@@ -77,7 +77,7 @@ this.it = it ?? 120
 
         // 60フレームごとにプレイヤーの入力状態をコンソールに出力する
         if (frame % 60 === 0) {
-            console.log("[chars.js Player.update] window.Allkeys state:", JSON.stringify(window.Allkeys));
+            console.log("[chars.js Player.update] window.Allkeys state:", JSON.stringify(window.Allkeys), "speed:", this.speed, "color:", this.color);
         }
 
         if (window.Allkeys.ArrowUp)    this.Move({ x: 0, y: -1 });

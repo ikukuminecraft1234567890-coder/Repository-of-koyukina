@@ -229,16 +229,26 @@ players[0].y = Math.max(0, Math.min(canvas.h, players[0].y));
     });
 
     window.addEventListener("keydown", (e) => {
-        window.keyboardState[e.key] = true;
-        window.Allkeys[e.key] = true;
-        console.log(`[sys.js keydown] key: ${e.key}, Allkeys:`, JSON.stringify(window.Allkeys));
-        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift"].includes(e.key)) e.preventDefault();
+        let key = e.key;
+        if (key === "ShiftLeft" || key === "ShiftRight") key = "Shift";
+        if (key === "z" || key === "Z") key = "z";
+        if (key === "x" || key === "X") key = "x";
+
+        window.keyboardState[key] = true;
+        window.Allkeys[key] = true;
+        console.log(`[sys.js keydown] key: ${e.key} -> normalized: ${key}, Allkeys:`, JSON.stringify(window.Allkeys));
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift"].includes(key)) e.preventDefault();
     });
     window.addEventListener("keyup", (e) => { 
-        if (e.key === "x") players.forEach(v => v.ob = false);
-        window.keyboardState[e.key] = false;
-        window.Allkeys[e.key] = false; 
-        console.log(`[sys.js keyup] key: ${e.key}, Allkeys:`, JSON.stringify(window.Allkeys));
+        let key = e.key;
+        if (key === "ShiftLeft" || key === "ShiftRight") key = "Shift";
+        if (key === "z" || key === "Z") key = "z";
+        if (key === "x" || key === "X") key = "x";
+
+        if (key === "x") players.forEach(v => v.ob = false);
+        window.keyboardState[key] = false;
+        window.Allkeys[key] = false; 
+        console.log(`[sys.js keyup] key: ${e.key} -> normalized: ${key}, Allkeys:`, JSON.stringify(window.Allkeys));
     });
 }
 
