@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東方封魔録Season2 - Modular</title>
+    <style>
+canvas {
+    image-rendering: -moz-crisp-edges;    /* Firefox */
+    image-rendering: -webkit-crisp-edges; /* Safari */
+    image-rendering: pixelated;           /* Chrome, Edge, 各種スマホブラウザ */
+}
+
+        div {
+            white-space: pre-wrap;
+        }
+        #id {
+            white-space: pre-wrap; 
+            width: 350px;          
+            word-break: break-all; 
+        }
+
+        body { 
+            background: #222; 
+            color: white; 
+            text-align: center; 
+            overflow: hidden; 
+            font-family: sans-serif; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        
+    justify-content: center; 
+            align-items: center;     
+            height: 100vh;           
+        }
+        
+        /* 💡 ここを修正：画面に合わせて最大化し、比率を維持する */
+canvas, #gameCanvas {
+    background: #000;
+    display: block;
+    margin: 0 auto;
+    border: 2px solid white;
+    touch-action: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    
+    /* 縦横比を保ってフィットさせる */
+    width: auto;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    aspect-ratio: 384 / 448;
+}
+    </style>
+</head>
+<body>
+    <script type="module">
+        import { start } from './sys.js';
+        import { functions } from "./boss.js";
+import {endless} from "./engine.js"
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id ="input"
+        input.placeholder ='文字を入力してください';
+        const div = document.createElement('div')
+        const button = document.createElement('button');
+        button.id = "btn"
+        div.id = "div"
+        const sp = document.createElement('div')
+        sp.id = "id"
+        button.type = "button"
+        button.textContent = "遊ぶ"
+endless()
+        function buttonPush() {
+            function error(un,t) {
+                if (un) div.textContent = t
+            }
+            const spell = input.value
+            const sn = Number(spell - 1)
+            const diva = document.getElementById('div')
+            diva.style.backgroundColor = "lightwhite"; 
+            diva.style.color = "D40014";
+            document.body.append(diva)
+            diva.textContent = "";
+
+            if (spell === "$()") {
+                localStorage.clear()
+                const n = localStorage.getItem("sd")
+                diva.textContent = `正常にローカルストレージをクリアしました。${n}`
+                return;
+            }
+
+            error(sn > functions.length,`入力された値が不正です。スペルのナンバーは${functions.length}以下にしてください。`)
+            error(Number(spell) <= 0,`入力された値が不正です。スペルのナンバーは1以上にしてください。`)
+            error(isNaN(sn),`入力された値\n${spell}\nは不正です。${functions.length}以下の半角数字を入力してください`)
+            error(!spell,"文字が入力されていません。")
+            error(!functions[sn],"存在していないスペルカードです。スペルナンバーを下げるまたは再確認してやり直してね")
+            
+            if (div.textContent) return;
+            div.remove()
+            input.remove()
+            button.remove()
+            sp.remove()
+            
+            // ゲーム開始
+            start(sn)
+        }
+
+        function checkInput() {
+            const v = Number(input.value) - 1
+            const fn = functions[v]
+
+            if(!localStorage.getItem("sd")) return; // エラー防止用安全策
+            const clg = JSON.parse(localStorage.getItem("sd"))[v]
+            console.log(clg);
+            const diva = document.getElementById('div').textContent = ""
+            const name = fn.name ?? "無名"
+            const desc = fn.desc ?? "説明文はまだ書かれていません。"
+            const time = fn.time ? "制限時間:" + fn.time + "s" : ""
+            const limit= fn.limit ? "特殊変化:" + fn.limit : ""
+const hint = fn.hint ?? ""
+            const g = String(clg?.gets ?? 0).padStart(3, "0")
+            const am = String(clg?.amount ?? 0).padStart(3, "0")
+            const text = `
+名前:${name}
+\n説明文:${desc}\n
+${time} | ${limit} 
+\nヒント:${hint}\n
+${g}/${am}`
+            sp.textContent = text
+        }
+
+        button.addEventListener("click", buttonPush);
+        input.addEventListener("input", checkInput);
+        document.body.append(input,button,div,sp)
+
+        setTimeout(() => {
+            const canvasElement = document.getElementById("gameCanvas");
+            if (!canvasElement) return;
+
+            let lastTouchX = 0;
+            let lastTouchY = 0;
+        },100);
+    </script>
+</body>
+</html>

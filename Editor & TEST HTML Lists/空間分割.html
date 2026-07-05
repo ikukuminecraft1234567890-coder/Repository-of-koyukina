@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>空間分割法 自作挑戦場(スマホ版)</title>
+    <style>
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #222;
+            color: #fff;
+            font-family: sans-serif;
+            text-align: center;
+            touch-action: none; /* スクロールやズームを完全禁止 */
+            user-select: none;  /* テキスト長押し選択を禁止 */
+            -webkit-user-select: none;
+        }
+        canvas { background: #111; border: 2px solid #555; display: block; margin: 10px auto; }
+        .controls { margin-top: 10px; }
+        button { padding: 12px 24px; font-weight: bold; font-size: 16px; cursor: pointer; margin: 0 5px; }
+        label { margin-left: 10px; font-size: 14px; }
+        select { padding: 8px; font-size: 14px; }
+        /* 💡 インプットボックス用のスタイル */
+        .coord-inputs { margin-top: 15px; }
+        .coord-inputs input { width: 60px; padding: 8px; font-size: 14px; text-align: center; margin: 0 5px; background: #333; color: #fff; border: 1px solid #666; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h2>空間分割法 自作挑戦(スマホ用)</h2>
+    <canvas id="gameCanvas" width="280" height="480"></canvas>
+
+    <div class="controls">
+        <button id="btnFire">発射！</button>
+        <select id="bulletSizeSelect">
+            <option value="8">8px</option>
+            <option value="32" selected>32px</option>
+            <option value="128">128px</option>
+        </select>
+        <label>弾数: <span id="bulletCount">0</span></label>
+    </div>
+
+    <div class="coord-inputs">
+        <label>プレイヤーX: <input type="number" id="inputPlayerX" value="140" min="0" max="280"></label>
+        <label>プレイヤーY: <input type="number" id="inputPlayerY" value="430" min="0" max="480"></label>
+    </div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const a = {sx:0,sy:0,ex:0,ey:0,b:[]}
+const gps = (x, y) => ({
+    w: Math.floor(x / (canvas.width / 2)), // 横の部屋番号（0か1）
+    h: Math.floor(y / (canvas.height / 2)) // 縦の部屋番号（0か1）
+});
+const internal = (c) => c.x && c.y && c.x >= 0 && c.y >= 0 && c.x < 280 && c.y < 480
+// --- オブジェクトデータ ---
+const player = {
+    x: canvas.width / 2,
+    y: canvas.height - 50,
+    radius: 4,
+    color: "magenta"
+};
+
+let bullets = [];
+
+// 💡 DOM要素の取得
+const inputX = document.getElementById("inputPlayerX");
+const inputY = document.getElementById("inputPlayerY");
+
+// 💡 インプット欄が手動で書き換えられた時のイベントを設定
+inputX.addEventListener("input", () => {
+    const val = parseFloat(inputX.value);
+    if (!isNaN(val)) player.x = val;
+});
+inputY.addEventListener("input", () => {
+    const val = parseFloat(inputY.value);
+    if (!isNaN(val)) player.y = val;
+});
+
+// --- メインループ ---
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// --- 更新処理 ---
+function update() {
+const grid = [
+  // grid[0]（横が左側のエリア）
+  [ 
+    [], // grid[0][0] ➔ 左上
+    []  // grid[0][1] ➔ 左下
+  ],
+  
+  // grid[1]（横が右側のエリア）
+  [ 
+    [], // grid[1][0] ➔ 右上
+    []  // grid[1][1] ➔ 右下
+  ]
+];
+
+
+    // 弾の移動 ＆ 画面外消去
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.currentFrame++;
+        if (b.currentFrame > b.deleteFrame || b.x < -150 || b.x > canvas.width + 150 || b.y < -150 || b.y > canvas.height + 150) {
+            bullets.splice(i, 1);
+        } else if (internal(b)) {
+const data = gps(b.x,b.y)
+if (data.w !== 0 && data.w !== 1) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255, 3, 0, 1)";
+        ctx.fill();
+console.log("Error:inValided Data On Width:",data.w,"/RawData:",b.x)}
+if (data.h !== 0 && data.h !== 1) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255, 3, 0, 1.0)";
+        ctx.fill();
+console.log("Error:inValided Data On Height:",data.h,"/RawData:",b.y)
+}
+if (data) grid[data.w][data.h].push(b)
+}
+    }
+
+
+    // 当たり判定
+const data = gps(player.x,player.y)
+if (!internal(player)) return;
+    document.getElementById("bulletCount").textContent = `現在数:${grid[data.w][data.h].length}`;
+    const isHit = grid[data.w][data.h].some(b => {
+        const dx = b.x - player.x;
+        const dy = b.y - player.y;
+        return (dx * dx + dy * dy) < Math.pow(player.radius + b.radius, 2);
+    });
+let color = null
+if (data.w && data.h) color = "red"
+//左上
+if (!data.w && !data.h) color = "red"
+//右下
+if (data.w && data.h) color = "blue"
+//右上
+if (data.w && !data.h) color = "green"
+//左下
+if (!data.w && data.h) color = "yellow"
+    player.color = isHit ? color : "magenta";
+}
+
+// --- 描画処理 ---
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 弾の描画
+    bullets.forEach(b => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0, 140, 220, 0.7)";
+        ctx.fill();
+    });
+
+    // 自機の描画
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.fillStyle = player.color;
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.stroke();
+}
+// --- 💡 スマホ用タッチ操作の管理変数 ---
+let lastTouchX = 0;
+let lastTouchY = 0;
+let isTouching = false;
+
+// 1. タッチ開始（触れた瞬間の指の座標を記録）
+canvas.addEventListener("touchstart", e => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    // 画面上のタッチ座標をCanvas内の座標スケールに変換
+    lastTouchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    lastTouchY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+    isTouching = true;
+}, { passive: false });
+
+// 2. タッチ移動（指が動いた「差分」だけ自機を動かす：東方スタイル）
+canvas.addEventListener("touchmove", e => {
+    if (!isTouching) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const currentX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    const currentY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+
+    // 前回の位置からの移動量を計算
+    const dx = currentX - lastTouchX;
+    const dy = currentY - lastTouchY;
+
+    // 自機を移動
+    player.x += dx;
+    player.y += dy;
+
+    // 画面外にはみ出さないように画面端でロック
+    if (player.x < 0) player.x = 0;
+    if (player.x > canvas.width) player.x = canvas.width;
+    if (player.y < 0) player.y = 0;
+    if (player.y > canvas.height) player.y = canvas.height;
+
+    // 💡 スワイプ移動した結果をインプットボックス側にも同期する
+    inputX.value = Math.round(player.x);
+    inputY.value = Math.round(player.y);
+
+    // 今回の位置を次の基準にする
+    lastTouchX = currentX;
+    lastTouchY = currentY;
+}, { passive: false });
+
+// 3. タッチ終了
+canvas.addEventListener("touchend", e => {
+    isTouching = false;
+}, { passive: false });
+
+
+// --- 発射ボタンイベント ---
+document.getElementById("btnFire").addEventListener("touchstart", e => {
+    e.preventDefault(); // ボタンのダブルタップズーム等を防止
+    fireOmniBullet();
+}, { passive: false });
+
+// PCでの動作確認用にも一応残してあります
+document.getElementById("btnFire").addEventListener("click", fireOmniBullet);
+
+function fireOmniBullet() {
+    const size = parseFloat(document.getElementById("bulletSizeSelect").value);
+    const count = 72; 
+    const step = 360 / count;
+
+    for (let i = 0; i < count; i++) {
+        const rad = (i * step) * Math.PI / 180;
+        bullets.push({
+            x: canvas.width / 2,
+            y: 80,
+            vx: Math.cos(rad) * 2,
+            vy: Math.sin(rad) * 2,
+            radius: size / 2,
+            currentFrame: 0,
+            deleteFrame: 300 
+        });
+    }
+}
+// ゲーム開始
+gameLoop();
+</script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桜の大木 生成シミュレーター</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #111c24, #05070a);
+            color: #fff;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #ffb7c5; }
+        p { margin: 0; font-size: 0.9rem; color: #aaa; }
+        canvas {
+            display: block;
+            box-shadow: 0 0 30px rgba(255, 183, 197, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">
+        <h1>数学で描く桜の大木</h1>
+        <p>【画面クリックで新しい桜を再生成】</p>
+        <p style="font-size: 0.8rem; color: #777; margin-top: 5px;">
+            L-System(分岐) × パイプモデル(太さ) × 重力たわみ × 黄金角(花)
+        </p>
+    </div>
+
+    <canvas id="cherryBlossomCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('cherryBlossomCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 画面サイズに合わせる
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // アニメーション用のキュー
+        let drawQueue = [];
+        let animationFrameId = null;
+
+        // 木の生成・描画メイン関数
+        function generateTree() {
+            // 前のアニメーションをストップしてクリア
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawQueue = [];
+
+            const startX = canvas.width / 2;
+            const startY = canvas.height * 0.85; // 地面の位置
+            const initialLength = canvas.height * 0.22; // 初期の幹の長さ
+            const initialThickness = initialLength * 0.13; // パイプモデル基準の初期の太さ
+
+            // 再帰呼び出しの開始（幹から枝へ）
+            // branch(x, y, 長さ, 角度, 太さ, 現在の階層(世代))
+            branch(startX, startY, initialLength, -Math.PI / 2, initialThickness, 0);
+
+            // アニメーションループの開始
+            animate();
+        }
+
+        function branch(x, y, length, angle, thickness, depth) {
+            // 枝の終点を計算
+            const endX = x + length * Math.cos(angle);
+            const endY = y + length * Math.sin(angle);
+
+            // キューに枝の描画情報を登録（手前から奥、根本から先へと描画するため）
+            drawQueue.push({
+                type: 'branch',
+                x1: x, y1: y,
+                x2: endX, y2: endY,
+                thickness: thickness,
+                depth: depth
+            });
+
+            // 終了条件（細くなりすぎたか、最大階層に達したら花を咲かせる）
+            const maxDepth = 7;
+            if (depth >= maxDepth || thickness < 2) {
+                // 枝の先端（桜の塊）をフェルマーの螺旋（黄金角）をベースに密集させる
+                const flowerCount = 45; 
+                const goldenAngle = 137.5 * (Math.PI / 180);
+                const c = 2.5; // 広がり係数
+
+                for (let n = 0; n < flowerCount; n++) {
+                    const r = c * Math.sqrt(n) * (1 + Math.random() * 0.3);
+                    const theta = n * goldenAngle + Math.random();
+                    const fx = endX + r * Math.cos(theta);
+                    const fy = endY + r * Math.sin(theta);
+
+                    drawQueue.push({
+                        type: 'flower',
+                        x: fx, y: fy,
+                        size: Math.random() * 2.5 + 1.5,
+                        // 内側ほど濃いピンク、外側ほど淡いピンク
+                        color: `hsla(${340 + Math.random() * 15}, 90%, ${75 + (n*0.05)}%, ${0.6 - (n*0.005)})`
+                    });
+                }
+                return;
+            }
+
+            // パイプモデル理論に基づく枝分かれの計算
+            // D^2 = d1^2 + d2^2 + d3^2 から逆算して、分岐後の太さを決定
+            const branchCount = Math.random() > 0.2 ? 3 : 2; // 3つ叉か2つ叉か
+            const thicknessRatio = Math.sqrt(1 / branchCount) * 0.9; // 少し細めに補正
+            const nextThickness = thickness * thicknessRatio;
+
+            for (let i = 0; i < branchCount; i++) {
+                // 1. 基本の分岐角（L-System）: -40度〜40度の間で分散
+                let angleOffset = (Math.random() * 70 - 35) * (Math.PI / 180);
+                if (branchCount === 3) {
+                    angleOffset = ((i - 1) * 35 + (Math.random() * 20 - 10)) * (Math.PI / 180);
+                }
+                
+                let nextAngle = angle + angleOffset;
+
+                // 2. 重力によるたわみの微分方程式的な補正
+                // 中心から横に広がれば広がるほど（角度が水平に近いほど）、重力で下に垂れる力を加える
+                const horizontalFactor = Math.abs(Math.cos(nextAngle)); // 横向き度合い
+                const gravityForce = 0.08 * (depth / maxDepth) * horizontalFactor;
+                nextAngle += gravityForce; // ラジアンにプラス（下方向）へ曲げる
+
+                // 次の枝の長さ（先端にいくほどランダムに短くなる）
+                const nextLength = length * (0.7 + Math.random() * 0.2);
+
+                // 再帰呼び出し
+                branch(endX, endY, nextLength, nextAngle, nextThickness, depth + 1);
+            }
+        }
+
+        // 描画アニメーションの駆動
+        let currentIndex = 0;
+        function animate() {
+            // 1フレームに描画する要素数（徐々に咲いていく演出）
+            const speed = 25; 
+            
+            for (let i = 0; i < speed; i++) {
+                if (currentIndex >= drawQueue.length) return;
+
+                const item = drawQueue[currentIndex];
+                if (item.type === 'branch') {
+                    // 枝（幹）の描画
+                    ctx.beginPath();
+                    ctx.moveTo(item.x1, item.y1);
+                    ctx.lineTo(item.x2, item.y2);
+                    ctx.lineWidth = item.thickness;
+                    // 根本は黒く太く、先は少し赤みのある茶色に
+                    ctx.strokeStyle = `rgb(${50 + item.depth * 8}, ${40 + item.depth * 4}, ${40 + item.depth * 3})`;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                } else if (item.type === 'flower') {
+                    // 桜の花（フェルマーの螺旋上の点）の描画
+                    ctx.beginPath();
+                    ctx.arc(item.x, item.y, item.size, 0, Math.PI * 2);
+                    ctx.fillStyle = item.color;
+                    ctx.fill();
+                }
+                currentIndex++;
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // 初期生成とクリックイベント登録
+        generateTree();
+        window.addEventListener('click', () => {
+            currentIndex = 0;
+            generateTree();
+        });
+    </script>
+</body>
+</html>
