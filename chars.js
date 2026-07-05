@@ -75,14 +75,19 @@ this.it = it ?? 120
         this.invincible -= 1;
         this.IsSlow();
 
-        if (Allkeys.ArrowUp)    this.Move({ x: 0, y: -1 });
-        if (Allkeys.ArrowDown)  this.Move({ x: 0, y: 1 });
-        if (Allkeys.ArrowRight) this.Move({ x: 1, y: 0 });
-        if (Allkeys.ArrowLeft)  this.Move({ x: -1, y: 0 });
+        // 60フレームごとにプレイヤーの入力状態をコンソールに出力する
+        if (frame % 60 === 0) {
+            console.log("[chars.js Player.update] window.Allkeys state:", JSON.stringify(window.Allkeys));
+        }
+
+        if (window.Allkeys.ArrowUp)    this.Move({ x: 0, y: -1 });
+        if (window.Allkeys.ArrowDown)  this.Move({ x: 0, y: 1 });
+        if (window.Allkeys.ArrowRight) this.Move({ x: 1, y: 0 });
+        if (window.Allkeys.ArrowLeft)  this.Move({ x: -1, y: 0 });
     }
 
     OnShot(a = false) {
-        if (!Allkeys.z && !isTouching) return;
+        if (!window.Allkeys.z && !isTouching) return;
         if (!a) return new Bullet({ x: this.x, y: this.y, angle: -Math.PI / 2, speed: 15, color: "red", w: 15, h: 15, type: "PlayerBullet", deleteFrame: 180, isPB: true, PBdmg: 12 });
 
         let near = null, minDist = Infinity;
@@ -112,7 +117,7 @@ this.it = it ?? 120
     return OnHit;
 }
     IsSlow() {
-        if (Allkeys.Shift) {
+        if (window.Allkeys.Shift) {
             this.speed = this.MySpeed * 0.5;
             this.currentBaseColor = "green";
         } else {
@@ -122,7 +127,7 @@ this.it = it ?? 120
     }
 
     Bomb() {
-        if (Allkeys.x && this.ba > 0) {
+        if (window.Allkeys.x && this.ba > 0) {
             if (this.ob) return;
             this.ba -= 1;
             for (let i = 0; i < 120; i++) {

@@ -3,6 +3,10 @@ let fx = 0
 let fy = 0
 const asset = "./assets/";
 
+// グローバル変数を最上部で明示的に定義
+window.keyboardState = window.keyboardState || {};
+window.Allkeys = window.Allkeys || {};
+
 /**
  * 画面上の座標からグリッド位置を計算する（デバッグ用など）
  */
@@ -225,21 +229,21 @@ players[0].y = Math.max(0, Math.min(canvas.h, players[0].y));
     });
 
     window.addEventListener("keydown", (e) => {
-        keyboardState[e.key] = true;
-        Allkeys[e.key] = true;
+        window.keyboardState[e.key] = true;
+        window.Allkeys[e.key] = true;
+        console.log(`[sys.js keydown] key: ${e.key}, Allkeys:`, JSON.stringify(window.Allkeys));
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift"].includes(e.key)) e.preventDefault();
     });
     window.addEventListener("keyup", (e) => { 
         if (e.key === "x") players.forEach(v => v.ob = false);
-        keyboardState[e.key] = false;
-        Allkeys[e.key] = false; 
+        window.keyboardState[e.key] = false;
+        window.Allkeys[e.key] = false; 
+        console.log(`[sys.js keyup] key: ${e.key}, Allkeys:`, JSON.stringify(window.Allkeys));
     });
 }
 
 export const Half = { x: 192, y: 224 }; // 384x448 の半分に初期値を更新
 export let players = [];
-window.keyboardState = {};
-window.Allkeys = {};
 export let frame = 0;
 
 export function sp(num) { return num * 60; }
@@ -582,21 +586,23 @@ export function updateGamepad() {
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
     
     // キーボードの初期状態をセット
-    let arrowLeft = keyboardState.ArrowLeft || false;
-    let arrowRight = keyboardState.ArrowRight || false;
-    let arrowUp = keyboardState.ArrowUp || false;
-    let arrowDown = keyboardState.ArrowDown || false;
-    let shift = keyboardState.Shift || false;
-    let z = keyboardState.z || false;
-    let x = keyboardState.x || false;
+    let arrowLeft = window.keyboardState.ArrowLeft || false;
+    let arrowRight = window.keyboardState.ArrowRight || false;
+    let arrowUp = window.keyboardState.ArrowUp || false;
+    let arrowDown = window.keyboardState.ArrowDown || false;
+    let shift = window.keyboardState.Shift || false;
+    let z = window.keyboardState.z || false;
+    let x = window.keyboardState.x || false;
 
     const threshold = 0.3; // デッドゾーン
+    let activeGamepad = false;
 
     // 接続されているすべてのゲームパッドをチェックして入力をマージ
     for (let i = 0; i < gamepads.length; i++) {
         const gp = gamepads[i];
         if (!gp) continue;
 
+        activeGamepad = true;
         const stickX = gp.axes[0] || 0;
         const stickY = gp.axes[1] || 0;
         const dpadUp = gp.buttons[12]?.pressed || false;
@@ -617,11 +623,15 @@ export function updateGamepad() {
     }
 
     // 最終的な状態をAllkeysに適用
-    Allkeys.ArrowLeft = arrowLeft;
-    Allkeys.ArrowRight = arrowRight;
-    Allkeys.ArrowUp = arrowUp;
-    Allkeys.ArrowDown = arrowDown;
-    Allkeys.Shift = shift;
-    Allkeys.z = z;
-    Allkeys.x = x;
+    window.Allkeys.ArrowLeft = arrowLeft;
+    window.Allkeys.ArrowRight = arrowRight;
+    window.Allkeys.ArrowUp = arrowUp;
+    window.Allkeys.ArrowDown = arrowDown;
+    window.Allkeys.Shift = shift;
+    window.Allkeys.z = z;
+    window.Allkeys.x = x;
+
+    if (activeGamepad && (arrowLeft || arrowRight || arrowUp || arrowDown || shift || z || x)) {
+        console.log("[sys.js updateGamepad] Gamepad input detected. Allkeys:", JSON.stringify(window.Allkeys));
+    }
 }

@@ -55,6 +55,9 @@ rb.addEventListener("click", rbpush);
 
 export function gameLoop() {
 updateGamepad();
+if (stat.pfr % 60 === 0) {
+    console.log("[engine.js gameLoop] pfr:", stat.pfr, "window.Allkeys:", JSON.stringify(window.Allkeys));
+}
 /*
 if (stat.pfr % 60 === 0)saveToDisk(
   "http://127.0.0.1:8080/log",  // ← これ
@@ -130,7 +133,7 @@ rb.addEventListener("click", rbpush);
 document.body.append(cb,rb)
     return;
 }
-                p.update(Allkeys);
+                p.update();
            // if (frame % 5 === 0) p.OnShot(false); // 通常
               //if (frame % 15 === 0) p.OnShot(true);  // ホーミング
                 p.draw(ctx,ondebug);
