@@ -18,7 +18,6 @@ export class Entity {
         this.hitboxRadius = rd;
         if (name !== "Player" && ap) entitys.push(this);
     }
-
     update() {
         if (this.y < this.targetY) this.y += this.speed;
         this.ny = this.y;
@@ -32,7 +31,6 @@ export class Entity {
         this.x = Nx;
         this.y = Ny;
     }
-
     draw(ctx, debug = false) {
         ctx.fillStyle = this.color;
         ctx.beginPath();
