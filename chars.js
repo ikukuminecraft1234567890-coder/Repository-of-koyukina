@@ -118,7 +118,7 @@ this.it = it ?? 120
 }
     IsSlow() {
         if (window.Allkeys.Shift) {
-            this.speed = 0.6;
+            this.speed = 0.8;
             this.currentBaseColor = "green";
         } else {
             this.speed = this.MySpeed;
