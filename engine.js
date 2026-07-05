@@ -1,7 +1,7 @@
 import { Entity,Player } from "./chars.js";
 import { 
    canvas,ctx, players,bullets,
-    Allkeys, updateFrame, frame, Half, Bullet, pf, CircleSpawn ,entitys,spelln,start
+    updateFrame, frame, Half, Bullet, pf, CircleSpawn ,entitys,spelln,start
 ,internal,gps, updateGamepad} from './sys.js';
 import {functions} from "./boss.js"
 export function endless() {

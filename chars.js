@@ -1,6 +1,6 @@
 import { 
     canvas, ctx, players, bullets,
-    Allkeys, updateFrame, frame, Half, isTouching, Bullet, entitys
+    updateFrame, frame, Half, isTouching, Bullet, entitys
 ,internal,gps} from './sys.js';
 
 export class Entity {

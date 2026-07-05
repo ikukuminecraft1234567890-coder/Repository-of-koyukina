@@ -1,7 +1,7 @@
 import { Entity,Player } from "./chars.js";
 import { 
    canvas,ctx, players,bullets,
-    Allkeys, updateFrame, frame, Half, Bullet, pf, CircleSpawn ,entitys,spelln,start
+    updateFrame, frame, Half, Bullet, pf, CircleSpawn ,entitys,spelln,start
 ,CC,internal,bullet} from './sys.js';
 import {stat,gameLoop} from "./engine.js"
 /**
