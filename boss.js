@@ -14,15 +14,12 @@ import {stat,gameLoop} from "./engine.js"
 // ⭕ 修正後: 度数(degree)をラジアン(radian)に正しく変換する
 const dtr = (deg) => (deg * Math.PI) / 180;
 
-// タスクごとに一意のIDを割り振るためのカウンター
 let nextTaskId = 0;
-
 function wait(callback, time, isFrame = true) {
     if (typeof callback !== 'function') return;
 
     const targetFrames = isFrame ? time : Math.round((time * 60) / 1000);
     const startFrame = pfr;
-
     if (!globalThis._waitTasks) {
         globalThis._waitTasks = new Map();
     }
