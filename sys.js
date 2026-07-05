@@ -238,8 +238,8 @@ players[0].y = Math.max(0, Math.min(canvas.h, players[0].y));
 
 export const Half = { x: 192, y: 224 }; // 384x448 の半分に初期値を更新
 export let players = [];
-const keyboardState = {};
-export const Allkeys = {};
+export const keyboardState = window.keyboardState = {};
+export const Allkeys = window.Allkeys = {};
 export let frame = 0;
 
 export function sp(num) { return num * 60; }
