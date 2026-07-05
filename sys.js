@@ -580,33 +580,48 @@ export async function CC(type, colors) {
 
 export function updateGamepad() {
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-    const gp = gamepads[0];
-    if (!gp) return;
+    
+    // キーボードの初期状態をセット
+    let arrowLeft = keyboardState.ArrowLeft || false;
+    let arrowRight = keyboardState.ArrowRight || false;
+    let arrowUp = keyboardState.ArrowUp || false;
+    let arrowDown = keyboardState.ArrowDown || false;
+    let shift = keyboardState.Shift || false;
+    let z = keyboardState.z || false;
+    let x = keyboardState.x || false;
 
     const threshold = 0.3; // デッドゾーン
 
-    // スティックおよびD-pad（十字キー）の入力を取得
-    const stickX = gp.axes[0] || 0;
-    const dpadLeft = gp.buttons[14]?.pressed || false;
-    const dpadRight = gp.buttons[15]?.pressed || false;
+    // 接続されているすべてのゲームパッドをチェックして入力をマージ
+    for (let i = 0; i < gamepads.length; i++) {
+        const gp = gamepads[i];
+        if (!gp) continue;
 
-    Allkeys.ArrowLeft = (keyboardState.ArrowLeft || false) || (stickX < -threshold) || dpadLeft;
-    Allkeys.ArrowRight = (keyboardState.ArrowRight || false) || (stickX > threshold) || dpadRight;
+        const stickX = gp.axes[0] || 0;
+        const stickY = gp.axes[1] || 0;
+        const dpadUp = gp.buttons[12]?.pressed || false;
+        const dpadDown = gp.buttons[13]?.pressed || false;
+        const dpadLeft = gp.buttons[14]?.pressed || false;
+        const dpadRight = gp.buttons[15]?.pressed || false;
 
-    const stickY = gp.axes[1] || 0;
-    const dpadUp = gp.buttons[12]?.pressed || false;
-    const dpadDown = gp.buttons[13]?.pressed || false;
+        // スティックまたはD-padの入力をマージ
+        arrowLeft = arrowLeft || (stickX < -threshold) || dpadLeft;
+        arrowRight = arrowRight || (stickX > threshold) || dpadRight;
+        arrowUp = arrowUp || (stickY < -threshold) || dpadUp;
+        arrowDown = arrowDown || (stickY > threshold) || dpadDown;
 
-    Allkeys.ArrowUp = (keyboardState.ArrowUp || false) || (stickY < -threshold) || dpadUp;
-    Allkeys.ArrowDown = (keyboardState.ArrowDown || false) || (stickY > threshold) || dpadDown;
+        // ボタン入力をマージ
+        shift = shift || gp.buttons[1]?.pressed || false;
+        z = z || gp.buttons[0]?.pressed || false;
+        x = x || gp.buttons[2]?.pressed || gp.buttons[3]?.pressed || false;
+    }
 
-    // ボタン入力のマッピング
-    // Bボタン (Xbox Bボタン / Switch Aボタン = ボタン 1) ➔ 低速移動 (Shift)
-    Allkeys.Shift = (keyboardState.Shift || false) || (gp.buttons[1]?.pressed || false);
-
-    // Aボタン (Xbox Aボタン / Switch Bボタン = ボタン 0) ➔ ショット (z)
-    Allkeys.z = (keyboardState.z || false) || (gp.buttons[0]?.pressed || false);
-
-    // Xボタン (Xbox Xボタン / Switch Yボタン = ボタン 2) または Yボタン(ボタン 3) ➔ ボム (x)
-    Allkeys.x = (keyboardState.x || false) || (gp.buttons[2]?.pressed || gp.buttons[3]?.pressed || false);
+    // 最終的な状態をAllkeysに適用
+    Allkeys.ArrowLeft = arrowLeft;
+    Allkeys.ArrowRight = arrowRight;
+    Allkeys.ArrowUp = arrowUp;
+    Allkeys.ArrowDown = arrowDown;
+    Allkeys.Shift = shift;
+    Allkeys.z = z;
+    Allkeys.x = x;
 }
