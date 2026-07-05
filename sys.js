@@ -504,7 +504,19 @@ export class Bullet {
             case "scale":
             case "米弾":
             case "diamond":
-                idraw(this.type === "クナイ" ? "kunai" : this.type === "御札" ? "amulet" : this.type === "グミ" ? "gummy" : this.type === "ナイフ弾" ? "knife" : this.type === "大弾" ? "big" : this.type === "鱗弾" ? "scale" : this.type === "米弾" ? "diamond" : this.type, this.x, this.y, this.w, this.h, this.angle, this.color);
+            case "陰陽玉":
+            case "陰陽弾":
+            case "onmyoutama":
+                let imgType = this.type;
+                if (imgType === "クナイ") imgType = "kunai";
+                else if (imgType === "御札") imgType = "amulet";
+                else if (imgType === "グミ") imgType = "gummy";
+                else if (imgType === "ナイフ弾") imgType = "knife";
+                else if (imgType === "大弾") imgType = "big";
+                else if (imgType === "鱗弾") imgType = "scale";
+                else if (imgType === "米弾") imgType = "diamond";
+                else if (imgType === "陰陽玉" || imgType === "陰陽弾") imgType = "onmyoutama";
+                idraw(imgType, this.x, this.y, this.w, this.h, this.angle, this.color);
                 break;
                 
             case "四角":
