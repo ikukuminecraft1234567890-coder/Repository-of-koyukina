@@ -59,7 +59,7 @@ export class Entity {
 
 export class Player extends Entity {
     constructor(x, y, radius, color,rd,it,zanki) {
-        super("Player", x, y, radius, color, 0, false, rd);
+        super("Player", x, y, radius, color, 4, false, rd);
 this.maxzanki = zanki ?? 3
         this.zanki = zanki ?? 3;
 this.it = it ?? 120
