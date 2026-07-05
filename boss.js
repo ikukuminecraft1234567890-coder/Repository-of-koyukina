@@ -23,14 +23,12 @@ function wait(callback, time, isFrame = true) {
     const targetFrames = isFrame ? time : Math.round((time * 60) / 1000);
     const startFrame = pfr;
 
-    // 💡 初回呼び出し時に Map がなければ作成する
     if (!globalThis._waitTasks) {
         globalThis._waitTasks = new Map();
     }
     
     const taskId = nextTaskId++;
     
-    // 💡 MapにID付きでタスクを登録
     globalThis._waitTasks.set(taskId, {
         execute: () => {
             if (pfr - startFrame >= targetFrames) {
