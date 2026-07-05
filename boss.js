@@ -14,18 +14,23 @@ import {stat,gameLoop} from "./engine.js"
 // ⭕ 修正後: 度数(degree)をラジアン(radian)に正しく変換する
 const dtr = (deg) => (deg * Math.PI) / 180;
 
+// タスクごとに一意のIDを割り振るためのカウンター
 let nextTaskId = 0;
+
 function wait(callback, time, isFrame = true) {
     if (typeof callback !== 'function') return;
 
     const targetFrames = isFrame ? time : Math.round((time * 60) / 1000);
     const startFrame = pfr;
+
+    // 💡 初回呼び出し時に Map がなければ作成する
     if (!globalThis._waitTasks) {
         globalThis._waitTasks = new Map();
     }
     
     const taskId = nextTaskId++;
     
+    // 💡 MapにID付きでタスクを登録
     globalThis._waitTasks.set(taskId, {
         execute: () => {
             if (pfr - startFrame >= targetFrames) {
@@ -126,9 +131,10 @@ fn(ev)
 //バラマキ高速
 export const functions = []
 const spell1 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"獄界剣「二百里の一閃｣",
 desc:"",
-hint:"",
-ct:"",
+hint:"ランダム0なので位置を覚えるといいかも？",
+ct:"384x448環境に移行してから作った初のスペルカード！🤩地味にランダム要素0です。",
 list:[],
 //自機狙い弾
 prop:0,
@@ -170,9 +176,10 @@ bullet({
 }}}
 functions.push(spell1)
 const spell2 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"",
+name:"フラッシュオブボーダー",
+desc:"無敵時間使ってボーダー外に逃げるのはやめてね",
 hint:"",
-ct:"",
+ct:"自作です。紺珠伝見てないんで！割と初期配置ゲーだったりするw",
 list:[],
 //自機狙い弾
 prop:true,
@@ -241,9 +248,10 @@ fnlist:[{f:0,loop:true,fn:function(){
 }}
 functions.push(spell2)
 const spell3 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"筒粥「神の粥」",
 desc:"",
 hint:"",
-ct:"",
+ct:"めっちゃ神奈子っぽい弾幕w名前はそのまま神奈子の流用\n実は自機狙い後の形が人みたいになってるのは意図してない。理想は丸い状態だったんすけどね()まあいい感じになったんで....",
 list:[],
 //自機狙い弾
 prop:{s:true,a:true},
@@ -321,7 +329,7 @@ setlist:[{f:5,e:3}],
 }}}
 functions.push(spell3)
 const spell4 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"",
+desc:"バグってるので次回作成",
 hint:"",
 ct:"",
 speed:1,
@@ -438,9 +446,10 @@ bullet({
 functions.push(spell4)
 
 const spell5 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"テスト用",
+name:"不滅「フェニックスの羽」",
+desc:"",
 hint:"",
-ct:"",
+ct:"そのまま妹紅のスペルの再現しようとしたけど上手く形が作れなかったのでそのまま方向性を変換したスペル。なんだかんだ気合い避けスペルがいちばん楽しい🤨",
 speed:1,
 list:[],
 amount:15,
@@ -471,9 +480,10 @@ for (let i = 0;i<this.amount;i++)bullet({
 }}}
 functions.push(spell5)
 const spell6 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"テスト用",
+name:"藤原「滅罪寺院傷」",
+desc:"",
 hint:"",
-ct:"",
+ct:"初期の耐久時間は60s(！？)、どんどん密度が上がっていくのでめっちゃムズいです。個人的には気に入ってるけど難易度としては苦手() ここだけの話、上のチェックボックスをオンにするとクリアが無効化されてそのままずっとスペルが続く(死亡判定もないので無限に被弾可能)ので密度の上がり方がやばすぎておそらくフリーズしますw",
 //自機狙い弾
 prop:true,
 step:8,
@@ -482,7 +492,7 @@ this.step=8
 this.prop=true
 gi(1.75)
 },
-time:60,
+time:20,
 run() {
 if (pfr % 30 === 0) {
 this.step -= 0.1
@@ -522,9 +532,10 @@ bullet({
 }
 functions.push(spell6)
 const spell7 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"テスト用",
+name:"純符｢純粋な弾幕天国｣",
+desc:"",
 hint:"",
-ct:"",
+ct:"あまりにもムズすぎて1度とんでもないナーフをしてやっと作者がクリア。めっちゃムズい！！！元々はストーンゴッデスが楽しいからいい感じの気合い弾幕を作ろうしてたんですけどね;;どうしてこうなるのか...時間経過で難易度が上がるところとかストーンゴッデスパクリな名残がある",
 //自機狙い弾
 prop:true,
 step:8,
@@ -650,9 +661,10 @@ setlist:[{f:30,e:1.5}]
 }}
 functions.push(spell7)
 const spell8 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"テスト用",
+name:"ストーンゴッデス",
+desc:"",
 hint:"",
-ct:"",
+ct:"はい。分かったってにてないのは\nこれはスペカ7が思てたんと違うから作り直したヤツ。全方位弾にブレつけると一気にそれっぽくなるのを理解しましたよ！ちなみにこれは結構ストーンゴッデスでは無いけど、いい感じ",
 //自機狙い弾
 prop:true,
 step:8,
@@ -661,7 +673,7 @@ this.step=8
 this.prop=true
 gi(0.5)
 },
-time:60,
+time:20,
 run() {
 if (pfr % 15 === 0) {
 circle((ev) => {
@@ -683,10 +695,11 @@ bullet({
 }
 }}
 functions.push(spell8)
-const spell9 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+const spell9 = { // 修正箇所：改行による宣言の分断を解消し、
+name:"幻在「クロックコープス」",
 desc:"テスト用",
 hint:"",
-ct:"",
+ct:"実は発射時の自機の位置に角度が再設定されるので、逃げ惑うのは無駄です。後なんなら弾の発車位置がズレるのでお勧めしないw",
 //自機狙い弾
 prop:true,
 c:0,
@@ -727,9 +740,10 @@ if (this.custom + 180 === pfr) this.angle = pf(this.x,this.y)
 }}
 functions.push(spell9)
 const spell10 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"テスト用",
+name:"幻遊「ジャック・ザ・ルドビレ」(",
+desc:"",
 hint:"",
-ct:"",
+ct:"なう(2026/07/05 21:35:58)現状最後のスペカ。これはスペル9のバグから生まれたスペカ。めっちゃ力作ではあるけど元がバグなのがなんともというアレ。",
 //自機狙い弾
 prop:true,
 owner:null,
