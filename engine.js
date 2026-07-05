@@ -2,7 +2,7 @@ import { Entity,Player } from "./chars.js";
 import { 
    canvas,ctx, players,bullets,
     Allkeys, updateFrame, frame, Half, Bullet, pf, CircleSpawn ,entitys,spelln,start
-,internal,gps} from './sys.js';
+,internal,gps, updateGamepad} from './sys.js';
 import {functions} from "./boss.js"
 export function endless() {
 const check = document.createElement('input');
@@ -54,6 +54,7 @@ rb.addEventListener("click", rbpush);
 
 
 export function gameLoop() {
+updateGamepad();
 /*
 if (stat.pfr % 60 === 0)saveToDisk(
   "http://127.0.0.1:8080/log",  // ← これ

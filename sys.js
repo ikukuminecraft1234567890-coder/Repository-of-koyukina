@@ -225,11 +225,13 @@ players[0].y = Math.max(0, Math.min(canvas.h, players[0].y));
     });
 
     window.addEventListener("keydown", (e) => {
+        keyboardState[e.key] = true;
         Allkeys[e.key] = true;
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Shift"].includes(e.key)) e.preventDefault();
     });
     window.addEventListener("keyup", (e) => { 
         if (e.key === "x") players.forEach(v => v.ob = false);
+        keyboardState[e.key] = false;
         Allkeys[e.key] = false; 
     });
 }
@@ -237,6 +239,7 @@ players[0].y = Math.max(0, Math.min(canvas.h, players[0].y));
 export const Half = { x: 192, y: 224 }; // 384x448 の半分に初期値を更新
 export let players = [];
 export const Allkeys = {};
+export const keyboardState = {};
 export let frame = 0;
 
 export function sp(num) { return num * 60; }
@@ -573,4 +576,37 @@ export async function CC(type, colors) {
             };
         });
     });
+}
+
+export function updateGamepad() {
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = gamepads[0];
+    if (!gp) return;
+
+    const threshold = 0.3; // デッドゾーン
+
+    // スティックおよびD-pad（十字キー）の入力を取得
+    const stickX = gp.axes[0] || 0;
+    const dpadLeft = gp.buttons[14]?.pressed || false;
+    const dpadRight = gp.buttons[15]?.pressed || false;
+
+    Allkeys.ArrowLeft = (keyboardState.ArrowLeft || false) || (stickX < -threshold) || dpadLeft;
+    Allkeys.ArrowRight = (keyboardState.ArrowRight || false) || (stickX > threshold) || dpadRight;
+
+    const stickY = gp.axes[1] || 0;
+    const dpadUp = gp.buttons[12]?.pressed || false;
+    const dpadDown = gp.buttons[13]?.pressed || false;
+
+    Allkeys.ArrowUp = (keyboardState.ArrowUp || false) || (stickY < -threshold) || dpadUp;
+    Allkeys.ArrowDown = (keyboardState.ArrowDown || false) || (stickY > threshold) || dpadDown;
+
+    // ボタン入力のマッピング
+    // Bボタン (Xbox Bボタン / Switch Aボタン = ボタン 1) ➔ 低速移動 (Shift)
+    Allkeys.Shift = (keyboardState.Shift || false) || (gp.buttons[1]?.pressed || false);
+
+    // Aボタン (Xbox Aボタン / Switch Bボタン = ボタン 0) ➔ ショット (z)
+    Allkeys.z = (keyboardState.z || false) || (gp.buttons[0]?.pressed || false);
+
+    // Xボタン (Xbox Xボタン / Switch Yボタン = ボタン 2) または Yボタン(ボタン 3) ➔ ボム (x)
+    Allkeys.x = (keyboardState.x || false) || (gp.buttons[2]?.pressed || gp.buttons[3]?.pressed || false);
 }
