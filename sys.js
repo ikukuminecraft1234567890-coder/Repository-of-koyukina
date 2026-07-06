@@ -3,11 +3,9 @@ let fx = 0
 let fy = 0
 const asset = "./assets/";
 
-
 // グローバル変数を最上部で明示的に定義
 window.keyboardState = window.keyboardState || {};
 window.Allkeys = window.Allkeys || {};
-
 
 /**
  * 画面上の座標からグリッド位置を計算する（デバッグ用など）
@@ -24,7 +22,7 @@ export function gps(x, y) {
     };
 }
 
-// canvas.w と canvas.h を使って自動判定する画面内チェック
+// ⭕ canvas.w と canvas.h を使って自動判定する画面内チェック
 export const internal = (c) => {
     if (!canvas || !canvas.w || !canvas.h) return false;
     const cx = Math.max(0, Math.min(c.x, canvas.w - 1));
@@ -39,7 +37,9 @@ export const internal = (c) => {
 
 const imgList = new Map();
 
-// 画像に幻想彩色（Glow Filter）処理を施し、DataURLを返却する関数
+/**
+ * 画像に幻想彩色（Glow Filter）処理を施し、DataURLを返却する関数
+ */
 async function setColor(img, color, glowAmount = 300) {
     const parseHexToRgb = (hexStr) => {
         const match = hexStr.trim().match(/^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/);
@@ -316,7 +316,8 @@ export function bullet({
     fnlist = [], 
     push = true, 
     custom = [],
-    seta = []
+    seta = [],
+rd=1,
 }) {
 return new Bullet({
         x: x, 
@@ -343,7 +344,8 @@ return new Bullet({
         fnlist: fnlist, 
         push: push, 
         custom: custom,
-        seta: seta
+        seta: seta,
+rd:rd
     });
 }
 
@@ -356,7 +358,7 @@ export class Bullet {
         rotateF = Infinity,   
         rotate = [],          
         slowF = 0, slowE = 1,
-        fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle, setlist = [], fnlist = [], push = true, custom = [],seta=[]
+        fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle, setlist = [], fnlist = [], push = true, custom = [],seta=[],rd=1
     }) {
         this.custom = custom;
         this.x = x;
@@ -365,7 +367,7 @@ export class Bullet {
         this.speed = speed;
         this.w = w;
         this.h = h;
-        this.radius = w / 2;
+        this.radius = (w * rd) / 2;
         this.color = color;
         this.type = type;
         this.timer = 0;
@@ -508,6 +510,7 @@ export class Bullet {
             case "陰陽弾":
             case "onmyoutama":
             case "onmyoudama":
+            case "om":
                 let imgType = this.type;
                 if (imgType === "クナイ") imgType = "kunai";
                 else if (imgType === "御札") imgType = "amulet";
@@ -516,7 +519,7 @@ export class Bullet {
                 else if (imgType === "大弾") imgType = "big";
                 else if (imgType === "鱗弾") imgType = "scale";
                 else if (imgType === "米弾") imgType = "diamond";
-                else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
+                else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama" || imgType === "om") imgType = "onmyoutama";
                 idraw(imgType, this.x, this.y, this.w, this.h, this.angle, this.color);
                 break;
                 
@@ -588,7 +591,7 @@ export async function CC(type, colors) {
     else if (imgType === "大弾") imgType = "big";
     else if (imgType === "鱗弾") imgType = "scale";
     else if (imgType === "米弾") imgType = "diamond";
-    else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
+    else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama" || imgType === "om") imgType = "onmyoutama";
 
     const baseImg = new Image();
     baseImg.src = asset + imgType + ".png";
