@@ -596,7 +596,13 @@ export async function CC(type, colors) {
     const baseImg = new Image();
     baseImg.src = asset + imgType + ".png";
     
-    await new Promise(resolve => baseImg.onload = resolve);
+    await new Promise(resolve => {
+        baseImg.onload = resolve;
+        baseImg.onerror = () => {
+            console.error("Failed to load image asset:", baseImg.src);
+            resolve();
+        };
+    });
     const colorArray = Array.isArray(colors) ? colors : [colors];
     
     colorArray.forEach(color => {

@@ -77,7 +77,7 @@ const it = (t) => (min, max) => t >= min && t <= max;
  * // 使い方
  * gameInit(0.5, "ボス", [ {type: "gummy", colors: this.list} ]);
  */
-function gi(playerSize = 1,bulletTypes = [],it = 120,zanki) {
+async function gi(playerSize = 1,bulletTypes = [],it = 120,zanki) {
     // 1. フレームカウンタのリセット
     pfr = 0;
     
@@ -91,7 +91,7 @@ function gi(playerSize = 1,bulletTypes = [],it = 120,zanki) {
     // 4. 弾種・カラーパレットの事前登録（引数があれば一括処理）
     for (const config of bulletTypes) {
         if (config.type && config.colors) {
-            CC(config.type, config.colors);
+            await CC(config.type, config.colors);
         }
     }
     
