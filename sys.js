@@ -509,7 +509,6 @@ export class Bullet {
             case "陰陽玉":
             case "陰陽弾":
             case "onmyoutama":
-            case "onmyoudama":
             case "om":
                 let imgType = this.type;
                 if (imgType === "クナイ") imgType = "kunai";
@@ -519,7 +518,7 @@ export class Bullet {
                 else if (imgType === "大弾") imgType = "big";
                 else if (imgType === "鱗弾") imgType = "scale";
                 else if (imgType === "米弾") imgType = "diamond";
-                else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama" || imgType === "om") imgType = "onmyoutama";
+                else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "om") imgType = "onmyoutama";
                 idraw(imgType, this.x, this.y, this.w, this.h, this.angle, this.color);
                 break;
                 
@@ -591,18 +590,12 @@ export async function CC(type, colors) {
     else if (imgType === "大弾") imgType = "big";
     else if (imgType === "鱗弾") imgType = "scale";
     else if (imgType === "米弾") imgType = "diamond";
-    else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama" || imgType === "om") imgType = "onmyoutama";
+    else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
 
     const baseImg = new Image();
     baseImg.src = asset + imgType + ".png";
     
-    await new Promise(resolve => {
-        baseImg.onload = resolve;
-        baseImg.onerror = () => {
-            console.error("Failed to load image asset:", baseImg.src);
-            resolve();
-        };
-    });
+    await new Promise(resolve => baseImg.onload = resolve);
     const colorArray = Array.isArray(colors) ? colors : [colors];
     
     colorArray.forEach(color => {
