@@ -77,7 +77,7 @@ const it = (t) => (min, max) => t >= min && t <= max;
  * // 使い方
  * gameInit(0.5, "ボス", [ {type: "gummy", colors: this.list} ]);
  */
-async function gi(playerSize = 1,bulletTypes = [],it = 120,zanki) {
+function gi(playerSize = 1,bulletTypes = [],it = 120,zanki) {
     // 1. フレームカウンタのリセット
     pfr = 0;
     
@@ -91,7 +91,7 @@ async function gi(playerSize = 1,bulletTypes = [],it = 120,zanki) {
     // 4. 弾種・カラーパレットの事前登録（引数があれば一括処理）
     for (const config of bulletTypes) {
         if (config.type && config.colors) {
-            await CC(config.type, config.colors);
+            CC(config.type, config.colors);
         }
     }
     
@@ -815,3 +815,141 @@ this.angle = pf(this.x,this.y,0,this.owner,this.custom.x,this.custom.y)
 }}
 }}
 functions.push(spell10)
+const spell11 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"災禍｢土石流｣",
+desc:"",
+hint:"当たってるように見えても案外隙間を抜けれます。諦めないこと",
+ct:"土石流とは、山津波の正式名称の事である。難易度で言うと結構むずい。ただし、隙間を抜けてるのがめっちゃ楽しいのでOKw",
+//自機狙い弾
+prop:false,
+init() {
+this.prop=false
+gi(0.5)},
+time:30,
+run() {
+if (pfr % 4 === 0) {
+if (pfr > 600) this.prop = true
+const x = random(0,canvas.w)
+const a = dtr(random(60,120))
+const nnc = this.prop && a >= dtr(90)? "FF0053" : "0028FF" 
+const nc = this.prop ? nnc : "7F0094"
+for (let nx = -10;nx < 10;nx+=5)bullet({
+    speed:3.5, // スピード5
+    color:nc,
+rd:1,
+w: 64,
+    h: 64, 
+    type: "om",
+    y: 0,
+    x: x + nx*2,
+    angle: dtr(90),
+custom:this.prop,
+fnlist:[{f:0,fn:function(){if(this.custom)this.angle = a}}],
+setlist:[{f:120,e:2.5}]
+})
+}
+}}
+functions.push(spell11)
+const spell12 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"天竜「雨の源泉」",
+desc:"",
+hint:"",
+ct:"初期は途中で自機狙いにならなかったのでめっちゃ簡単だったので、直して結構ムズ目にしたwちなみに簡単なのは変わらぬ()",
+//自機狙い弾
+prop:false,
+init() {
+this.prop=false
+gi(0.5)},
+time:60,
+run() {
+if (pfr % 3 === 0) {
+const x = random(0,canvas.w)
+const a = dtr(random(60,120))
+bullet({
+    speed:3.5, // スピード5
+    color:"#8527B0",
+rd:1,
+w: 64,
+    h: 64, 
+    type: "big",
+    y: 0,
+    x: x,
+    angle: dtr(90),
+custom:true,
+fnlist:[{f:0,fn:function(){
+if(this.timer===1)this.angle = pf(this.x,this.y)
+    if (this.y >= canvas.h) {
+this.speed = 1
+if (Math.random() < 0.05 & this.custom)this.angle = pf(this.x,this.y)
+this.custom = false
+}
+},loop:true}],
+setlist:[{f:60,e:0.5}]
+})
+}
+}}
+functions.push(spell12)
+const spell13 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"獄符「千本の針の大陸｣",
+desc:"",
+hint:"",
+ct:"実は自機狙い弾が挟まってたのに気付きました？あれがあるせいでめっちゃむずいはずwなう(2026/07/06 20:40:55)最後のスペカ。また次回会いましょうw",
+//自機狙い弾
+prop:0,
+init() {
+this.prop=0
+gi(0.5)},
+time:35,
+run() {
+if (pfr % 15 === 0) {
+this.prop += 2
+const pp = normal(this.prop,-180,180)
+circle((ev) =>{
+const x = Half.x
+const y = Half.y
+const a = ev.deg
+const angle = a + dtr(random(-5,5) + pp)
+if (ev.i === 1)bullet({
+    speed:1, // スピード5
+    color:"#FF285A",
+rd:1,
+w:16,
+    h: 16, 
+    type: "kunai",
+    y: y,
+    x: x,
+    angle: pf(x,y),
+custom:true,
+setlist:[{f:15,e:1.5}]
+})
+wait(() => {bullet({
+    speed:1, // スピード5
+    color:"#FF285A",
+rd:1,
+w:16,
+    h: 16, 
+    type: "kunai",
+    y: y,
+    x: x,
+    angle: angle,
+custom:true,
+setlist:[{f:15,e:1.5}]
+})
+if (ev.i % 6 === 0)bullet({
+    speed:1, // スピード5
+    color:"#284BFF",
+rd:1,
+w:16,
+    h: 16, 
+    type: "kunai",
+    y: y,
+    x: x,
+    angle: angle + dtr(pp),
+custom:true,
+setlist:[{f:15,e:0.5}]
+})
+},ev.i/6)
+},{count:36})}
+    
+}}
+functions.push(spell13)
