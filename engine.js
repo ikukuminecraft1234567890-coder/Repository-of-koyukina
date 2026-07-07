@@ -130,7 +130,7 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
         txt.style.fontWeight = "bold";
         txt.style.whiteSpace = "pre-wrap";
         txt.style.marginBottom = "20px";
-        txt.textContent = `クリアおめでとうございます！！\n\nミス数: ${players[0].maxzanki - miss}\n\nクリア説明文: ${fn.ct}`;
+        txt.textContent = `CLEAR!\n\nミス数: ${players[0].maxzanki - miss}`;
         
         const btnContainer = document.createElement("div");
         btnContainer.style.display = "flex";
@@ -174,7 +174,7 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
                     txt.style.fontWeight = "bold";
                     txt.style.whiteSpace = "pre-wrap";
                     txt.style.marginBottom = "20px";
-                    txt.textContent = `GAME OVER\n\nスペルカード: ${fn.name}\n経過時間: ${fs(stat.pfr).toFixed(1)}秒 / ${fn.time}秒`;
+                    txt.textContent = `GAME OVER`;
                     
                     const btnContainer = document.createElement("div");
                     btnContainer.style.display = "flex";
