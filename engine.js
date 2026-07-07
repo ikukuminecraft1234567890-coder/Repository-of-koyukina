@@ -27,13 +27,11 @@ const rb = document.createElement('button');
 rb.id = "btn";
 rb.type = "button";
 rb.textContent = "リトライ";
-rb.style.cssText = "width: 140px; height: 40px; margin: 10px; font-size: 16px; font-weight: bold; cursor: pointer; background: #3c0055; border: 2px solid #d800ff; color: white; border-radius: 8px; text-shadow: 0 0 5px rgba(216,0,255,0.6);";
 
 const cb = document.createElement('button');
 cb.id = "btn";
 cb.type = "button";
 cb.textContent = "戻る";
-cb.style.cssText = "width: 140px; height: 40px; margin: 10px; font-size: 16px; font-weight: bold; cursor: pointer; background: #222; border: 2px solid #555; color: white; border-radius: 8px;";
 
 function cbpush() { location.reload(); }
 
