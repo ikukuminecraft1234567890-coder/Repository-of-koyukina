@@ -43,11 +43,6 @@ cancelAnimationFrame(stat.gameId);
         activeCanvas.remove(); // ⭕ これで確実に消えます
     }
     
-    const overlay = document.getElementById("resultOverlay");
-    if (overlay) {
-        overlay.remove();
-    }
-    
     const resText = document.getElementById("resultText");
     if (resText) {
         resText.remove();
@@ -152,35 +147,10 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
             if (anyPlayerDead) {
                 cancelAnimationFrame(stat.gameId);
                 
-                // 💡 死んだ瞬間がわかりやすいよう、ゲームの枠（キャンバス）は削除せずそのまま残す！
-                
-                if (!document.getElementById("resultOverlay")) {
-                    const overlay = document.createElement("div");
-                    overlay.id = "resultOverlay";
-                    overlay.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.85); border: 2px solid white; border-radius: 12px; padding: 30px; text-align: center; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; color: white; font-family: sans-serif;";
-                    
-                    const txt = document.createElement("div");
-                    txt.id = "resultText";
-                    txt.style.color = "#ff3333";
-                    txt.style.fontSize = "24px";
-                    txt.style.fontWeight = "bold";
-                    txt.style.whiteSpace = "pre-wrap";
-                    txt.style.marginBottom = "20px";
-                    txt.textContent = `GAME OVER`;
-                    
-                    const btnContainer = document.createElement("div");
-                    btnContainer.style.display = "flex";
-                    btnContainer.style.gap = "15px";
-                    btnContainer.appendChild(cb);
-                    btnContainer.appendChild(rb);
-                    
-                    overlay.appendChild(txt);
-                    overlay.appendChild(btnContainer);
-                    
-                    cb.addEventListener("click", cbpush);
-                    rb.addEventListener("click", rbpush);
-                    document.body.appendChild(overlay);
-                }
+                // 元の通り、キャンバスは削除せず、bodyの最後にボタンを追加する
+                cb.addEventListener("click", cbpush);
+                rb.addEventListener("click", rbpush);
+                document.body.append(cb, rb);
                 return;
             }
 
