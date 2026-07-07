@@ -27,11 +27,13 @@ const rb = document.createElement('button');
 rb.id = "btn";
 rb.type = "button";
 rb.textContent = "リトライ";
+rb.style.cssText = "width: 140px; height: 40px; margin: 10px; font-size: 16px; font-weight: bold; cursor: pointer; background: #3c0055; border: 2px solid #d800ff; color: white; border-radius: 8px; text-shadow: 0 0 5px rgba(216,0,255,0.6);";
 
 const cb = document.createElement('button');
 cb.id = "btn";
 cb.type = "button";
 cb.textContent = "戻る";
+cb.style.cssText = "width: 140px; height: 40px; margin: 10px; font-size: 16px; font-weight: bold; cursor: pointer; background: #222; border: 2px solid #555; color: white; border-radius: 8px;";
 
 function cbpush() { location.reload(); }
 
@@ -41,6 +43,11 @@ cancelAnimationFrame(stat.gameId);
     const activeCanvas = document.getElementById("gameCanvas");
     if (activeCanvas) {
         activeCanvas.remove(); // ⭕ これで確実に消えます
+    }
+    
+    const resText = document.getElementById("resultText");
+    if (resText) {
+        resText.remove();
     }
 
     start(stat.nowspell);
@@ -98,9 +105,13 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
 const miss = players[0].zanki
 cancelAnimationFrame(stat.gameId); 
 const txt = document.createElement("div");
+txt.id = "resultText";
 const cv = document.getElementById("gameCanvas")
 cv.remove()
 txt.textContent = `クリアおめでとうございます！！\nミス数:${players[0].maxzanki -miss}\n\n\nクリア説明文:${fn.ct}`
+txt.style.whiteSpace = "pre-wrap";
+txt.style.fontSize = "18px";
+txt.style.margin = "20px";
     // 1. まずローカルストレージから全体のデータを安全に読み込む（なければ空オブジェクト）
     const allData = JSON.parse(localStorage.getItem("sd")) || {};
     
@@ -126,11 +137,23 @@ return;
 
             players.forEach((p) => {
 if (p.death && !check.checked) {
-
-cancelAnimationFrame(stat.gameId);
-cb.addEventListener("click", cbpush);
-rb.addEventListener("click", rbpush);
-document.body.append(cb,rb)
+    cancelAnimationFrame(stat.gameId);
+    
+    const cv = document.getElementById("gameCanvas");
+    if (cv) cv.remove();
+    
+    const txt = document.createElement("div");
+    txt.id = "resultText";
+    txt.style.color = "#ff3333";
+    txt.style.fontSize = "24px";
+    txt.style.fontWeight = "bold";
+    txt.style.whiteSpace = "pre-wrap";
+    txt.style.margin = "20px";
+    txt.textContent = `GAME OVER\n\nスペルカード: ${fn.name}\n経過時間: ${fs(stat.pfr).toFixed(1)}秒 / ${fn.time}秒`;
+    
+    cb.addEventListener("click", cbpush);
+    rb.addEventListener("click", rbpush);
+    document.body.append(txt, cb, rb);
     return;
 }
                 p.update();
