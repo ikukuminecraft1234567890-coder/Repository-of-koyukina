@@ -10,7 +10,6 @@ import {stat,gameLoop} from "./engine.js"
  * @param {number} time - 待機する時間（フレーム数またはミリ秒）
  * @param {boolean} [isFrame=true] - trueならフレーム換算、falseならミリ秒換算
  */
-// ❌ 修正前: const dtr = (deg) => (deg * Math.PI) 
 // ⭕ 修正後: 度数(degree)をラジアン(radian)に正しく変換する
 const dtr = (deg) => (deg * Math.PI) / 180;
 
