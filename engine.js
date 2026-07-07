@@ -135,32 +135,37 @@ document.body.append(txt,cb,rb)
 return;
 }
 
+            let anyPlayerDead = false;
             players.forEach((p) => {
-if (p.death && !check.checked) {
-    cancelAnimationFrame(stat.gameId);
-    
-    const cv = document.getElementById("gameCanvas");
-    if (cv) cv.remove();
-    
-    const txt = document.createElement("div");
-    txt.id = "resultText";
-    txt.style.color = "#ff3333";
-    txt.style.fontSize = "24px";
-    txt.style.fontWeight = "bold";
-    txt.style.whiteSpace = "pre-wrap";
-    txt.style.margin = "20px";
-    txt.textContent = `GAME OVER\n\nスペルカード: ${fn.name}\n経過時間: ${fs(stat.pfr).toFixed(1)}秒 / ${fn.time}秒`;
-    
-    cb.addEventListener("click", cbpush);
-    rb.addEventListener("click", rbpush);
-    document.body.append(txt, cb, rb);
-    return;
-}
+                if (p.death && !check.checked) {
+                    anyPlayerDead = true;
+                }
                 p.update();
-           // if (frame % 5 === 0) p.OnShot(false); // 通常
-              //if (frame % 15 === 0) p.OnShot(true);  // ホーミング
-                p.draw(ctx,ondebug);
+                p.draw(ctx, ondebug);
             });
+
+            if (anyPlayerDead) {
+                cancelAnimationFrame(stat.gameId);
+                
+                const cv = document.getElementById("gameCanvas");
+                if (cv) cv.remove();
+                
+                if (!document.getElementById("resultText")) {
+                    const txt = document.createElement("div");
+                    txt.id = "resultText";
+                    txt.style.color = "#ff3333";
+                    txt.style.fontSize = "24px";
+                    txt.style.fontWeight = "bold";
+                    txt.style.whiteSpace = "pre-wrap";
+                    txt.style.margin = "20px";
+                    txt.textContent = `GAME OVER\n\nスペルカード: ${fn.name}\n経過時間: ${fs(stat.pfr).toFixed(1)}秒 / ${fn.time}秒`;
+                    
+                    cb.addEventListener("click", cbpush);
+                    rb.addEventListener("click", rbpush);
+                    document.body.append(txt, cb, rb);
+                }
+                return;
+            }
 
             // 敵・ボス処理
             for (let i = entitys.length - 1; i >= 0; i--) {
