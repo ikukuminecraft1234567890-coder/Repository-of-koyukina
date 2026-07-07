@@ -43,9 +43,9 @@ cancelAnimationFrame(stat.gameId);
         activeCanvas.remove(); // ⭕ これで確実に消えます
     }
     
-    const resText = document.getElementById("resultText");
-    if (resText) {
-        resText.remove();
+    const overlay = document.getElementById("resultOverlay");
+    if (overlay) {
+        overlay.remove();
     }
 
     start(stat.nowspell);
@@ -100,16 +100,9 @@ ctx.textAlign = "left";
 
 
 if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
-const miss = players[0].zanki
-cancelAnimationFrame(stat.gameId); 
-const txt = document.createElement("div");
-txt.id = "resultText";
-const cv = document.getElementById("gameCanvas")
-cv.remove()
-txt.textContent = `クリアおめでとうございます！！\nミス数:${players[0].maxzanki -miss}\n\n\nクリア説明文:${fn.ct}`
-txt.style.whiteSpace = "pre-wrap";
-txt.style.fontSize = "18px";
-txt.style.margin = "20px";
+    const miss = players[0].zanki
+    cancelAnimationFrame(stat.gameId); 
+    
     // 1. まずローカルストレージから全体のデータを安全に読み込む（なければ空オブジェクト）
     const allData = JSON.parse(localStorage.getItem("sd")) || {};
     
@@ -125,12 +118,34 @@ txt.style.margin = "20px";
     // 5. 最後に全体をシリアライズしてローカルストレージに保存
     localStorage.setItem("sd", JSON.stringify(allData));
     
-cancelAnimationFrame(stat.gameId);
-document.body.append(cb,rb)
-cb.addEventListener("click", cbpush);
-rb.addEventListener("click", rbpush);
-document.body.append(txt,cb,rb)
-return;
+    if (!document.getElementById("resultOverlay")) {
+        const overlay = document.createElement("div");
+        overlay.id = "resultOverlay";
+        overlay.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; border-radius: 12px; padding: 30px; text-align: center; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; color: white; font-family: sans-serif;";
+        
+        const txt = document.createElement("div");
+        txt.id = "resultText";
+        txt.style.color = "#00ffcc";
+        txt.style.fontSize = "18px";
+        txt.style.fontWeight = "bold";
+        txt.style.whiteSpace = "pre-wrap";
+        txt.style.marginBottom = "20px";
+        txt.textContent = `クリアおめでとうございます！！\n\nミス数: ${players[0].maxzanki - miss}\n\nクリア説明文: ${fn.ct}`;
+        
+        const btnContainer = document.createElement("div");
+        btnContainer.style.display = "flex";
+        btnContainer.style.gap = "15px";
+        btnContainer.appendChild(cb);
+        btnContainer.appendChild(rb);
+        
+        overlay.appendChild(txt);
+        overlay.appendChild(btnContainer);
+        
+        cb.addEventListener("click", cbpush);
+        rb.addEventListener("click", rbpush);
+        document.body.appendChild(overlay);
+    }
+    return;
 }
 
             let anyPlayerDead = false;
@@ -145,22 +160,34 @@ return;
             if (anyPlayerDead) {
                 cancelAnimationFrame(stat.gameId);
                 
-                const cv = document.getElementById("gameCanvas");
-                if (cv) cv.remove();
+                // 💡 死んだ瞬間がわかりやすいよう、ゲームの枠（キャンバス）は削除せずそのまま残す！
                 
-                if (!document.getElementById("resultText")) {
+                if (!document.getElementById("resultOverlay")) {
+                    const overlay = document.createElement("div");
+                    overlay.id = "resultOverlay";
+                    overlay.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.85); border: 2px solid white; border-radius: 12px; padding: 30px; text-align: center; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; color: white; font-family: sans-serif;";
+                    
                     const txt = document.createElement("div");
                     txt.id = "resultText";
                     txt.style.color = "#ff3333";
                     txt.style.fontSize = "24px";
                     txt.style.fontWeight = "bold";
                     txt.style.whiteSpace = "pre-wrap";
-                    txt.style.margin = "20px";
+                    txt.style.marginBottom = "20px";
                     txt.textContent = `GAME OVER\n\nスペルカード: ${fn.name}\n経過時間: ${fs(stat.pfr).toFixed(1)}秒 / ${fn.time}秒`;
+                    
+                    const btnContainer = document.createElement("div");
+                    btnContainer.style.display = "flex";
+                    btnContainer.style.gap = "15px";
+                    btnContainer.appendChild(cb);
+                    btnContainer.appendChild(rb);
+                    
+                    overlay.appendChild(txt);
+                    overlay.appendChild(btnContainer);
                     
                     cb.addEventListener("click", cbpush);
                     rb.addEventListener("click", rbpush);
-                    document.body.append(txt, cb, rb);
+                    document.body.appendChild(overlay);
                 }
                 return;
             }
