@@ -14,7 +14,6 @@ import {stat,gameLoop} from "./engine.js"
 // ⭕ 修正後: 度数(degree)をラジアン(radian)に正しく変換する
 const dtr = (deg) => (deg * Math.PI) / 180;
 
-
 // タスクごとに一意のIDを割り振るためのカウンター
 let nextTaskId = 0;
 
@@ -954,3 +953,244 @@ setlist:[{f:15,e:0.5}]
     
 }}
 functions.push(spell13)
+
+
+
+const spell14 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"禁忌｢鯉の迷路｣",
+desc:"",
+hint:"",
+ct:"はい。はい。はい。一見とんでもない高難易度の脳死スペカかと思いきや、穴を回っていくというスペカです。いやまあこれでも難しいんですけどw結構自信作。ちなみに錦忌は特に意味は無い。元々なんか錦上京っぽくしたいなーっと思ってたけど無理だったので、適当に禁忌と錦上京の錦で合わせておいただけw(追記:錦忌には先駆者がいたっぽいので禁忌にしておきました)",
+//自機狙い弾
+prop:{d:75,a:0},
+init() {
+this.prop={d:75,a:0}
+gi(0.5)},
+time:15,
+run() {
+if (pfr % 20 === 0) {
+this.prop.d += 15
+this.prop.a += 3
+const a = normal(this.prop.a,-180,180)
+const p = normal(this.prop.d,-180,180)
+circle((ev) =>{
+const x = Half.x
+const y = Half.y
+wait(() => {bullet({
+    speed:1, // スピード5
+    color:"#2800FF",
+rd:1,
+w:16,
+    h: 16, 
+    type: "big",
+    y: y,
+    x: x,
+    angle: dtr(ev.deg+a),
+setlist:[{f:15,e:3}]
+})
+
+},ev.i / 6)
+},{count:72,startDeg:p})}
+    
+}}
+functions.push(spell14)
+
+const spell15 = {
+name: "檻符｢弾幕の竜巻｣",
+desc: "",
+hint: "白い、赤い間は当たり判定がありません。",
+ct: "弾幕の檻でもあり、竜巻でもあるw普通に弾幕の檻っていう名前と、竜巻両方良かったんで決めかねたので合わせました。個人的にめっちゃムズイ。ちなみに、なんか絶対当たってないだろ！ってタイミングで被弾することあったと思います。あれは普通にバグw直せなかった;;",
+time:30,
+prop: { deg: 0 },
+init() {
+this.prop = { deg: 0 }
+gi(1)},
+run() {
+// 💡 最初の1フレーム目に、バーを構成する18個の弾をまとめて生成
+if (pfr === 3) {
+        const size = 32;       // 弾のサイズ（w, h）
+const r =1.4
+        const halfSize = size /3; // 綺麗に端に合わせるためのオフセット
+        const color = "#FFE838"; // 黄色
+        const type = "normal";    // 弾種
+// 条件式を <= にすることで、0 と canvas.w の2回実行されるようになります
+for (let x = 0; x <= canvas.w; x += canvas.w) {
+    for (let y = 0; y <= canvas.h; y += canvas.h) {
+        bullet({
+            speed: 0,
+            color: "9C27B0",
+            w: size * 4, h: size * 4,
+            type: type,
+            x: x, // 0（左）または canvas.w（右）
+            y: y, // 0（上）または canvas.h（下）
+            angle: 0
+        });
+    }
+}
+
+        // 横方向（上下の辺）の配置
+        // 左端(halfSize)から右端(canvas.w - halfSize)まで、サイズ分の間隔で配置
+        for (let x = halfSize; x <= canvas.w - halfSize; x += size/2) {
+            // 上辺
+            bullet({
+rd:r,
+                speed: 0,
+                color: color,
+                w: size, h: size,
+                type: type,
+                x: x,
+                y: halfSize, // 画面の一番上
+                angle: 0
+            });
+            // 下辺
+            bullet({
+rd:r,
+                speed: 0,
+                color: color,
+                w: size, h: size,
+                type: type,
+                x: x,
+                y: canvas.h - halfSize, // 画面の一番下
+                angle: 0
+            });
+        }
+
+        // 縦方向（左右の辺）の配置
+        // 上下の角の重複を避けるため、1マス内側からスタートして配置
+        for (let y = halfSize + size; y <= canvas.h - (halfSize + size); y += size/2) {
+            // 左辺
+            bullet({
+rd:r,
+                speed: 0,
+                color: color,
+                w: size, h: size,
+                type: type,
+                x: halfSize, // 画面の一番左
+                y: y,
+                angle: 0
+            });
+            // 右辺
+            bullet({
+rd:r,
+                speed: 0,
+                color: color,
+                w: size, h: size,
+                type: type,
+                x: canvas.w - halfSize, // 画面の一番右
+                y: y,
+                angle: 0
+            });
+        }
+    }
+if (pfr % 15 === 0) {
+    for (let i = 1; i <= 24; i++) {
+        bullet({
+            speed: 0, // 💡 自動前進はさせない（座標を直接制御するため）
+            color: "#FFFFFF",
+            rd: 0,
+            w: 16,
+            h: 16, 
+            type: "big",
+            y: Half.y,
+            x: Half.x,
+            angle: 0,
+            custom: {
+b:true,
+s:random(1.5,3),
+                radius: i * 12, // 💡 中心からの距離（iが増えるほど外側へ）
+                initialDeg: 90  // 💡 初期配置の角度（真下スタート）
+            },
+            fnlist: [{
+                f: 0, loop: true, fn: function() {
+                    // 毎フレーム全体の角度を進める（pfrを利用して回転）
+                    // 1フレームごとに1.5度回転（お好みで速度を調整してください）
+if (this.timer === 180) {
+this.color = "FF0050"
+this.custom.b = false }
+if (this.timer === 240) {
+this.color = "2800FF"
+this.rd = 1
+    this.radius = (this.w * this.rd) /2
+this.color = "2800FF"
+if (Math.random() < 0.25) {
+this.color = "00FF68"
+    this.angle = random(-180,180)
+this.speed = 1
+}
+}
+if (!this.custom.b) return;
+                    const currentDeg = this.custom.initialDeg + (pfr * this.custom.s);
+                    const rad = dtr(currentDeg);
+                    // 💡 中心座標（Half.x, Half.y）から、角度と半径を使って毎フレーム位置を上書き
+                    this.x = Half.x + Math.cos(rad) * this.custom.radius;
+                    this.y = Half.y + Math.sin(rad) * this.custom.radius;
+                }
+            }]
+        })
+    }
+}
+}}
+functions.push(spell15)
+const spell16 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"博麗｢幻想結界 -小-｣",
+desc:"",
+hint:"減少、増加は13周期。",
+ct:"結構すこ。なう(2026/07/07 20:25:45)最終スペル。14〜16は結構完成度高いと思うんすよ！残り時間が見えないのは普通に申し訳ないwてか最近のスペカ難易度高めのが多いかもしれんw",
+//自機狙い弾
+prop:{d:75,a:0},
+init() {
+this.prop={d:75,a:0,c:0,dir:true}
+gi(0.5)},
+time:30,
+run() {
+if (pfr === 3) {
+            const size = 64;       // 弾のサイズ（w, h）
+const r =1.4
+        const halfSize = size /3; // 綺麗に端に合わせるためのオフセット
+        const color = "#FFE838"; // 黄色
+        const type = "normal";    // 弾種
+// 条件式を <= にすることで、0 と canvas.w の2回実行されるようになります
+for (let x = 0; x <= canvas.w; x += canvas.w) {
+    for (let y = 0; y <= canvas.h; y += canvas.h) {
+        bullet({
+            speed: 0,
+            color: "9C27B0",
+            w: size * 4, h: size * 4,
+            type: type,
+            x: x, // 0（左）または canvas.w（右）
+            y: y, // 0（上）または canvas.h（下）
+            angle: 0
+        });
+    }
+}
+}
+if (pfr % 60 === 0) {
+this.prop.c+=1
+const stop = this.prop.d *3
+const swit = this.prop.c > 7
+if (this.prop.c > 13) this.prop.c = 0
+this.prop.d = swit ? this.prop.d + 3 : this.prop.d - 3
+this.prop.a += 3
+const a = normal(this.prop.a,-180,180)
+const p = normal(this.prop.d,-180,180)
+circle((ev) =>{
+const x = Half.x
+const y = Half.y
+wait(() => {bullet({
+    speed:1, // スピード5
+    color:"#FF003B",
+rd:1,
+w:16,
+    h: 16, 
+    type: "amulet",
+    y: y,
+    x: x,
+    angle: dtr(ev.deg+a),
+setlist:[{f:stop,e:0},{f:600,e:3}]
+})
+
+},ev.i / 10)
+},{count:72,startDeg:0})}
+    
+}}
+functions.push(spell16)
