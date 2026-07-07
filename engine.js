@@ -47,6 +47,11 @@ cancelAnimationFrame(stat.gameId);
     if (overlay) {
         overlay.remove();
     }
+    
+    const resText = document.getElementById("resultText");
+    if (resText) {
+        resText.remove();
+    }
 
     start(stat.nowspell);
     cb.remove();
@@ -103,6 +108,17 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
     const miss = players[0].zanki
     cancelAnimationFrame(stat.gameId); 
     
+    // 💡 クリア時は枠線を残さず、今まで通りキャンバスを削除してクリア説明文を表示する
+    const cv = document.getElementById("gameCanvas")
+    if (cv) cv.remove();
+    
+    const txt = document.createElement("div");
+    txt.id = "resultText";
+    txt.textContent = `クリアおめでとうございます！！\nミス数:${players[0].maxzanki - miss}\n\n\nクリア説明文:${fn.ct}`;
+    txt.style.whiteSpace = "pre-wrap";
+    txt.style.fontSize = "18px";
+    txt.style.margin = "20px";
+    
     // 1. まずローカルストレージから全体のデータを安全に読み込む（なければ空オブジェクト）
     const allData = JSON.parse(localStorage.getItem("sd")) || {};
     
@@ -118,33 +134,9 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
     // 5. 最後に全体をシリアライズしてローカルストレージに保存
     localStorage.setItem("sd", JSON.stringify(allData));
     
-    if (!document.getElementById("resultOverlay")) {
-        const overlay = document.createElement("div");
-        overlay.id = "resultOverlay";
-        overlay.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; border-radius: 12px; padding: 30px; text-align: center; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; color: white; font-family: sans-serif;";
-        
-        const txt = document.createElement("div");
-        txt.id = "resultText";
-        txt.style.color = "#00ffcc";
-        txt.style.fontSize = "18px";
-        txt.style.fontWeight = "bold";
-        txt.style.whiteSpace = "pre-wrap";
-        txt.style.marginBottom = "20px";
-        txt.textContent = `CLEAR!\n\nミス数: ${players[0].maxzanki - miss}`;
-        
-        const btnContainer = document.createElement("div");
-        btnContainer.style.display = "flex";
-        btnContainer.style.gap = "15px";
-        btnContainer.appendChild(cb);
-        btnContainer.appendChild(rb);
-        
-        overlay.appendChild(txt);
-        overlay.appendChild(btnContainer);
-        
-        cb.addEventListener("click", cbpush);
-        rb.addEventListener("click", rbpush);
-        document.body.appendChild(overlay);
-    }
+    cb.addEventListener("click", cbpush);
+    rb.addEventListener("click", rbpush);
+    document.body.append(txt, cb, rb);
     return;
 }
 
