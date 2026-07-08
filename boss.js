@@ -10,8 +10,16 @@ import {stat,gameLoop} from "./engine.js"
  * @param {number} time - 待機する時間（フレーム数またはミリ秒）
  * @param {boolean} [isFrame=true] - trueならフレーム換算、falseならミリ秒換算
  */
+// ❌ 修正前: const dtr = (deg) => (deg * Math.PI) 
 // ⭕ 修正後: 度数(degree)をラジアン(radian)に正しく変換する
 const dtr = (deg) => (deg * Math.PI) / 180;
+const intern = (c) => {
+    if(c.y >= canvas.h - 1  && c.custom) {
+return false
+}
+if(c.y <= 1  && !c.custom) {
+return true;
+}};
 
 // タスクごとに一意のIDを割り振るためのカウンター
 let nextTaskId = 0;
@@ -41,9 +49,12 @@ function wait(callback, time, isFrame = true) {
     });
 }
 
- function random(min, max) {
-            return Math.random() * (max - min) + min;
-        }
+function random(min, max, f = false) {
+    const result = Math.random() * (max - min) + min;
+    // f が true の場合は整数に変換（切り捨て）、そうでない場合はそのまま Float で返す
+    return f ? Math.floor(result) : result;
+}
+
 
 // 💡 変数っぽく書くだけで自動的に裏の stat を読み書きする魔法の定義
 Object.defineProperties(globalThis, {
@@ -67,6 +78,8 @@ const sd = (a, b = 1) => a % (60 * b) === 0;
 const fs = (m) => m / 60;
 const itraw = (a,b,c) => a >= b && a <= c
 const it = (t) => (min, max) => t >= min && t <= max;
+const mx = 384*2;
+const my = 448*2
 /**
  * スペルカード開始時のゲーム状態をリセット・初期化する共通関数
  * @param {number} [playerSize=1] - プレイヤーの当たり判定サイズ
@@ -107,7 +120,7 @@ function normal(v, n1, n2) {
 }
 
 
-function circle(fn,{count=18,startDeg=0,custom=null,step = "a"}) {
+function circle(fn,{count=18,startDeg=0,custom=null,step = "a"},rl=[]) {
 const astep = step !== "a" ? step : 360 / count;
     for (let i = 0; i < count; i++) {
         // 1. 順番通りにベースの角度を計算（0, 10, 20...）
@@ -120,10 +133,34 @@ const astep = step !== "a" ? step : 360 / count;
         if (deg > 180) {
             deg -= 360;
         }
-const ev = {count,step:astep,startDeg,i,deg,custom}
+const ev = {count,step:astep,startDeg,i,deg,custom,rl}
+rl.push(ev)
 fn(ev)
 }}
 
+/**
+ * 弾を画面端（上下左右）で反射させる汎用関数
+ * @param {Object} b - 弾オブジェクト（this）
+ * @param {number} [padding=0] - 画面端からどれだけ内側で反射させるかの余白（弾の半径など）
+ */
+function reverse(b, padding = 0) {
+    const minX = padding;
+    const maxX = canvas.w - padding;
+    const minY = padding;
+    const maxY = canvas.h - padding;
+
+    // 💡 上下の壁での反射 (Y軸反転)
+    if (b.y <= minY || b.y >= maxY) {
+        b.angle = -b.angle; // ラジアンの上下反転
+        b.y = Math.max(minY, Math.min(maxY, b.y)); // めり込み防止補正
+    }
+
+    // 💡 左右の壁での反射 (X軸反転)
+    if (b.x <= minX || b.x >= maxX) {
+        b.angle = Math.PI - b.angle; // ラジアンの左右鏡面反射
+        b.x = Math.max(minX, Math.min(maxX, b.x)); // めり込み防止補正
+    }
+}
 
 
 
@@ -1193,3 +1230,148 @@ setlist:[{f:stop,e:0},{f:600,e:3}]
     
 }}
 functions.push(spell16)
+const spell17 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"貫符｢メイズスパーク｣",
+desc:"",
+hint:"青弾は壁で反射します",
+ct:"どう！？！どう！？！どう、？！？！？めっちゃいいスペカだと思うんですねこれ。レーザー実装した甲斐が有ったw地味に星弾は魔理沙要素としてです。特にこだわりは無いので初期は丸弾だった",
+//自機狙い弾
+prop:{d:75,a:0},
+init() {
+this.prop={d:75,a:0,c:0,dir:true}
+gi(0.5)},
+time:30,
+run() {
+if (pfr % 240 === 0 || pfr === 3) {
+circle((ev) =>{
+const x = Half.x
+const y = Half.y
+const a = random(1,6)
+bullet({
+    speed:180, // スピード5
+    color:"#FF003B",
+rd:1,
+w:16,
+    h: 999, 
+    type: "laser",
+    y: random(0,canvas.h),
+    x: random(0,canvas.w),
+    angle: dtr(ev.deg + random(-180,180)),
+deleteFrame:240,
+fnlist:[{f:120,fn:function() {
+    bullet({
+        speed:1,
+color:this.color,
+w:8,h:8,
+type:"star",
+x:this.x,y:this.y,
+angle:this.angle,
+custom:true,
+fnlist:[{f:0,loop:true,fn:function() {reverse(this)}}]
+    })
+}}]
+})
+},{count:36,startDeg:0})}
+    
+}}
+functions.push(spell17)
+const spell18 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"現象｢豪雨と旭光、陽炎｣",
+desc:"",
+hint:"",
+ct:"悪くないと思う。レーザー被りなのは許してwレーザーまじで楽しいから仕方がない。難易度は結構頑張って調整しましたよ！ただ正直、真下に居座るのが最適解すぎるのは改善点かなと",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:false},
+init() {
+this.prop={d:0,a:false}
+gi(0.5,[],120,3)
+},
+time:37,
+run() {
+const flag = pfr % 300
+if (flag > 0) {
+    bullet({
+    speed:1, // スピード5
+    color:"#028ED4",
+rd:1,
+w:16,
+    h: 16, 
+    type: "scale",
+    y: 0,
+    x: random(0,canvas.w),
+    angle: dtr(random(0,180)),
+setlist:[{f:60,e:1.5,multi:true}],
+fnlist:[{f:60,fn:function(){this.angle+=random(-10,10)}}]
+})
+}
+if (flag === 0) {
+const bool = this.prop.a
+ this.prop.a = !this.prop.a
+this.prop.d += 16
+circle((ev) =>{
+const a = random(1,6)
+const angle = bool ? dtr(ev.deg + normal(this.prop.d,-180,180)) : dtr(ev.deg)
+const x = bool ? random(0,canvas.w) : Half.x
+const y = bool ? random(0,canvas.h) : 0
+const speed = bool ? 120 : 50
+const tempo = bool ? 2 : 1
+if (ev.i % tempo === 0)bullet({
+    speed:speed, // スピード5
+    color:"#FF5100",
+rd:1,
+w:16,
+    h: 999, 
+    type: "laser",
+    y: y,
+    x: x,
+    angle: angle,
+deleteFrame:180,
+})
+},{count:144,startDeg:0})
+}
+    
+}}
+functions.push(spell18)
+const spell19 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"獄符｢地獄人の感｣",
+desc:"",
+hint:"",
+ct:"うおwはい。安置がありますwといっても、安置でも2被弾は確定なんですがねw初動から真下に行くだけで余裕でクリアできますが、そういうスペルなので😅気づく人はいると思うんですねw",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:0},
+init() {
+this.prop={d:0,a:0}
+gi(0.5,[],120,3)
+},
+time:37,
+run() {
+const colors = ["FF0028","FF6A00","FFE900","92FF00","00FF3F","00FFF8","0018FF","7F00FF","F800FF","FF004A"]
+if (pfr % 10 === 0 || pfr === 3) {
+this.prop.a += 1
+if (this.prop.a > colors.length - 1) this.prop.a = 0
+this.prop.d += 30
+circle((ev) =>{
+const rand = ev.i % 15
+const angle = this.prop.d
+const a = true
+// ※「a」が整数化フラグ（true）の変数名として定義されている前提です
+
+bullet({
+    speed: 6.5,
+    color: colors[this.prop.a],
+    rd:1,
+    w: 64,
+    h: 64, 
+    type: "big",
+    y: 0,
+    x: Half.x,
+    angle: dtr(ev.deg+angle),
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+
+
+})},{count:54,startDeg:0})
+    }
+}}
+functions.push(spell19)

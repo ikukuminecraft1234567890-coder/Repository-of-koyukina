@@ -1,6 +1,8 @@
 // --- 1. 定数・共有変数 ---
 let fx = 0
 let fy = 0
+const MX = 384
+const MY = 448
 const asset = "./assets/";
 
 // グローバル変数を最上部で明示的に定義
@@ -111,7 +113,7 @@ export let canvas = null
 export let ctx = null
 export let isTouching = false;
 export const entitys = []
-export const bullets = []
+export let bullets = []
 let lastTouchX = 0 
 let lastTouchY = 0
 import { functions } from "./boss.js"
@@ -144,8 +146,8 @@ export function start(index, bool) {
     ctx = canvas.getContext("2d");
 
     // 💡 呼び出し元（boss.js等）にサイズ指定がなければ初期値384x448（東方サイズ）にする
-    fx = functions[index].x ?? 384
-    fy = functions[index].y ?? 448
+    fx = functions[index].x ?? MX
+    fy = functions[index].y ?? MY
     const VIRTUAL_WIDTH = fx; 
     const VIRTUAL_HEIGHT = fy;
     canvas.w = VIRTUAL_WIDTH;
@@ -259,7 +261,7 @@ export let frame = 0;
 export function sp(num) { return num * 60; }
 export function sd(a, b = 1) { return a % (60 * b) === 0; }
 
-function idraw(type, x, y, w, h, angle, color) {
+function idraw(type, x, y, w, h, angle, color, alpha = 1) {
     const key = `${type}-${color}`;
     const cached = imgList.get(key);
     
@@ -286,6 +288,7 @@ function idraw(type, x, y, w, h, angle, color) {
     }
     
     ctx.save();
+    ctx.globalAlpha = alpha; // 💡 透明度を反映
     ctx.translate(x, y);
     ctx.rotate(angle + Math.PI / 2);
     ctx.drawImage(cached, -w / 2, -h / 2, w, h);
@@ -366,8 +369,9 @@ export class Bullet {
         this.angle = angle;
         this.speed = speed;
         this.w = w;
-        this.h = h;
-        this.radius = (w * rd) / 2;
+        this.h = type !== "laser" ? h : 9999;
+        this.radius = rd <= 0 ? 0: (w * rd) / 2;
+this.rd = rd
         this.color = color;
         this.type = type;
         this.timer = 0;
@@ -392,6 +396,7 @@ export class Bullet {
     }
 
     update() {
+this.radius = this.rd <= 0 ? 0: (this.w * this.rd) / 2;
         if (this.timer > this.slowF) {
             if (this.slowEx) this.speed *= this.slowE;
             else if (this.timer === this.slowF + 1) this.speed *= this.slowE;
@@ -474,9 +479,12 @@ export class Bullet {
         if (this.timer >= this.rotateF) {
             this.angle += this.rotateE;
         }
-
-        this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed;
+const is = this.type === "laser"
+    if (!is) {
+this.x += Math.cos(this.angle) * this.speed;
+}
+        if (!is) {
+this.y += Math.sin(this.angle) * this.speed;}
         this.timer++;
     }
 
@@ -489,6 +497,30 @@ export class Bullet {
         
         // 💡 画像描画タイプとパス描画（fill）タイプで処理を分離させてバグを修正
         let isPathBullet = false;
+if (this.type === "laser") {
+    if (this.timer >= this.speed) {
+        // 💡 本体レーザーを召喚(元の不透明な color をそのまま使用)
+        idraw("laser", this.x, this.y, this.w, this.h, this.angle, this.color, 1);
+    } else {
+        // 💡 予告中：laserwait.png を透明度0→1で徐々にはっきりさせる
+        if (this.waitAlpha === undefined) this.waitAlpha = 0;
+        if (this.waitAlpha < 1) this.waitAlpha += 0.05;
+
+        if (this.colorFactor === undefined) this.colorFactor = 0;
+        if (this.colorFactor < 1) this.colorFactor += 0.05;
+
+        const r = 255 - (255 - 128) * this.colorFactor;
+        const g = 255 - (255 - 128) * this.colorFactor;
+        const b = 255 - (255 - 128) * this.colorFactor;
+        
+        // ❌ 修正前: this.color = `rgb(...)` （元の色を破壊していた）
+        // ⭕ 修正後: その場限りのローカル変数に代入して、元の this.color は守る！
+        const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
+
+        idraw("laserwait", this.x, this.y, this.w, this.h, this.angle, waitColor, Math.min(this.waitAlpha, 1));
+    }
+    return;
+}
 
         switch (this.type) {
             case "normal":
@@ -510,6 +542,7 @@ export class Bullet {
             case "陰陽弾":
             case "onmyoutama":
             case "om":
+            case "star":
                 let imgType = this.type;
                 if (imgType === "クナイ") imgType = "kunai";
                 else if (imgType === "御札") imgType = "amulet";
@@ -548,6 +581,33 @@ export class Bullet {
             ctx.restore();
         }
     }
+// Bullet クラス内に追加
+hitTestLaser(px, py, hitboxRadius) {
+if(this.timer < this.speeed) return;
+    // レーザーの根本(this.x, this.y)から angle 方向へ h の長さの線分として判定
+    const length = this.h; // レーザーの長さ
+    const dirX = Math.cos(this.angle);
+    const dirY = Math.sin(this.angle);
+
+    // 線分の始点から対象までのベクトル
+    const toPX = px - this.x;
+    const toPY = py - this.y;
+
+    // 線分方向への射影(0〜lengthにクランプ)
+    let t = toPX * dirX + toPY * dirY;
+    t = Math.max(0, Math.min(length, t));
+
+    // 線分上の最近点
+    const closestX = this.x + dirX * t;
+    const closestY = this.y + dirY * t;
+
+    // 幅方向の判定(this.w がレーザーの太さ)
+    const dx = px - closestX;
+    const dy = py - closestY;
+    const laserHalfWidth = ((this.w*0.87)) / 2;
+
+    return (dx * dx + dy * dy) < Math.pow(hitboxRadius + laserHalfWidth * 0.6, 2);
+}
 }
 
 // --- 5. 便利関数 (数学・スポナー) ---
@@ -591,7 +651,7 @@ export async function CC(type, colors) {
     else if (imgType === "鱗弾") imgType = "scale";
     else if (imgType === "米弾") imgType = "diamond";
     else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
-
+else if (imgType === "laser") imgType = "laser";
     const baseImg = new Image();
     baseImg.src = asset + imgType + ".png";
     
