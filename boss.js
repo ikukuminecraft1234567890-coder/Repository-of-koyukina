@@ -153,13 +153,16 @@ function reverse(b, padding = 0) {
     if (b.y <= minY || b.y >= maxY) {
         b.angle = -b.angle; // ラジアンの上下反転
         b.y = Math.max(minY, Math.min(maxY, b.y)); // めり込み防止補正
+return true;
     }
 
     // 💡 左右の壁での反射 (X軸反転)
     if (b.x <= minX || b.x >= maxX) {
         b.angle = Math.PI - b.angle; // ラジアンの左右鏡面反射
         b.x = Math.max(minX, Math.min(maxX, b.x)); // めり込み防止補正
+return true;
     }
+return false
 }
 
 
@@ -1375,3 +1378,110 @@ bullet({
     }
 }}
 functions.push(spell19)
+const spell20 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"純符｢純粋な弾数地獄｣",
+desc:"",
+hint:"",
+ct:"純符の名を冠する割にはムズくないかも？20スペカの大台に乗りました\nスペカ7といいこいつといいあんまりむずくないの多い🥲\nこのスペカははじめてやっただんまくげーむのMathMareに影響されている。オススメ",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:0},
+init() {
+this.prop={d:0,a:0}
+gi(0.5,[],120,3)
+},
+time:50,
+run() {
+if (pfr === 3) {
+this.prop.a += 1
+bullet({
+    speed: 3,
+    color: "FF0030",
+    rd:1,
+    w: 4,
+    h: 4, 
+    type: "normal",
+    y: 0,
+    x: Half.x,
+    angle: dtr(45),
+fnlist:[{f:0,loop:true,fn:function() {
+const bounced = reverse(this)
+if (bounced) {
+   bullet({
+    speed: 1.5,
+    color: "00EDFF",
+    rd:1,
+    w: 4,
+    h: 4, 
+    type: "normal",
+    y: this.y,
+    x: this.x,
+    angle: dtr(random(-180,180)),
+fnlist:[{f:0,loop:true,fn:function(){
+const bounced = reverse(this)
+if (bounced) {
+   bullet({
+    speed: 1.5,
+    color: "36B027",
+    rd:1,
+    w: 4,
+    h: 4, 
+    type: "normal",
+    y: this.y,
+    x: this.x,
+    angle: dtr(random(-180,180)),
+fnlist:[{f:0,loop:true,fn:function(){
+reverse(this)
+}}]
+})}}
+}]
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+
+
+})}
+    }}]})
+    
+}}}
+functions.push(spell20)
+const spell21 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"熱湯｢地底の熱源泉｣",
+desc:"",
+hint:"",
+ct:"全方位反射隠れ自機狙い弾の弾幕です。要素もりもりwこの辺なんか時間発狂多いな？",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:0,b:false},
+init() {
+this.prop={d:0,a:0,b:false}
+gi(0.5,[],120,3)
+},
+time:30,
+run() {
+if (pfr % 240 === 0 || pfr === 3) {
+this.prop.b = !this.prop.b
+const color = this.prop.b ? "6FE6FF" : "FF6F91"
+const x = this.prop.b ? Half.x - 80 : Half.x + 80
+const y = Half.y - 10
+this.prop.a += 1
+const p = pf(x,y)
+circle((ev) => {
+bullet({
+    speed: 1,
+    color: color,
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "kunai",
+    y: y,
+    x: x,
+    angle: dtr(ev.deg) + p,
+fnlist:[{f:0,loop:true,fn:function() {
+reverse(this)
+}}]
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+
+
+})},{count:36})
+    
+}}}
+functions.push(spell21)
