@@ -21,8 +21,6 @@ if(c.y <= 1  && !c.custom) {
 return true;
 }};
 
-
-
 // タスクごとに一意のIDを割り振るためのカウンター
 let nextTaskId = 0;
 
@@ -1473,7 +1471,7 @@ bullet({
     rd:1,
     w: 16,
     h: 16, 
-    type: "kunai",
+    type: "kunai2",
     y: y,
     x: x,
     angle: dtr(ev.deg) + p,
@@ -1487,3 +1485,226 @@ reverse(this)
     
 }}}
 functions.push(spell21)
+const spell22 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"光符「アースライトレイ」",
+desc:"",
+hint:"",
+ct:"レーザー思いついてまっさきに実装したかったスペカ。やっと作れましたわよということで()",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.prop={d:0,a:0,b:false,c:0}
+gi(1.5,[],120,3)
+},
+time:60,
+run() {
+const cycle = pfr % 240
+if (pfr % 20 === 0) {
+const y = 0
+const x = players[0].x
+bullet({
+    speed: 3,
+    color: "274EB0",
+    rd:1,
+    w: 4,
+    h: 4, 
+    type: "normal",
+    y: y,
+    x: x,
+    angle: dtr(90),
+deleteFrame:360
+})
+}
+if (pfr % 240 === 0) {
+for (let i = 0 ;i < 30;i++) {
+this.prop.c += 42
+const x = normal(this.prop.c,0,canvas.w)
+const y = 0
+bullet({
+    speed: 240,
+    color: "FF0050",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "laser",
+    y: y,
+    x: x,
+    angle: dtr(90),
+deleteFrame:360
+})} 
+    
+}
+    }}
+functions.push(spell22)
+const spell23 = {
+name:"スピア・ザ・グングニルのレプリカ",
+desc:"",
+hint:"",
+ct:"旧作のスペカ9の移植。割と気に入ってるから移植したw",
+list:[],
+//自機狙い弾
+pe:0,
+init() {
+this.pe = 0
+CC("gummy","#00FF00")
+CC("knife","#80FF80")
+CC("gummy","#0000FF")
+entity = new Entity("ボス", Half.x, Half.y - 80, 20, "purple", 3, true)
+gi(0.5)
+},
+time:25,
+run() {
+const count = 72
+const step = 360 / count;
+if (this.pe > 4) this.pe = -4
+if (pfr % 120 == 0) this.pe += 1
+const startDeg = this.pe * 30
+if (pfr % 30 === 0) {
+for (let i = 0; i < count; i++) {
+        // 1. 順番通りにベースの角度を計算（0, 10, 20...）
+        let baseDeg = i * step; 
+        
+        // 2. スタート位置（startDeg）を足して、360度以内に丸める（% 360）
+        let deg = (baseDeg + startDeg) % 360;
+        
+        // 3. 180度を超えた後半の半分を、いつものマイナスの世界（-179 〜 -1）に変換する
+        if (deg > 180) {
+            deg -= 360;
+        }
+        
+        // 4. ラジアンに変換して発射！
+        const angle = deg * (Math.PI / 180);
+wait(() => {new Bullet({
+    speed: 1, // スピード5
+    color: "#00FF00", 
+    w: 16, 
+    h: 16, 
+    type: "gummy", 
+    y: entity.y, 
+    x: entity.x, 
+    angle: angle,
+custom:1,
+setlist:[{f:0,e: function () {
+        // 120フレーム（2秒）を1サイクルとする
+        const cycle = pfr % 60;
+if (cycle === 0) this.custom = this.custom * 3
+            return this.custom
+        },loop:true}]
+// 最初は右（0度）
+})
+},i)
+}
+if (fs(pfr) > 10) {
+for (let i = 0; i < count; i++) {
+        // 1. 順番通りにベースの角度を計算（0, 10, 20...）
+        let baseDeg = i * step * 0.75; 
+        
+        // 2. スタート位置（startDeg）を足して、360度以内に丸める（% 360）
+        let deg = (baseDeg + -startDeg) % 360;
+        
+        // 3. 180度を超えた後半の半分を、いつものマイナスの世界（-179 〜 -1）に変換する
+        if (deg > 180) {
+            deg -= 360;
+        }
+        
+        // 4. ラジアンに変換して発射！
+        const angle = deg * (Math.PI / 180);
+wait(() => {new Bullet({
+    speed: 1, // スピード5
+    color: "#0000FF", 
+    w: 16, 
+    h: 16, 
+    type: "gummy", 
+    y: entity.y, 
+    x: entity.x, 
+    angle: angle,
+custom:1,
+setlist:[{f:0,e: function () {
+        // 120フレーム（2秒）を1サイクルとする
+        const cycle = pfr % 60;
+if (cycle === 0) this.custom = this.custom * 1.5
+            return this.custom
+        },loop:true}]
+// 最初は右（0度）
+})
+},i)
+}
+}
+}
+if (pfr % 3 === 0)new Bullet({
+    speed: 3, // スピード5
+    color: "#80FF80", 
+    w: 16, 
+    h: 16, 
+    type: "knife", 
+    y: entity.y, 
+    x: entity.x, 
+    angle: pf(entity.x,entity.y),
+// 最初は右（0度）
+})
+}}
+functions.push(spell23)
+const spell24 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"藍奥義｢弾幕結界 -下-｣",
+desc:"",
+hint:"",
+ct:"個人的に自信あり！気合と見た目両立出来た良スペカだと思います。サイズが途中で変わる弾があるのは難易度の為()元々は避けるのが不可能だったので可能にしましたわよということで、なう(2026/07/10 17:29:51)ラストのスペカ。実は少し前のアプデのはこのラストのスペカの文言がないw",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.prop={d:0,a:0,b:false,c:32}
+gi(1.5,[],120,3)
+},
+time:30,
+run() {
+if (pfr % 30 === 0) {
+
+this.prop.c -= 1
+this.prop.d += 2.4
+const Size = Math.max(16,this.prop.c)
+const loc = {x:Half.x,y:Half.y}
+circle((ev) => {
+wait(() => {
+const rd = Size > 20 ? 0.7:  0.7
+bullet({
+    speed: 2,
+    color: "FF0050",
+    rd:rd * 0.5,
+    w: Size,
+    h: Size, 
+    type: "gummy",
+    y: loc.y,
+    x: loc.x,
+    angle: dtr(ev.deg+this.prop.d),
+deleteFrame:360,
+setlist:[{f:40,e:1.5}],
+fnlist:[{f:120,fn:function() {
+if (this.w <= 20) return;
+    this.w = this.w * 0.75
+this.h = this.h * 0.75
+}}]
+
+})
+bullet({
+    speed: 2,
+    color: "00FFFA",
+    rd:rd,
+    w: Size,
+    h: Size, 
+    type: "gummy",
+    y: loc.y,
+    x: loc.x,
+    angle: -dtr(ev.deg + this.prop.d*1.4),
+deleteFrame:360,
+setlist:[{f:40,e:1.5}],
+fnlist:[{f:120,fn:function() {
+if (this.w <= 20) return;
+    this.w = this.w * 0.75
+this.h = this.h * 0.75
+}}]
+})
+},ev.i*2)},{count:72})
+}}}
+functions.push(spell24)
