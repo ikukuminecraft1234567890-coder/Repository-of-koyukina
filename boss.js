@@ -1708,3 +1708,119 @@ this.h = this.h * 0.75
 },ev.i*2)},{count:72})
 }}}
 functions.push(spell24)
+const spell25 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"謎符｢ギザの大ピラミッドの聖遺物｣",
+desc:"",
+hint:"",
+ct:"難易度は結構高い気がするので時間を短くした(ゴリ押し)ピラミッドの表現は上手くいったんじゃないかな？",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.prop={d:0,a:0,b:false,c:32}
+gi(1.5,[],120,3)
+},
+time:20,
+run() {
+if (pfr % 240 === 0) {
+const x = players[0].x
+for (let i = - 50 ;i<=50;i+=50)bullet({
+    speed: 90,
+    color: "0085FF",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "laser",
+    y: 0,
+    x: x+i,
+    angle: dtr(90),
+deleteFrame:240
+})
+}
+if (pfr % 30 === 0) {
+
+this.prop.c -= 1
+this.prop.d += 2.4
+const loc = {x:Half.x,y:Half.y}
+circle((ev) => {
+wait(() => {
+bullet({
+    speed: 2,
+    color: "B08327",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "knife",
+    y: loc.y,
+    x: loc.x,
+    angle: dtr(90),
+deleteFrame:360,
+setlist:[{f:40,e:1.5}],
+custom:this.prop.d,
+fnlist:[{f:1,fn:function() {
+this.angle = dtr(normal(ev.deg,60,120))
+}},{f:25,fn:function() {
+this.color = "FF0050"
+this.angle = dtr(ev.deg+this.custom)}}]
+})
+},ev.i*2)},{count:72})
+}}}
+functions.push(spell25)
+const spell26 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"熱風｢不死鳥の旋風｣",
+desc:"",
+hint:"",
+ct:"下と上から玉出てくるやつ作るの楽しい。難易度はそこまでかな",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.prop={d:0,a:0,b:false,c:32}
+gi(1.5,[],120,3)
+},
+time:60,
+run() {
+
+if (pfr % 240 === 0) {
+for (let i = 0;i< canvas.w ; i+=0.5) {
+bullet({
+    speed: 0,
+    color: "FFFFFF",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: 0,
+    x: i,
+    angle: dtr(random(0,180)),
+custom:60,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.custom > this.timer) {
+this.speed = 1.5
+    this.color = "FF0053"
+this.angle += dtr(random(30,60))
+}
+}}]
+})
+if (i % 3 === 0)bullet({
+    speed: 0,
+    color: "FFFFFF",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: canvas.h,
+    x: i,
+    angle: dtr(random(0,180)),
+custom:60,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.custom > this.timer) {
+this.speed = 1.5
+    this.color = "FF0053"
+this.angle += dtr(random(30,60))
+}
+}}]
+})
+}
+}}}
+functions.push(spell26)
