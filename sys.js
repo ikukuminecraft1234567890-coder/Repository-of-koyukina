@@ -369,7 +369,7 @@ export class Bullet {
         this.angle = angle;
         this.speed = speed;
         this.w = w;
-        this.h = type !== "laser" ? h : 9999;
+        this.h = type !== "laser" ? h : 999;
         this.radius = rd <= 0 ? 0: (w * rd) / 2;
 this.rd = rd
         this.color = color;
@@ -543,6 +543,7 @@ if (this.type === "laser") {
             case "onmyoutama":
             case "om":
             case "star":
+            case "kunai2":
                 let imgType = this.type;
                 if (imgType === "クナイ") imgType = "kunai";
                 else if (imgType === "御札") imgType = "amulet";
