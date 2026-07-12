@@ -170,7 +170,7 @@ return false
 //バラマキ高速
 export const functions = []
 const spell1 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-name:"獄界剣「二百里の一閃｣",
+name:"天界剣「七魄忌諱」",
 desc:"",
 hint:"ランダム0なので位置を覚えるといいかも？",
 ct:"384x448環境に移行してから作った初のスペルカード！🤩地味にランダム要素0です。",
@@ -1824,3 +1824,164 @@ this.angle += dtr(random(30,60))
 }
 }}}
 functions.push(spell26)
+
+const spell27 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"星屑｢シューティングメテオ｣",
+desc:"",
+hint:"",
+ct:"どう！？！？ブレイジングスター見て思いついたスペル。しっかりオリジナリティを出しましたとも、ええ。個人的にはかなりお気に入り。スペル27は4回くらい完全に別のスペルがボツになってるからやっと完成させました",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+amount:10,
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.amount = 60
+this.prop={d:0,a:0,b:false,c:32}
+gi(0.5,[],120,3)
+},
+time:25,
+run() {
+if (pfr % 120 === 0) {
+bullet({
+    speed: 3,
+    color: "000000",
+    rd:0,
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: 0,
+    x: players[0].x,
+    angle: dtr(90),
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer % 30 !== 0) return;
+circle((ev) => {
+bullet({
+    speed:0.5,
+color:"FF00DD",
+rd:1,
+w:16,
+h:16,
+type:"star",
+y:this.y,
+x:this.x,
+angle:dtr(ev.deg),
+setlist:[{f:6,e:1.5}],
+custom:2,
+fnlist:[{f:0,loop:true,fn:function() {
+    if (this.custom > 1) {
+    const it = reverse(this)
+if (it) this.custom -= 1
+    }
+}}]
+})
+},{count:8})}}]
+})
+}
+}
+    
+}
+functions.push(spell27)
+const spell28 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"獄界剣「二百倶盧舎の一閃｣",
+desc:"残機は2です。",
+hint:"レーザーの上行ってもいいけど邪道プレイとみなします。",
+ct:"どう？万人受けになってると思います。元々は37秒でしたがこのテキスト執筆中に反省して32sにしました。37sでもクリアしてるから文句は言わせない。意図的に難易度下げるの、大事。",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+amount:10,
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.amount = 60
+this.prop={d:0,a:0,b:false,c:32}
+gi(0.5,[],120,2)
+},
+time:32,
+run() {
+if (pfr % 240 === 0) {
+bullet({
+    speed: 120,
+    color: "FF007B",
+    rd:1,
+    w: 32,
+    h: 32, 
+    type: "laser",
+    y: Half.y + 130,
+    x: 0,
+    angle: 0,
+})}
+const cyc = pfr % 360
+if (cyc > 180) {
+bullets.map((e) => {
+if (e.type !== "laser"){
+e.color = "FFFFFF"
+e.speed = 0.5
+}
+})
+} else {
+    bullets.map((e) => {
+if (e.type !== "laser") {
+e.color = e.custom.c
+e.speed = e.custom.s}
+})
+}
+if (pfr % 60 === 0 || pfr === 3) {
+this.prop.d += 1
+for (let i = 0 ;i < 1;i++) {
+const b = this.prop.d % 3 === 0 && i === 0
+wait(() =>{ 
+circle((ev) =>{
+wait(() => {
+bullet({
+    speed: 1.5,
+    color: "BD52AF",
+    rd:1,
+    w: 32,
+    h: 32, 
+    type: "big",
+    y: 0,
+    x: Half.x + ev.i,
+    angle: dtr(ev.deg),
+custom:{r:Math.random(),b:b,s:1.5,c:"BD52AF"},
+fnlist:[{f:0,loop:true,fn:function() {
+if (pfr % 60 !== 0) return;
+if (!this.custom.b) return;
+if (this.custom.r > 0) {
+this.custom.b = false
+for (let i = 0;i < 10;i++) {
+const Random = Math.random() > 0.75
+const Size = Random ? 32 : 8
+const type = Random ? "big" : "normal"
+const rd   = Random ? 0.7 : 1
+if (Math.random() < 0.015)this.deleteFrame = 0;
+bullet({
+speed:0.5,
+color:"F94953",
+rd:rd,
+w:Size,
+h:Size,
+type:type,
+x:this.x,
+y:this.y,
+angle:dtr(random(-180,180)),
+custom:{s:1.5,c:"F94953"},
+setlist:[{f:12,e:1.5}],
+/*setlist:[{f:0,loop:true,e:function() {
+return Math.max(0.5,this.speed - 0.01)
+}},{f:90,loop:true,e:function() {
+    return Math.min(this.speed + 0.01,1.5)
+}}],
+*/
+fnlist:[{f:90,fn:function() {
+    //this.angle = -this.angle
+}}]
+})
+}
+}}}]
+})
+},ev.i*4)
+},{count:54})
+},i*30)
+    
+}}
+}}
+functions.push(spell28)
