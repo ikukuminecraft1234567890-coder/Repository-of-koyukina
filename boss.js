@@ -1985,3 +1985,89 @@ fnlist:[{f:90,fn:function() {
 }}
 }}
 functions.push(spell28)
+const spell29 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"大合葬「霊車コンチェルトグロッソ」",
+desc:"",
+hint:"",
+ct:"反射自機狙い弾は珍しいんじゃないかな？結構いい感じだと思う。",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+amount:10,
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.amount = 60
+this.prop={d:0,a:0,b:false,c:32}
+gi(0.5,[],120,3)
+},
+time:20,
+run() {
+if (pfr % 60 === 0 || pfr === 3) {
+circle((ev) =>{
+bullet({
+    speed: 1.5,
+    color: "BD52AF",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "big",
+    y: Half.y,
+    x: Half.x,
+    angle: dtr(ev.deg),
+custom:{r:Math.random(),s:1.5,c:"BD52AF"},
+fnlist:[{f:0,loop:true,fn:function() {
+    const w = reverse(this)
+if (w) this.angle = pf(this.x,this.y) 
+}}]
+})
+},{count:8})
+}}}
+functions.push(spell29)
+const spell30 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"塞符｢迫り来る波｣",
+desc:"残機は1です。",
+hint:"",
+ct:"難易度はまあまあかなw個人的に気に入ってる絶望感は高いと思うけど固定弾なのと端で避けるだけなのですぐ終わるw30の大台の割には微妙な気もします😅",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+amount:10,
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.amount = 60
+this.prop={d:0,a:0,b:false,c:32}
+gi(0.5,[],120,1)
+},
+time:10,
+run() {
+if (pfr % 15 === 0 || pfr === 3) {
+this.prop.a += 36
+circle((ev) =>{
+wait(() => {
+
+bullet({
+    speed: 1.5,
+    color: "BD52AF",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "big",
+    y: Half.y,
+    x: Half.x,
+    angle: dtr(ev.deg+normal(this.prop.a,60,120)),
+custom:{r:Math.random(),s:1.5,c:"BD52AF"},
+})
+bullet({
+    speed: 0.47,
+    color: "BD52AF",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "big",
+    y: Half.y,
+    x: Half.x,
+    angle: -dtr(ev.deg+normal(this.prop.a,60,120)),
+custom:{r:Math.random(),s:1.5,c:"BD52AF"},
+})
+},ev.i)
+    },{count:36})
+}}}
+functions.push(spell30)
