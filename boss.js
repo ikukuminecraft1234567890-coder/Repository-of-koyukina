@@ -368,119 +368,71 @@ setlist:[{f:5,e:3}],
 }}}
 functions.push(spell3)
 const spell4 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
-desc:"バグってるので次回作成",
+name:"西行妖の枝",
+desc:"バグから修正した",
 hint:"",
-ct:"",
+ct:"ごめんやんwずっと放置してたスペカ。なんなら原型ない。実装はしたんで🥲",
 speed:1,
 list:[],
 //自機狙い弾
-prop:{s:true,a:true},
+prop:{s:true,a:1},
 init() {
 this.speed = 1
-this.prop.s=true,this.prop.a=true
-gi(1)
+this.prop.s=true,this.prop.a=1
+gi(0.5)
 },
-time:60,
+time:30,
 run() {
-const speed = 1;
-// 💡 720個の弾を speed の速さで割り切るフレーム数にする
-const waitTime = Math.ceil(720 / this.speed);
-if (this.prop.a) {
-    this.prop.a = !this.prop.a
-
-this.speed += 0.5
+if (pfr % 60 === 0) {
+    this.prop.a += 18
+const st = {s:1,t:"big",r:16,c:"9C27B0",mt:45}
 circle((ev) =>{
-wait(() => {bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
+const angle = dtr(ev.deg + normal(this.prop.a,0,180))
+bullet({
+    speed:st.s, // スピード5
+    color:st.c, 
+    w: st.r,
+    h: st.r, 
+    type:st.t,
     y: Half.y,
     x: Half.x,
-    angle: dtr(ev.deg + 180)
+    angle: angle,
+fnlist:[{f:st.mt,fn:function() {this.angle *= 1.5}}]
 })
 bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
-    y: Half.y,
+    speed:st.s, // スピード5
+    color:st.c, 
+    w: st.r,
+    h: st.r, 
+    type:st.t,
+    y: Half.y+10,
     x: Half.x,
-    angle: dtr(ev.deg)
+    angle: angle,
+fnlist:[{f:st.mt,fn:function() {this.angle *= 1.5}}]
 })
 bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
-    y: Half.y,
+    speed:st.s, // スピード5
+    color:st.c, 
+    w: st.r,
+    h: st.r, 
+    type:st.t,
+    y: Half.y-10,
     x: Half.x,
-    angle: dtr(ev.deg + 90)
+    angle: angle,
+fnlist:[{f:st.mt,fn:function() {this.angle *= 1.5}}]
 })
 bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
-    y: Half.y,
+    speed:st.s, // スピード5
+    color:st.c, 
+    w: st.r,
+    h: st.r, 
+    type:st.t,
+    y: Half.y+15,
     x: Half.x,
-    angle: dtr(ev.deg - 90)
+    angle: angle,
+fnlist:[{f:st.mt/2,fn:function() {this.angle *= 2}}]
 })
-    
-},ev.i / this.speed)
-},{count:720,startDeg:0})
-
-}
-if (pfr % waitTime + 10 === 0) {
-this.speed += 0.15
-circle((ev) =>{
-wait(() => {bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
-    y: Half.y,
-    x: Half.x,
-    angle: dtr(ev.deg + 180)
-})
-bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
-    y: Half.y,
-    x: Half.x,
-    angle: dtr(ev.deg)
-})
-bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
-    y: Half.y,
-    x: Half.x,
-    angle: dtr(ev.deg + 90)
-})
-bullet({
-    speed:7.5, // スピード5
-    color:"9C27B0", 
-    w: 8,
-    h: 8, 
-    type: "normal",
-    y: Half.y,
-    x: Half.x,
-    angle: dtr(ev.deg - 90)
-})
-    
-},ev.i / this.speed)
-},{count:720,startDeg:0})
+},{count:72,startDeg:0})
 }}}
 functions.push(spell4)
 
@@ -2071,3 +2023,86 @@ custom:{r:Math.random(),s:1.5,c:"BD52AF"},
     },{count:36})
 }}}
 functions.push(spell30)
+const spell31 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"天空剣｢十文字斬り｣",
+desc:"",
+hint:"",
+ct:"全方位弾+十字自機狙いレーザーの組み合わせ。悪くないと思う",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+amount:10,
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.amount = 60
+this.prop={d:0,a:0,b:false,c:32}
+gi(0.5,[],120,3)
+},
+time:30,
+run() {
+this.prop.a += 3
+if (pfr % 60 === 0 || pfr === 3) {
+circle((ev) => {
+wait(() => {bullet({
+    speed: 0.5,
+    color: "BD52AF",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "scale",
+    y: Half.y,
+    x:Half.x,
+    angle: dtr(ev.deg+this.prop.a),
+setlist:[{f:12,e:3}]
+})
+},ev.i*1.4)},{count:18})
+
+
+
+bullet({
+    speed: 150,
+    color: "BD52AF",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "laser",
+    y: 0,
+    x:players[0].x,
+    angle: dtr(90),
+deleteFrame:300,
+})
+bullet({
+    speed: 150,
+    color: "BD52AF",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "laser",
+    y: players[0].y,
+    x: 0,
+    angle: dtr(0),
+deleteFrame:300,
+})
+}}}
+functions.push(spell31)
+const spell32 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"",
+desc:"",
+hint:"",
+ct:"",
+//自機狙い弾
+//全方位レーザー、上からバラマキ
+amount:10,
+prop:{d:0,a:0,b:false,c:0},
+init() {
+this.amount = 60
+this.prop={d:0,a:0,b:false,c:32}
+gi(0.5,[],120,3)
+},
+time:30,
+run() {
+this.prop.a += 3
+if (pfr % 240 === 0 || pfr === 3) {
+
+
+}}}
+functions.push(spell32)
