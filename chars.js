@@ -1,8 +1,8 @@
 import { 
     canvas, ctx, players, bullets,
-    updateFrame, frame, Half, isTouching, Bullet, entitys
+    updateFrame, frame, Half, isTouching, entitys
 ,internal,gps} from './sys.js';
-
+import {Bullet} from "./bc.js"
 export class Entity {
     constructor(name, x, y, radius, color, speed, ap = true, rd) {
         this.name = name;
@@ -96,14 +96,17 @@ this.it = it ?? 120
         if (near) new Bullet({ x: this.x, y: this.y, angle: pf(this.x, this.y, 0, near), speed: 30, color: "green", w: 15, h: 15, type: "PlayerBullet", deleteFrame: 180, isPB: true, PBdmg: 1 });
     }
 
- hitTest(invincible = false,grid) {
+hitTest(invincible = false, grid) {
     if (this.invincible > 0) return false;
-   const data = gps(this.x,this.y)
+    const data = gps(this.x, this.y)
     const OnHit = grid[data.w][data.h].some(bullet => {
+        if (bullet.type === "laser") {
+if(bullet.timer < bullet.speed) return;
+            // まだ発射準備中(timer < speed)は当たらない、が必要なら調整
+            return bullet.hitTestLaser(this.x, this.y, this.hitboxRadius);
+        }
         const dx = bullet.x - this.x;
         const dy = bullet.y - this.y;
-        
-        // デフォルト（Circle等）は円判定
         return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * 0.6), 2);
     });
 

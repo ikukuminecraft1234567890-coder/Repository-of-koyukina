@@ -13,7 +13,7 @@
         }
 
         div {
-            white-space: pre-wrap;
+           white-space: pre-wrap;
         }
 
         #id {
@@ -38,6 +38,7 @@
         
         canvas, #gameCanvas {
             background: #000;
+
             display: block;
             margin: 0 auto;
             border: 2px solid white;
@@ -45,10 +46,37 @@
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             width: auto;
-            height: 90vh;
-            max-width: 95vw;
-            max-height: 90vh;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
             aspect-ratio: 384 / 448;
+        }
+
+        /* 💡追加：画面上部に表示する可変画像用のスタイル */
+        #topImages {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            z-index: 10;
+            pointer-events: none; /* 画像がクリック等を邪魔しないように */
+        }
+
+        #img64 {
+            width: 64px;
+            height: 64px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #img16 {
+            width: 64px;
+            height: 64px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
     </style>
 </head>
@@ -57,6 +85,18 @@
         import { start } from './sys.js';
         import { functions } from "./boss.js";
         import { endless,stat } from "./engine.js";
+
+        // 💡追加：16x16画像のdif値ごとのパス対応表（あとで自由に書き換えてください）
+        const difImageMap = {
+            E: "images/easy.png",
+            N: "images/normal.png",
+            H: "images/hard.png",
+            L: "images/lunatic.png"
+        };
+
+        // 💡追加：64x64画像のパス（クリア済み/未クリアの2種類）
+        const clearImagePath = "images/clear.png";
+        const noClearImagePath = "images/noclear.png";
 
         // UI要素の生成と配置
         const input = document.createElement('input');
@@ -75,7 +115,23 @@
         const sp = document.createElement('div');
         sp.id = "id";
 
-        document.body.append(input, button, div, sp);
+        // 💡追加：画面上部の可変画像コンテナと画像要素
+        const topImages = document.createElement('div');
+        topImages.id = "topImages";
+
+        const img64 = document.createElement('img');
+        img64.id = "img64";
+        img64.alt = "";
+        img64.style.display = "none";
+
+        const img16 = document.createElement('img');
+        img16.id = "img16";
+        img16.alt = "";
+        img16.style.display = "none";
+
+        topImages.append(img64, img16);
+
+        document.body.append(topImages, input, button, div, sp);
 
         // 初期化処理の実行
         endless();
@@ -116,6 +172,7 @@
             input.remove();
             button.remove();
             sp.remove();
+            topImages.remove(); // 💡追加：スタート時に画像コンテナごと削除
 cancelAnimationFrame(stat.gameId); 
     // 💡 ボタンが押された「今」、画面にあるキャンバスをピンポイントで取得する
   
@@ -130,6 +187,8 @@ cancelAnimationFrame(stat.gameId);
             // 💡安全対策：該当するスペルデータがない（範囲外など）なら処理しない
             if (!fn) {
                 sp.textContent = "";
+                img64.style.display = "none"; // 💡追加：無効な入力なら画像を隠す
+                img16.style.display = "none";
                 return;
             }
 
@@ -157,7 +216,9 @@ cancelAnimationFrame(stat.gameId);
             
             const g = String(clg?.gets ?? 0).padStart(3, "0");
             const am = String(clg?.amount ?? 0).padStart(3, "0");
-
+const clear = clg.gets > 0
+const nm = clg.nm
+const LastClear = nm && clear ? "assets/nc.png" : "assets/c.png"
             sp.textContent = `
 名前:${name}
 
@@ -168,6 +229,20 @@ ${time} | ${limit}
 ヒント:${hint}
 
 ${g}/${am}`;
+
+            // 💡追加：64x64画像 → clg.nc（true/false）に応じてクリア/未クリア画像を切り替え
+            const nc = clg?.nc ?? false;
+            img64.src = LastClear;
+            img64.style.display = "block";
+
+            // 💡追加：16x16画像 → fn.dif（E/N/H/L）に応じて難易度画像を切り替え
+            const difPath = fn.dif ? "assets/"+fn.dif+".png" : "assets/e.png"
+            if (difPath) {
+                img16.src = difPath;
+                img16.style.display = "block";
+            } else {
+                img16.style.display = "none";
+            }
         }
 
         // イベントリスナーの登録

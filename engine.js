@@ -1,9 +1,11 @@
 import { Entity,Player } from "./chars.js";
 import { 
    canvas,ctx, players,bullets,
-    updateFrame, frame, Half, Bullet, pf, CircleSpawn ,entitys,spelln,start
+    updateFrame, frame, Half,entitys,spelln,start
 ,internal,gps, updateGamepad} from './sys.js';
 import {functions} from "./boss.js"
+import {bullet,Bullet} from "./bc.js"
+
 export function endless() {
 const check = document.createElement('input');
 check.id = "check";
@@ -42,11 +44,6 @@ cancelAnimationFrame(stat.gameId);
     if (activeCanvas) {
         activeCanvas.remove(); // ⭕ これで確実に消えます
     }
-    
-    const resText = document.getElementById("resultText");
-    if (resText) {
-        resText.remove();
-    }
 
     start(stat.nowspell);
     cb.remove();
@@ -60,9 +57,6 @@ rb.addEventListener("click", rbpush);
 
 export function gameLoop() {
 updateGamepad();
-if (stat.pfr % 60 === 0) {
-    console.log("[engine.js gameLoop] pfr:", stat.pfr, "window.Allkeys:", JSON.stringify(window.Allkeys));
-}
 /*
 if (stat.pfr % 60 === 0)saveToDisk(
   "http://127.0.0.1:8080/log",  // ← これ
@@ -100,28 +94,27 @@ ctx.textAlign = "left";
 
 
 if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
-    const miss = players[0].zanki
-    cancelAnimationFrame(stat.gameId); 
-    
-    // 💡 クリア時は枠線を残さず、今まで通りキャンバスを削除してクリア説明文を表示する
-    const cv = document.getElementById("gameCanvas")
-    if (cv) cv.remove();
-    
-    const txt = document.createElement("div");
-    txt.id = "resultText";
-    txt.textContent = `クリアおめでとうございます！！\nミス数:${players[0].maxzanki - miss}\n\n\nクリア説明文:${fn.ct}`;
-    txt.style.whiteSpace = "pre-wrap";
-    txt.style.fontSize = "18px";
-    txt.style.margin = "20px";
-    
-    // 1. まずローカルストレージから全体のデータを安全に読み込む（なければ空オブジェクト）
+const miss = players[0].zanki
+cancelAnimationFrame(stat.gameId); 
+const txt = document.createElement("div");
+const cv = document.getElementById("gameCanvas")
+const missAmount = players[0].maxzanki - miss
+let text = `おめでとうございます！！\nミス数:${players[0].maxzanki -miss}\n\n\nクリア説明文:${fn.ct}`
+if (missAmount === 0) {
+text = `ノーミスクリアおめでとうございます！ノーミスクリア説明文:${fn.nm}`
+}
+cv.remove()
+txt.textContent = text
     const allData = JSON.parse(localStorage.getItem("sd")) || {};
-    
+console.log("ミス数",missAmount)
+const bool = missAmount === 0
+console.log(bool)
     // 2. 現在のスペル（spelln）のセーブデータを引っこ抜く（なければ初期値）
-    const now = allData[spelln] ?? { gets: 0, amount: 0 };
-    
+    const now = allData[spelln] ?? { gets: 0, amount: 0,nm:false};
+const nowNM = now.nm ? true : bool
+console.log("nnm",nowNM)
     // 3. 今のスペルの gets だけを +1 する
-    const updatedSpellData = { ...now, gets: now.gets + 1 };
+    const updatedSpellData = { ...now, gets: now.gets + 1,nm:nowNM};
     
     // 4. 【重要】全体オブジェクトの、このスペル番号の位置にデータを入れ直す！
     allData[spelln] = updatedSpellData;
@@ -129,30 +122,28 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
     // 5. 最後に全体をシリアライズしてローカルストレージに保存
     localStorage.setItem("sd", JSON.stringify(allData));
     
-    cb.addEventListener("click", cbpush);
-    rb.addEventListener("click", rbpush);
-    document.body.append(txt, cb, rb);
-    return;
+cancelAnimationFrame(stat.gameId);
+document.body.append(cb,rb)
+cb.addEventListener("click", cbpush);
+rb.addEventListener("click", rbpush);
+document.body.append(txt,cb,rb)
+return;
 }
 
-            let anyPlayerDead = false;
             players.forEach((p) => {
-                if (p.death && !check.checked) {
-                    anyPlayerDead = true;
-                }
-                p.update();
-                p.draw(ctx, ondebug);
-            });
+if (p.death && !check.checked) {
 
-            if (anyPlayerDead) {
-                cancelAnimationFrame(stat.gameId);
-                
-                // 元の通り、キャンバスは削除せず、bodyの最後にボタンを追加する
-                cb.addEventListener("click", cbpush);
-                rb.addEventListener("click", rbpush);
-                document.body.append(cb, rb);
-                return;
-            }
+cancelAnimationFrame(stat.gameId);
+cb.addEventListener("click", cbpush);
+rb.addEventListener("click", rbpush);
+document.body.append(cb,rb)
+    return;
+}
+                p.update();
+           // if (frame % 5 === 0) p.OnShot(false); // 通常
+              //if (frame % 15 === 0) p.OnShot(true);  // ホーミング
+                p.draw(ctx,ondebug);
+            });
 
             // 敵・ボス処理
             for (let i = entitys.length - 1; i >= 0; i--) {
@@ -170,23 +161,42 @@ if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
         [ [], [] ], // grid[0][0](左上), grid[0][1](左下)
         [ [], [] ]  // grid[1][0](右上), grid[1][1](右下)
     ];
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        
-        b.update(); // 弾を移動させる（中での push は無くなったので安全！）
-b.draw(ctx)
-        // 画面外なら消去
-        if (b.shouldRemove()) {
-            bullets.splice(i, 1);
-            continue;
-        }
+for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.update();
+    b.draw(ctx);
 
-        // 💡 移動した後の最新座標で、部屋（grid）に1発ずつ仕分ける！
-            const data = gps(b.x, b.y);
-            if (data.w >= 0 && data.w < 2 && data.h >= 0 && data.h < 2) {
-                grid[data.w][data.h].push(b); // ここで1回だけ登録される！
-            }
+    if (b.shouldRemove()) {
+        bullets.splice(i, 1);
+        continue;
     }
+
+    if (b.type === "laser") {
+        // レーザーは始点から終点まで一定間隔でサンプリングして、通過する全マスに登録する
+        const length = b.h;
+        const steps = Math.ceil(length / 20); // 20px間隔でサンプリング(粗すぎず細かすぎず)
+        const dirX = Math.cos(b.angle);
+        const dirY = Math.sin(b.angle);
+        const registered = new Set();
+
+        for (let s = 0; s <= steps; s++) {
+            const t = (length / steps) * s;
+            const px = b.x + dirX * t;
+            const py = b.y + dirY * t;
+            const data = gps(px, py);
+            const key = `${data.w},${data.h}`;
+            if (data.w >= 0 && data.w < 2 && data.h >= 0 && data.h < 2 && !registered.has(key)) {
+                grid[data.w][data.h].push(b);
+                registered.add(key);
+            }
+        }
+    } else {
+        const data = gps(b.x, b.y);
+        if (data.w >= 0 && data.w < 2 && data.h >= 0 && data.h < 2) {
+            grid[data.w][data.h].push(b);
+        }
+    }
+}
 if (players[0]) {
         // player.hitTest の中身で `grid` を使って some() を回す
         players[0].hitTest(false,grid); 
@@ -230,31 +240,6 @@ export function drawFps(ctx) {
     ctx.restore();
 }
 
-/**
- * サーバー上のファイルを更新する関数
- * ※ サーバー側にファイルが存在しないとエラーになります
- */
-// engine.js
-/**
- * @param {string} targetUrl - 送信先のURL (例: "http://192.168.0.7:8080/save")
- * @param {string} fileName - 保存するファイル名
- * @param {string} textContent - 保存したい内容
- */
-export async function saveToDisk(targetUrl, fileName, textContent) {
-    try {
-        const res = await fetch(targetUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filename: fileName, content: textContent })
-        });
-
-        if (!res.ok) throw new Error(`サーバーエラー: ${res.status}`);
-        
-        console.log("成功:", await res.text());
-    } catch (e) {
-        console.error("書き込み失敗:", e.message);
-    }
-}
 
 
 
