@@ -216,9 +216,9 @@ cancelAnimationFrame(stat.gameId);
             
             const g = String(clg?.gets ?? 0).padStart(3, "0");
             const am = String(clg?.amount ?? 0).padStart(3, "0");
-const clear = clg.gets > 0
-const nm = clg.nm
-const LastClear = nm && clear ? "assets/nc.png" : "assets/c.png"
+            const clear = (clg?.gets ?? 0) > 0;
+            const nm = clg?.nm ?? false;
+            const LastClear = (nm && clear) ? "assets/nc.png" : "assets/c.png";
             sp.textContent = `
 名前:${name}
 
