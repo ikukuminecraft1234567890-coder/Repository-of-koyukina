@@ -6,8 +6,8 @@ import {stat,gameLoop} from "./engine.js"
 import {bullet,Bullet,CC} from "./bc.js"
 
 import {
-dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf
-} from "./bullet.js"
+dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
+,keep} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 
@@ -2162,4 +2162,306 @@ setlist:[{f:12,e:1.7}]
 }
 }
 }
-functions.push(spell34)
+functions.push(spell34) 
+const spell35 = {
+name:"罠符｢設置型妖怪バスター｣",
+desc:"残機は2です。",
+hint:"",
+dif:"h",
+nm:"このスペカは割と悪くないかな。でもクリアしやす過ぎるかなと。思いまして！？残機を2に変えました！",
+ct:"起きた直後に思いついたスペル。割とムズいんじゃない？",
+list:[],
+prop:{n:0,hue:0},
+init() {
+this.prop = {n:0, hue:0}
+gi(1,[],120,2)
+},
+time:29,
+run() {
+if (pfr%15===0) {
+const x = random(0,canvas.w)
+    bullet({
+            speed: 1.5,
+            color: "FF0016",
+            w: 16,
+            h: 16,
+            type: "om",
+            x: x,
+            y: 0,
+            angle: pf(x,0),
+custom:{b:true,size1:16,size2:32},
+fnlist:[{f:0,loop:true,fn:function() {
+reverse(this)
+if (pfr % 60 === 0) {
+this.custom.b = !this.custom.b
+if (this.custom.b) {
+this.w = this.custom.size1
+this.h = this.custom.size1
+this.radius = this.w / 2
+} else {
+this.w = this.custom.size2
+this.h = this.custom.size2
+this.radius = this.w / 2
+}
+}}}]
+        })
+    }
+}
+}
+functions.push(spell35)
+
+const spell36 = {
+name:"銀忌「インフォメーション・パラドックス」",
+desc:"",
+hint:"",
+dif:"l",
+nm:"案外コツ掴むと簡単でした。かなりムズいかも？",
+ct:"めちゃくちゃオシャレ。完全パターンスペカ。なお時間発狂ありw 抜ける位置を覚えると行けます。36sなのはナンバー揃えじゃなくて普通にラストを左右下で耐えるのを阻止するため。",
+list:[],
+prop:{n:0,hue:0},
+init() {
+this.prop = {n:0, hue:0,a:0}
+gi(1,[],120,3)
+},
+time:36,
+run() {
+const cyc = 1
+if (cyc > 0 && cyc < 240) {
+if (pfr % 120 === 0) this.prop.a += 32
+if (pfr%15===0) {
+this.prop.n += 5
+const x = Half.x
+let a = 0;
+circle((ev) => {
+wait(() =>{
+bullet({
+            speed: 1.5,
+            color: "FF0016",
+            w: 16,
+            h: 16,
+            type: "normal",
+            x: x,
+            y: Half.y,
+            angle: dtr(ev.deg+this.prop.a),
+custom:{n:this.prop.n,i:ev.i},
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer === (120 + this.custom.n + this.custom.i / 10)) this.speed = 0
+if (pfr % 240 === 0) {
+this.speed = 1.5
+this.angle = -this.angle
+}
+        }}]
+    
+})
+    },ev.i)},{count:72})
+}
+}}}
+functions.push(spell36)
+const spell37 = {
+name:"棘符｢侵食する棘植物｣",
+desc:"",
+hint:"",
+dif:"h",
+nm:"この辺はネタ切れが酷いけど耐えます。元々は低難易度のつもりだったけど思ったよりむずくなっちゃったヤツ",
+ct:"めちゃくちゃ困ってる。この辺からネタ切れが酷いので全方位停止弾二連続wﾀｽｹﾃｰ＞-＜",
+list:[],
+prop:{n:0,hue:0},
+init() {
+this.prop = {n:0, hue:0,a:0}
+gi(0.35,[],120,3)
+},
+time:30,
+run() {
+if (pfr%45===0) {
+this.prop.a += 5
+const x = Half.x
+let a = 0;
+circle((ev) => {
+wait(() =>{
+bullet({
+            speed: 1.5,
+            color: "FF0016",
+            w: 16,
+            h: 16,
+            type: "knife",
+            x: x,
+            y: Half.y,
+            angle: dtr(ev.deg+this.prop.a),
+setlist:[{f:60,e:0},{f:180,e:0.95},{f:340,e:0},{f:420,e:0.1}],
+fnlist:[{f:0,loop:true,fn:function() {
+/*
+if (this.timer === 60) this.speed = 0;
+if (this.timer === 180) this.speed = 1.5
+*/
+if (this.timer===360) this.angle = -this.angle
+if (this.timer > 120 && this.timer <=360) this.angle += dtr((36/60)/2)
+        }}]
+    
+})
+    },ev.i)},{count:72})
+}
+}}
+functions.push(spell37)
+const spell38 = {
+name:"真実｢バミューダトライアングル｣",
+desc:"無敵時間は120 > 180フレームになり、残機は3>5です。",
+hint:"",
+dif:"l",
+nm:"難易度は高いかな？個人的にスカーレットシュートの名を借りてる割には感あるww今度いい感じの作ります！🫡と思ったけど製作中に変えた。これここ見れてる人いるの？",
+ct:"名前三回くらい変更した。スカーレットシュートインスパイアです。このテキスト書いたあとに4回くらいスペカ変更したw",
+list:[],
+prop:{n:0,hue:0},
+init() {
+this.prop = {n:0, hue:0,a:0}
+gi(0.35,[],180,5)
+},
+time:60,
+run() {
+if (pfr > 2300) return;
+if (pfr%1200===0||pfr===1) {
+this.prop.n += 3
+const x = Half.x
+triangle((ev) => {
+wait(() => {
+bullet({
+            speed: 2,
+            color: "FF0016",
+            w: 24,
+            h: 24,
+            type: "knife",
+            x: x+ev.x,
+            y: Half.y+ev.y,
+            angle: dtr(ev.deg),
+custom:true,
+deleteFrame:800,
+fnlist:[{f:0,loop:true,fn:function() {
+reverse(this)
+if (this.timer === 30) this.speed = 0;
+if (pfr % 120 === 0 && this.custom) {
+this.custom = false
+wait(()=>{this.angle += dtr(random(-30,30))},30)
+}
+if (!this.custom && this.timer === 240) {
+
+//this.angle = dtr(random(-180,180))
+}
+if (this.timer > 240 && !this.custom && pfr % 60 === 0 && this.timer < 300e30) {
+this.speed = 2
+const is = Math.random() < 0.1
+const type = is ? "big" : "normal"
+const size = is ? 24 : 8
+   bullet({
+            speed: 0.75,
+            color: "FF0016",
+            w: size,
+            h: size,
+            type: type,
+            x: this.x+random(-15,15),
+            y: this.y+random(-15,15),
+            angle: -this.angle,
+custom:3,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.custom <= 0) return;
+    const s = reverse(this)
+if (s) this.custom -= 1
+}}]
+})
+}
+    
+}}]
+})
+    },ev.i/10)},{dist:30,count:18+this.prop.n})
+}
+}}
+functions.push(spell38)
+const spell39 = {
+name:"想起｢封魔陣｣",
+desc:"",
+hint:"完全固定。1回目の正方形、2回目の円形になるやつは3回目以降も配置同じ。",
+dif:"n",
+nm:"おめでとうw完全固定とはいえムズいはムズいので普通によく行けましたね",
+ct:"個人的に自信ある。完全固定弾のパターン弾幕。研究したらすぐだと思う。なんならノーミスも現実的",
+list:[],
+prop:{n:0,hue:0},
+init() {
+this.prop = {n:0, hue:0,a:0}
+gi(0.5,[],120,3)
+},
+time:60,
+run() {
+if (pfr===1 || pfr % 1200 === 0) {
+const x = Half.x
+const y = Half.y
+bullet({
+rd:1,
+speed: 0,
+            color: "276BB0",
+            w: 128,
+            h: 128,
+            type: "big",
+            x: x,
+            y: y,
+            angle: dtr(0),
+})
+square((ev) => {
+const loc = {x:x+ev.x,y:y+ev.y}
+console.log(loc)
+bullet({
+            speed: 1.5,
+            color: "FF0016",
+            w: 12,
+            h: 12,
+            type: "amulet",
+            x: loc.x,
+            y: loc.y,
+            angle: dtr(ev.deg+this.prop.a),
+deleteFrame:1200,
+fnlist:[{f:0,loop:true,fn:function() {
+this.angle += dtr(0.05)
+const bool = keep(this)
+if (bool) {this.speed = 0;}
+if (this.timer === 120 || pfr % 480 === 0) {
+this.speed=1.5
+this.angle += dtr(180)
+}
+}}]
+})
+},{dist:50,count:27,startDeg:45})
+this.prop.a += 90
+
+}
+}}
+functions.push(spell39)
+const spell40 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"QED｢495年の波紋｣",
+dif:"p",
+desc:"",
+hint:"",
+nm:"圧倒的気合い弾幕。配置によっては詰む！なんだかんだ時間発狂に頼ってる気がする;;成長したのかしてないのか...",
+ct:"Phとは名だけwまあそもそも実力Phの弾幕が今ないんですがw(まず実力Phの弾幕あってもテストプレイでクリアできない;;)さてとうとう40スペカ目。これは元々負荷テスト用の奴だったんですが魔改造してバランスを良くしました。旧作は20スペカなので二倍のボリューム！w難易度も比較的高いかな",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(1)
+},
+time:40,
+run() {
+this.prop.a += 1/180
+const time = 300 / this.prop.a
+if (pfr % Math.floor(time) === 0) {
+for (let i = 0;i<150;i++)bullet({
+    speed:random(1.5,6.5), // スピード5
+    color:"9C27B0", 
+    w: 8,
+    h: 8, 
+    type: "normal",
+    y: 0,
+    x: Half.x,
+    angle: dtr(Math.random() * 360)
+})
+}}}
+functions.push(spell40)
