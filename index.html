@@ -216,9 +216,9 @@ cancelAnimationFrame(stat.gameId);
             
             const g = String(clg?.gets ?? 0).padStart(3, "0");
             const am = String(clg?.amount ?? 0).padStart(3, "0");
-            const clear = (clg?.gets ?? 0) > 0;
-            const nm = clg?.nm ?? false;
-            const LastClear = (nm && clear) ? "assets/nc.png" : "assets/c.png";
+const clear = clg.gets > 0
+const nm = clg.nm
+const LastClear = nm && clear ? "assets/nc.png" : "assets/c.png"
             sp.textContent = `
 名前:${name}
 
@@ -233,7 +233,8 @@ ${g}/${am}`;
             // 💡追加：64x64画像 → clg.nc（true/false）に応じてクリア/未クリア画像を切り替え
             const nc = clg?.nc ?? false;
             img64.src = LastClear;
-            img64.style.display = "block";
+const a = clear ? "block" : "none"
+            img64.style.display = a;
 
             // 💡追加：16x16画像 → fn.dif（E/N/H/L）に応じて難易度画像を切り替え
             const difPath = fn.dif ? "assets/"+fn.dif+".png" : "assets/e.png"

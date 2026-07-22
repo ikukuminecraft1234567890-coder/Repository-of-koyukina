@@ -307,3 +307,55 @@ export function keep(b) {
 
     return clamped
 }
+/**
+ * RGBの数値を16進数カラーコード（HEX）に変換する関数
+ * @param {number} r - 赤 (0〜255)
+ * @param {number} g - 緑 (0〜255)
+ * @param {number} b - 青 (0〜255)
+ * @returns {string} `#RRGGBB` 形式の文字列
+ */
+export function ccolor(r, g, b) {
+  // 各値を 0〜255 の範囲内にクランプ（丸め）して整数化
+  const toHex = (value) => {
+    const clamped = Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
+    // 16進数に変換し、1桁の場合は先頭に 0 を付与（パディング）
+    return clamped.toString(16).padStart(2, '0');
+  };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+
+
+export function ns(s = 1) {
+  let x = (s === 0 ? 1 : s) >>> 0;
+  x ^= x << 13;
+  x ^= x >>> 17;
+  x ^= x << 5;
+  return x >>> 0;
+}
+
+export function seed(min, max, s = 1, { isFloat = true, ns: autoStep = false } = {}) {
+  let currentSeed = (typeof s === 'object' && s !== null) ? s.s : s;
+  const safeSeed = (currentSeed === 0 ? 1 : currentSeed) >>> 0;
+
+  // ★ここを追加：シードを一度ハッシュ的に混ぜてから使う
+  const mixed = ns(safeSeed);
+  const rand01 = mixed / 4294967296;
+
+  const lower = Math.min(min, max);
+  const upper = Math.max(min, max);
+
+  const val = isFloat
+    ? lower + rand01 * (upper - lower)
+    : Math.floor(lower + rand01 * (upper - lower + 1));
+
+  if (autoStep) {
+    const nextVal = ns(currentSeed);
+    if (typeof s === 'object' && s !== null) {
+      s.s = nextVal;
+    }
+  }
+
+  return val;
+}

@@ -341,10 +341,9 @@ export class Bullet {
             else if (this.timer === this.fastF + 1) this.speed *= this.fastE;
         }
 
-        let newspeed = this.speed;
+    if (this.setlist.length) {let newspeed = this.speed;
         let speedMultiplier = 1;
-
-        this.setlist.forEach((e, i) => {
+this.setlist.forEach((e, i) => {
             const isLoop = e.loop ?? false;
             const type = e.type ?? "set";
             const isNext = e.next ?? true;
@@ -366,7 +365,8 @@ export class Bullet {
         });
 
         this.speed = newspeed * speedMultiplier;
-        this.fnlist.forEach((e) => {
+}
+      if (this.fnlist.length) this.fnlist.forEach((e) => {
             const isLoop = e.loop ?? false;
             const isActive = isLoop ? (this.timer >= e.f) : (this.timer === e.f);
             if (isActive && typeof e.fn === "function") {
@@ -374,12 +374,12 @@ export class Bullet {
             }
         });
 
-        this.seta.forEach((e, i) => {
+    if (this.seta.length)this.seta.forEach((e, i) => {
             const isLoop = e.loop ?? false;
             const type = e.type ?? "set";
             const isNext = e.next ?? true;
 
-            const next = this.setlist[i + 1];
+         const next = this.seta[i + 1];
             const endFrame = (isNext && next) ? next.f : Infinity;
 
             const isActive = (isLoop && this.timer >= e.f && this.timer < endFrame) ||
@@ -391,7 +391,9 @@ export class Bullet {
             }
         });
 
-        const looplist = []
+      if (this.rotate.length){
+          
+      const looplist = []
         let LastAngle = this.angle
         this.rotate.forEach((r) => {
             if (r.loop && r.f <= this.timer && r.lf > this.timer) looplist.push(r)
@@ -409,7 +411,7 @@ export class Bullet {
             }
         })
         this.angle = LastAngle
-
+}
         if (this.timer >= this.rotateF) {
             this.angle += this.rotateE;
         }
