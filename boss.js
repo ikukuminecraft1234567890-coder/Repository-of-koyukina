@@ -7,7 +7,7 @@ import {bullet,Bullet,CC} from "./bc.js"
 
 import {
 dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
-,keep} from "./bullet.js"
+,keep,ccolor,ns,seed} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 
@@ -2465,3 +2465,223 @@ for (let i = 0;i<150;i++)bullet({
 })
 }}}
 functions.push(spell40)
+const spell41 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"移符｢水切り波紋｣",
+dif:"h",
+desc:"",
+hint:"",
+nm:"よく行けたね？理不尽要素強いのに‼",
+ct:"理不尽を感じる。最初は当たり判定無くすか予告見えた方が良かったかも",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(1)
+},
+time:20,
+run() {
+if (pfr % 120 === 0) {
+for (let i = 0;i<2;i++) {
+const x = random(0,canvas.w)
+const y = random(0,canvas.h)
+bullet({
+    speed:0, // スピード5
+    color:"9C27B0", 
+    w: 24,
+    h: 24, 
+    type: "om",
+    y: y,
+    x: x,
+    angle: 0,
+deleteFrame:60,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer % 20 !== 0) return;
+const ran = random(-50,50)
+circle((ev) => {
+bullet({
+    speed:2.5, // スピード5
+    color:"FF2253", 
+    w: 16,
+    h: 16, 
+    type: "amulet",
+    y: this.y,
+    x: this.x,
+    angle: dtr(ev.deg+ran),
+})},{count:36})
+}}]
+})
+}}}}
+functions.push(spell41)
+const spell42 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"夢想封印・散",
+dif:"n",
+desc:"",
+hint:"",
+nm:"もうちょいむずくしたかった。ただ万人受けするのはこういうものなのかな？と;;むずくすればいいものではないと理解している。",
+ct:"簡単すぎるかなwノーミス目指してくれせめて;;",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(1)
+},
+time:20,
+run() {
+if (pfr % 4 === 0) {
+const color = ["FF0037","FF0037",ccolor(255,255,255)][Math.floor(Math.random()*3)]
+bullet({
+    speed:1.5+random(-0.25,0.25), // スピード5
+    color:color, 
+    w: 16,
+    h: 16, 
+    type: "om",
+    y: 0,
+    x: random(0,canvas.w),
+    angle: dtr(90+random(-45,45)),
+})}
+if (pfr % 42 === 0 || pfr === 1) {
+const x = Half.x;
+const y = (Half.y - 30) - 30
+for (let i = 1;i<=75;i++) {
+const real = Math.min(i,60)
+const ly = y - random(0,real*1.5)
+const lx = x + random(-10,10)
+const base = pf(lx,ly)
+const Rawspeed = i ** 0.4
+const speed = i > 59 ? Rawspeed * 0.5:Rawspeed
+const angle = base + dtr(random(-15,15))
+const color = ["FF0037","FF0037",ccolor(255,255,255)][Math.floor(Math.random()*3)]
+const WTT = real/2
+wait(() => {
+bullet({
+    speed:0.5, // スピード5
+    color:color, 
+    w: 16,
+    h: 16, 
+    type: "amulet",
+    y: ly,
+    x: lx,
+    angle: angle,
+setlist:[{f:12,e:speed}],
+})},WTT)
+}}
+}}
+functions.push(spell42)
+const spell43 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"禁忌｢決定論的カオス｣",
+dif:"h",
+desc:"",
+hint:"",
+nm:"PRNG(シード式乱数)はAIに書かせましたわよ。これはかなり気に入ってる。楽しいよこれ！",
+ct:"決定論的カオスとはこれの場合何が出るかは確定してるのに次の値が予測不可能なこと。(大雑把)この弾幕の赤弾は実際に固定弾です。でも一見ランダム。パターン化が可能なランダムっていう強みですね〜",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(1)
+},
+time:30,
+run() {
+if (pfr % 120 === 0 || pfr === 1) {
+for (let count = 1;count<=3;count++) {
+wait(() => {
+for (let i = 1;i<=4;i++) {
+const x = Half.x;
+const y = Half.y
+const base = pf(x,y)
+const speed = 7.5 / (Math.max(1,(i/2)))
+const angle = pf(x,y)
+const color = "00FFEE"
+circle((ev) => {bullet({
+    speed:0.5, // スピード5
+    color:color, 
+    w: 16,
+    h: 16, 
+    type: "diamond",
+    y: y,
+    x: x,
+    angle: angle+dtr(ev.deg),
+setlist:[{f:12,e:speed}],
+})
+},{count:12})
+}
+},count*30)
+}}
+if (pfr % 15 === 0) {
+    this.prop.a += 1
+if (true) {
+circle((ev) => {
+const x = Half.x;
+const y = 30;
+const speed = Math.max(ev.i / 20,1.5) 
+const color = "FF0018"
+const angle = seed(-180,180,this.prop.a+ev.i*1000)
+bullet({
+    speed:0.5, // スピード5
+    color:color, 
+    w: 16,
+    h: 16, 
+    type: "diamond",
+    y: y,
+    x: x,
+    angle: angle+dtr(ev.deg),
+setlist:[{f:12,e:1.5}],
+})
+},{count:108})}
+}
+}}
+functions.push(spell43)
+const spell44 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name:"覚神「神代の記憶｣ ＆ 鈴仙・優曇華院・イナバ",
+dif:"h",
+desc:"",
+hint:"",
+nm:"綺麗？なのか？まあいいw個人的にはもうちょい詰めたかったね..実力がね、うんw",
+ct:"難易度は普通に最近自分でも分からなくてHardが多い。異論求む",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(1)
+},
+time:40,
+run() {
+if (pfr % 15 === 0) {
+this.prop.s = !this.prop.s;
+const speed = pfr > 1200 ? (this.prop.s ? 6.5 : 3.5) : 1.5
+    this.prop.a += 1
+if (pfr === 1200) bullets.length = 0
+if (true) {
+circle((ev) => {
+const x = Half.x;
+const y = 30;
+const color = "FF0018"
+const angle = seed(-180,180,this.prop.a+ev.i*1000)
+const tempo = speed > 1.5 ? (speed > 3.5 ? 3 : 2) : 1
+if (ev.i % tempo === 0)bullet({
+    speed:0.5, // スピード5
+    color:color, 
+    w: 16,
+    h: 16, 
+    type: "diamond",
+    y: y,
+    x: x,
+    angle: angle+dtr(ev.deg),
+setlist:[{f:12,e:speed}],
+})
+},{count:144})}
+}
+}}
+functions.push(spell44)
