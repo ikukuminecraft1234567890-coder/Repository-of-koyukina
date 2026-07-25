@@ -24,6 +24,8 @@
 
         body { 
             background: #222; 
+
+
             color: white; 
             text-align: center; 
             overflow: hidden; 
@@ -78,6 +80,119 @@
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
+
+        /* 💡追加：メイン操作UIをまとめる相対配置コンテナ（一覧ボタンの位置決め用） */
+        #mainUiWrap {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* 💡追加：右上の「一覧」ボタン */
+        #listOpenBtn {
+            position: absolute;
+            top: 0;
+            right: -8px;
+            transform: translateX(100%);
+            background: #333;
+            color: #fff;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        #listOpenBtn:hover {
+            background: #444;
+        }
+
+        /* 💡追加：スペル一覧モーダル */
+        #spellListOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        #spellListOverlay.open {
+            display: flex;
+        }
+        #spellListPanel {
+            background: #1a1a1a;
+            border: 2px solid #888;
+            border-radius: 8px;
+            width: min(520px, 92vw);
+            max-height: 82vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #spellListHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid #555;
+            background: #222;
+        }
+        #spellListHeader span {
+            font-weight: bold;
+            font-size: 15px;
+        }
+        #spellListCloseBtn {
+            background: #444;
+            color: #fff;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+        #spellListCloseBtn:hover {
+            background: #555;
+        }
+        #spellListBody {
+            overflow-y: auto;
+            padding: 6px;
+        }
+        .spellRow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            text-align: left;
+            white-space: normal;
+        }
+        .spellRow:hover {
+            background: #2a2a2a;
+        }
+        .spellRow .spellNum {
+            width: 34px;
+            flex-shrink: 0;
+            color: #aaa;
+            font-size: 13px;
+            text-align: right;
+        }
+        .spellRow .spellDifIcon {
+            width: 20px;
+            height: 20px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            flex-shrink: 0;
+        }
+        .spellRow .spellName {
+            flex: 1;
+            font-size: 14px;
+        }
+        .spellRow .spellMarkIcon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +214,9 @@
         const noClearImagePath = "images/noclear.png";
 
         // UI要素の生成と配置
+        const mainUiWrap = document.createElement('div');
+        mainUiWrap.id = "mainUiWrap";
+
         const input = document.createElement('input');
         input.type = 'text';
         input.id = "input";
@@ -114,6 +232,38 @@
 
         const sp = document.createElement('div');
         sp.id = "id";
+
+        // 💡追加：右上の「一覧」ボタン
+        const listOpenBtn = document.createElement('button');
+        listOpenBtn.id = "listOpenBtn";
+        listOpenBtn.type = "button";
+        listOpenBtn.textContent = "一覧";
+
+        // 💡追加：スペル一覧モーダル（オーバーレイ＋パネル）
+        const spellListOverlay = document.createElement('div');
+        spellListOverlay.id = "spellListOverlay";
+
+        const spellListPanel = document.createElement('div');
+        spellListPanel.id = "spellListPanel";
+
+        const spellListHeader = document.createElement('div');
+        spellListHeader.id = "spellListHeader";
+
+        const spellListTitle = document.createElement('span');
+        spellListTitle.textContent = "スペル一覧";
+
+        const spellListCloseBtn = document.createElement('button');
+        spellListCloseBtn.id = "spellListCloseBtn";
+        spellListCloseBtn.type = "button";
+        spellListCloseBtn.textContent = "閉じる";
+
+        spellListHeader.append(spellListTitle, spellListCloseBtn);
+
+        const spellListBody = document.createElement('div');
+        spellListBody.id = "spellListBody";
+
+        spellListPanel.append(spellListHeader, spellListBody);
+        spellListOverlay.append(spellListPanel);
 
         // 💡追加：画面上部の可変画像コンテナと画像要素
         const topImages = document.createElement('div');
@@ -131,10 +281,112 @@
 
         topImages.append(img64, img16);
 
-        document.body.append(topImages, input, button, div, sp);
+        mainUiWrap.append(input, listOpenBtn);
+        document.body.append(topImages, mainUiWrap, button, div, sp, spellListOverlay);
 
         // 初期化処理の実行
         endless();
+
+        // 💡追加：指定スペル番号(1始まり)でクリア状況を取得するヘルパー
+        function getClearInfo(index0) {
+            const storageData = localStorage.getItem("sd");
+            if (!storageData) return { clear: false, noMiss: false };
+            try {
+                const parsed = JSON.parse(storageData);
+                const clg = parsed ? parsed[index0] : null;
+                const clear = (clg?.gets ?? 0) > 0;
+                const noMiss = (clg?.nm ?? false) && clear;
+                return { clear, noMiss };
+            } catch (e) {
+                console.error("Storage parse error:", e);
+                return { clear: false, noMiss: false };
+            }
+        }
+
+        // 💡追加：スペル一覧を描画（番号順、クリア/ノーミス状況付き）
+        function renderSpellList() {
+            spellListBody.textContent = "";
+
+            functions.forEach((fn, i) => {
+                if (!fn) return;
+
+                const row = document.createElement('div');
+                row.className = "spellRow";
+
+                const num = document.createElement('span');
+                num.className = "spellNum";
+                num.textContent = String(i + 1);
+
+                const difKey = (fn.dif ?? "e").toLowerCase();
+
+                const difIcon = document.createElement('img');
+                difIcon.className = "spellDifIcon";
+                difIcon.alt = difKey;
+                difIcon.src = "assets/" + difKey + ".png";
+
+                const name = document.createElement('span');
+                name.className = "spellName";
+                name.textContent = fn.name ?? "無名";
+
+                // 💡クリア/ノーミスクリアの画像アイコン（未クリアなら空のまま非表示）
+                const markIcon = document.createElement('img');
+                markIcon.className = "spellMarkIcon";
+                const { clear, noMiss } = getClearInfo(i);
+                if (noMiss) {
+                    markIcon.src = "assets/nc.png";
+                    markIcon.alt = "ノーミスクリア";
+                    markIcon.title = "ノーミスクリア";
+                } else if (clear) {
+                    markIcon.src = "assets/c.png";
+                    markIcon.alt = "クリア済み";
+                    markIcon.title = "クリア済み";
+                } else {
+                    markIcon.style.visibility = "hidden";
+                }
+
+                row.append(num, difIcon, name, markIcon);
+
+                // 💡クリックで即ゲーム開始（別フォーム扱い）
+                row.addEventListener("click", () => {
+                    closeSpellList();
+                    startSpell(i);
+                });
+
+                spellListBody.append(row);
+            });
+        }
+
+        function openSpellList() {
+            renderSpellList();
+            spellListOverlay.classList.add("open");
+        }
+
+        function closeSpellList() {
+            spellListOverlay.classList.remove("open");
+        }
+
+        listOpenBtn.addEventListener("click", openSpellList);
+        spellListCloseBtn.addEventListener("click", closeSpellList);
+        // 💡背景クリックでも閉じられるように
+        spellListOverlay.addEventListener("click", (e) => {
+            if (e.target === spellListOverlay) closeSpellList();
+        });
+
+        // 💡追加：番号(0始まり)を指定してゲームを開始する共通処理
+        function startSpell(sn) {
+            if (sn < 0 || sn >= functions.length || !functions[sn]) return;
+
+            // 画面上の入力UIを削除してゲームへ移行
+            div.remove();
+            mainUiWrap.remove();
+            button.remove();
+            sp.remove();
+            topImages.remove();
+            spellListOverlay.remove();
+
+            cancelAnimationFrame(stat.gameId);
+            start(sn);
+        }
 
         // ボタンクリック時の処理（バリデーションとゲーム開始）
         function buttonPush() {
@@ -166,17 +418,8 @@
                 div.textContent = "存在していないスペルカードです。スペルナンバーを下げるまたは再確認してやり直してね";
                 return;
             }
-            
-            // 画面上の入力UIを削除してゲームへ移行
-            div.remove();
-            input.remove();
-            button.remove();
-            sp.remove();
-            topImages.remove(); // 💡追加：スタート時に画像コンテナごと削除
-cancelAnimationFrame(stat.gameId); 
-    // 💡 ボタンが押された「今」、画面にあるキャンバスをピンポイントで取得する
-  
-            start(sn);
+
+            startSpell(sn);
         }
 
         // 入力時のリアルタイムプレビュー処理
