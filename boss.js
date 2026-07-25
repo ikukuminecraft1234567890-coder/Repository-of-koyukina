@@ -2685,3 +2685,279 @@ setlist:[{f:12,e:speed}],
 }
 }}
 functions.push(spell44)
+
+const spell45 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "禁術｢不夜城レッド｣",
+dif:"p",
+desc:"",
+hint:"安置やそれらしいトリックは一切ありません。ガチ気合い。",
+nm:"",
+ct:"ガチファンタズム。幾度もの弱体化をして尚最難関。",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(0.5)
+},
+time:36,
+run() {
+if (pfr === 1) {
+bullet({
+    speed:9, // スピード5
+    color:"", 
+    w: 16,
+    h: 16, 
+    type: "big",
+    y: 0,
+    x: Half.x,
+    angle: dtr(90),
+custom:0,
+fnlist:[{
+    f:0,loop:true,fn:function() {
+this.custom+= 1
+if (reverse(this)) {
+this.speed += 0.5
+circle((ev) => {
+const ra = random(-45,45)
+bullet({
+    speed:1, // スピード5
+    color:"FF0300", 
+    w: 24,
+    h: 24, 
+    type: "big",
+    y: this.y+random(-15,-30),
+    x: this.x+random(-15,15),
+    angle: dtr(ev.deg+ra),
+custom:{t:0,b:2},
+fnlist:[{
+loop:true,fn:function() {
+this.custom.t+=1
+if (this.custom.t < 30)this.speed += 0.0666
+if (this.custom.b > 0) {const a = reverse(this)
+if (a) {
+this.speed = 1
+this.custom.t = 0;
+    this.custom.b -= 1
+}}
+},f:0}],
+})},{count:5})
+}}}]
+})
+}
+}}
+functions.push(spell45)
+const spell46 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "夢符｢封魔陣｣",
+dif:"n",
+desc:"",
+hint:"完全固定。",
+nm:"えぐ！！初動の難易度高いからよく行けたねww",
+ct:"私のスペルと言えば(？)の究極気合い避け弾幕ですわよ〜個人的に気に入ってる。封魔陣感は出せてないかも",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(0.5)
+},
+time:10,
+run() {
+const cyc = pfr % 240
+if (pfr % 6 === 0) {
+this.prop.a += 5
+const x = Half.x;
+const y = Half.y - 60;
+circle((ev) => {
+wait(() => {bullet({
+    speed:1, // スピード5
+    color:["FF0037","002AFF"][Math.floor(Math.random()*2)], 
+    w: 16,
+    h: 16, 
+    type: "big",
+    y: y,
+    x: x,
+    angle: dtr(ev.deg+normal(-180,180,this.prop.a)),
+setlist:[{f:18,e:3.5}],
+custom:0
+})},ev.i/5)},{count:54})
+}}}
+functions.push(spell46)
+const spell47 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "秘封｢月の妖鳥、化け猫の幻｣",
+dif:"n",
+desc:"",
+hint:"スマホ推奨。(高速移動必須)",
+nm:"どう？！妖鳥(鳥)はaiフル使用;;イメージ画は妹紅のほうおうてんしょーです。上手くいったんじゃない？さすClaude。",
+ct:"地味に難易度が低い。化け猫の幻は上手く思いつかなかった。",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(0.5)
+},
+time:30,
+run() {
+const cyc = pfr % 240
+
+if (pfr % 360 === 0) {
+const a = Math.random() > 0.5
+
+for (let i =0;i<3;i++) {
+const c = a ? "FF6500" : "0063FF"
+bullet({
+            speed: 60,
+            color: c,
+            w:16, h: 16,
+            type: "laser",
+            y: 0,
+            x: random(0,canvas.w),
+            angle: dtr(90),
+deleteFrame:240,
+custom:a,
+fnlist:[{f:0,loop:true,fn:function() {
+const d = 7.5
+const ang = this.custom ? -dtr(1.5/d) : dtr(1.5/d)
+    if (this.timer > 120 && this.timer < 180) this.angle += ang
+}}],
+        });
+}}
+if (pfr === 1) {
+bullet({
+    speed:0, // スピード5
+    color:"FDD73B", 
+    w: 128,
+    h: 128, 
+    type: "normal",
+    y: Half.y,
+    x: Half.x,
+    angle: 0,
+custom:0,
+fnlist:[{f:0,loop:true,fn:function() {
+    // ① 軸：まっすぐ下に伸びる弾の列
+if (this.timer % 30 !== 0) return;
+this.custom += 12
+const color = "FF0037"
+const type = "scale"
+const size = 16
+const ins = 1
+circle((ev) => {
+    const angle = ev.deg + this.custom;
+    const rad = dtr(90 + angle);
+    const moveSpeed = 3;
+    const dx = Math.cos(rad);
+    const dy = Math.sin(rad);
+
+    const arrowBullets = [];
+
+    // ① 軸（長さを1/3の50に変更、間隔も詰めて弾数を保つ）
+    const shaftLength = 60; // 元は150
+    for (let i = 0; i < shaftLength; i += 6) { // 12→6にして密度キープ
+        const b = bullet({
+            speed: ins,
+            color: color,
+            w: size, h: size,
+            type: type,
+            y: this.y + dy * i,
+            x: this.x + dx * i,
+            angle: rad,
+        });
+        arrowBullets.push(b);
+    }
+
+    // ② 鳥の翼：先端を起点に、外翼・内翼の二重V字を左右対称に生やす
+    const tipX = this.x + dx * shaftLength;
+    const tipY = this.y + dy * shaftLength;
+
+    const wings = [
+        { spread: 55, length: 100, count: 8, offset: 0 },     // 外翼
+        { spread: 35, length: 70, count: 6, offset: 15 },     // 内翼
+    ];
+
+    for (const wing of wings) {
+        for (let side = -1; side <= 1; side += 2) {
+            const wingRad = dtr(90 + angle + 180 + side * wing.spread);
+            const wdx = Math.cos(wingRad);
+            const wdy = Math.sin(wingRad);
+
+            for (let k = 0; k < wing.count; k++) {
+                const t = k / (wing.count - 1);
+                const dist = wing.offset + t * wing.length;
+
+                const b = bullet({
+                    speed: ins,
+                    color: color,
+                    w: size, h: size,
+                    type: type,
+                    x: tipX + wdx * dist,
+                    y: tipY + wdy * dist,
+                    angle: rad,
+                });
+                arrowBullets.push(b);
+            }
+        }
+    }
+
+    // ③ 一斉始動
+for (let ii =0;ii<60;ii++)wait(() => {
+      arrowBullets.forEach((b) => {
+            if (!b) return;
+            b.speed += 0.05
+            b.angle = rad;
+        });
+},ii)
+}, {count: 4});
+
+    
+}}]
+})
+}}}
+functions.push(spell47)
+const spell48 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "紙符｢射命丸式投函｣",
+dif:"n",
+desc:"",
+hint:"",
+nm:"いいねwこの辺は難易度が低いかな？でもこんくらいが楽しめるっしょわら",
+ct:"これはスペル47作ってたらいい感じの生まれたので単独にしたヤツ。気に入ってる",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1},
+init() {
+this.speed = 1
+this.prop.s=true,this.prop.a=1
+gi(0.5)
+},
+time:30,
+run() {
+
+if (pfr % 12 === 0) {
+for (let i =0;i<30;i++) {
+const ph = Math.random() < 0.5
+bullet({
+            speed: 1.5,
+rd:0,
+            color: "FF6500",
+            w:16, h: 16,
+            type: "amulet",
+            y: random(0,canvas.h),
+            x: 0,
+            angle: dtr(random(-180,180)),
+custom:random(120,240),
+fnlist:[{f:0,loop:true,fn:function() {
+    if (this.timer > this.custom && this.timer < this.custom + 30) this.angle += dtr(1.5)
+}}],
+        });
+}}
+
+
+}}
+functions.push(spell48)
