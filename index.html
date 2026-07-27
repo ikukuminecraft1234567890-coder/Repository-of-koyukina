@@ -45,6 +45,7 @@
             margin: 0 auto;
             border: 2px solid white;
             touch-action: none;
+
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             width: auto;
@@ -102,6 +103,28 @@
             cursor: pointer;
         }
         #listOpenBtn:hover {
+            background: #444;
+        }
+
+        /* 💡変更：「最新」ボタンは画面右上に確実に固定表示 */
+        #latestBtn {
+            position: fixed !important;
+            top: 8px !important;
+            right: 8px !important;
+            left: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+            transform: none !important;
+            z-index: 999 !important;
+            background: #333;
+            color: #fff;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        #latestBtn:hover {
             background: #444;
         }
 
@@ -239,6 +262,12 @@
         listOpenBtn.type = "button";
         listOpenBtn.textContent = "一覧";
 
+        // 💡追加：右上の「最新」ボタン（functions配列の末尾＝最新スペルを即プレイ）
+        const latestBtn = document.createElement('button');
+        latestBtn.id = "latestBtn";
+        latestBtn.type = "button";
+        latestBtn.textContent = "最新";
+
         // 💡追加：スペル一覧モーダル（オーバーレイ＋パネル）
         const spellListOverlay = document.createElement('div');
         spellListOverlay.id = "spellListOverlay";
@@ -282,7 +311,7 @@
         topImages.append(img64, img16);
 
         mainUiWrap.append(input, listOpenBtn);
-        document.body.append(topImages, mainUiWrap, button, div, sp, spellListOverlay);
+        document.body.append(topImages, latestBtn, mainUiWrap, button, div, sp, spellListOverlay);
 
         // 初期化処理の実行
         endless();
@@ -383,10 +412,28 @@
             sp.remove();
             topImages.remove();
             spellListOverlay.remove();
+            latestBtn.remove();
 
             cancelAnimationFrame(stat.gameId);
             start(sn);
         }
+
+        // 💡追加：最新ボタン押下時の処理。functions配列の末尾から遡って
+        // 有効なエントリ（nullや未定義でないもの）を探して即プレイする。
+        function playLatestSpell() {
+            for (let i = functions.length - 1; i >= 0; i--) {
+                if (functions[i]) {
+                    startSpell(i);
+                    return;
+                }
+            }
+            // 有効なスペルが1つも見つからなかった場合の通知
+            div.style.backgroundColor = "white";
+            div.style.color = "#D40014";
+            div.textContent = "プレイ可能なスペルカードが見つかりませんでした。";
+        }
+
+        latestBtn.addEventListener("click", playLatestSpell);
 
         // ボタンクリック時の処理（バリデーションとゲーム開始）
         function buttonPush() {

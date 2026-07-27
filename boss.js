@@ -2802,6 +2802,7 @@ init() {
 this.speed = 1
 this.prop.s=true,this.prop.a=1
 gi(0.5)
+pfr = 739
 },
 time:30,
 run() {
@@ -2961,3 +2962,261 @@ fnlist:[{f:0,loop:true,fn:function() {
 
 }}
 functions.push(spell48)
+const spell49 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "錦符｢記憶の深海に沈む少女-Phantasm-｣",
+dif:"p",
+desc:"",
+hint:"3ウェーブ目は3パターンありますがパターンさえ引けば完全固定弾。",
+nm:"❓❓❓❓❓❓❓❓❓❓まじで何をしたらそうなったの！？！？一応これほぼ最難関なんですけど..緑地帯もよくNM行けたねと言いたいけどラストはどうしたの！？！？ガチで教えてくれ",
+ct:"30Sにも及ぶ猛攻スペル。もちろんクリアチェック済ませてる。ラストはまじで終わってる。多分ノーミス不可能(笑)",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},pyramid:0,},
+init() {
+const initSeedMap = [999,356,124]
+const initSeed = initSeedMap[Math.floor(Math.random() * initSeedMap.length)]
+this.speed = 1
+this.prop.s=true,this.prop.a=1,this.prop.rng={s:initSeed},this.prop.pyramid=0;
+gi(1.5)
+},
+time:30,
+run() {
+const x = Half.x;
+const y = 80;
+if (pfr % 1 === 0 && pfr > 60 && pfr < 180) {
+this.prop.a += 1
+for (let i =-9;i<9;i+=3) {
+const base = pf(x,y,i*5)
+bullet({
+            speed: 3.5,
+rd:0,
+            color: "FF0001",
+            w:16, h: 16,
+            type: "normal",
+            y: y,
+            x: x,
+            angle: random(normal(this.prop.a,-180,180),base),
+setlist:[{f:20,e:5.5}]
+        });
+}
+
+} else if (pfr > 180 && pfr < 300 && pfr % 3 === 0) {
+const p = pf(x,y)
+circle((ev) => {
+bullet({
+    speed: 4.5,
+    color: "0080DB",
+    rd:1,
+    w: 48,
+    h: 48, 
+    type: "scale",
+    y: y,
+    x: x,
+    angle: dtr(ev.deg) + p,
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+
+
+})},{count:36})
+} else if (pfr > 300 && pfr < 540 && pfr % 3 === 0) {
+function spawnAmulet() {
+for (let i = 0;i<30;i++) {
+wait(() =>{
+const nx = random(-15,15)
+const p = pf(x,y)
+bullet({
+    speed: 5.5,
+    color: "E8BD00",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "amulet",
+    y: y - i*2,
+    x: x + nx,
+    angle: p,
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+})
+},i/2)
+}}
+if (pfr % 30 === 0) spawnAmulet()
+for (let i =0;i<15;i++) {
+const nx = Math.random() > 0.5 ? 0 : canvas.w
+const p = pf(nx,y)
+bullet({
+
+    speed: 4.5,
+    color: "2CE800",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "star",
+    y: y,
+    x: x,
+    angle: p,
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+})
+if (Math.random() > 0.95) bullet({
+speed: 4.5,
+    color: "B800E8",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "diamond",
+    y: 0,
+    x: nx,
+    angle: p,
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+})
+
+
+}} else if (pfr > 540 && pfr < 740 && pfr % 1 === 0) {
+this.prop.s += 10
+if (pfr % 3 === 0) {
+const nx = normal(this.prop.s,0,canvas.w)
+const p = pf(nx,y)
+circle((ev) => {
+const v = seed(-5,5,this.prop.rng,{ns:true})
+bullet({
+    speed: 0.5,
+    color: "00FF64",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "star",
+    y: y,
+    x: nx,
+    angle: dtr(ev.deg+v),
+fnlist:[{f:0,loop:true,fn:function(){
+if(this.timer === 60) this.speed = 4.5;
+if(this.timer > 90 && this.speed > 2.5) this.speed -= 0.04}}],
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+
+
+})},{count:20})
+}} else if (pfr > 800 && pfr < 1280 && pfr % 1 === 0) {
+if (pfr % 30 !== 0) return;
+circle((ev) => {
+this.prop.pyramid += 16
+wait(() => {
+for (let i = 0;i<10;i++) {
+for (let way = -(i / 2);way<i / 2;way++) {
+bullet({
+    speed: 3.5 + (i/10),
+    color: "FF00C3",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: y,
+    x: x+way*7.5,
+    angle: dtr(ev.deg+this.prop.pyramid),
+custom:{a:this.prop.pyramid+i,i:i*2},
+})
+}}
+},ev.i * 5)
+},{count:25})
+} else if (pfr > 1340) {
+if (pfr % 3 === 0) {
+    
+function spawnAmulet() {
+for (let i = 0;i<15;i++) {
+wait(() =>{
+const nx = random(-15,15)
+const p = pf(x,y)
+bullet({
+    speed: 5.5,
+    color: "E8BD00",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "amulet",
+    y: y - i*2,
+    x: x + nx,
+    angle: p,
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+})
+},i/2)
+}}
+if (pfr % 30 === 0) spawnAmulet()
+let is = 0;
+for (let i =0;i<15;i++) {
+const nx = Math.random() > 0.5 ? 0 : canvas.w
+const p = pf(nx,y)
+bullet({
+
+    speed: 4.5,
+    color: "FF1C48",
+    rd:1,
+    w: 24,
+    h: 24, 
+    type: "star",
+    y: y,
+    x: x,
+    angle: p,
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+})
+if (Math.random() > 0.975) bullet({
+speed: 3.5,
+    color: "B800E8",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "diamond",
+    y: 0,
+    x: nx,
+    angle: p,
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+})
+}
+}
+    this.prop.s += 10
+if (pfr % 3 === 0) {
+const nx = normal(this.prop.s,0,canvas.w)
+const p = pf(nx,y)
+circle((ev) => {
+const v = seed(-5,5,this.prop.rng,{ns:true})
+bullet({
+    speed: 0.5,
+    color: "00FF64",
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "star",
+    y: y,
+    x: nx,
+    angle: dtr(ev.deg+v),
+fnlist:[{f:0,loop:true,fn:function(){
+if(this.timer === 60) this.speed = 4.5;
+if(this.timer > 90 && this.speed > 2.5) this.speed -= 0.04}}],
+    // 各段階をそれぞれ1つのオブジェクトとして配列に格納
+
+
+})},{count:8})
+}
+if (pfr % 30 === 0) {
+
+circle((ev) => {
+const c = ev.i % 2 === 0 ? "FF00C3" : "00B4FF"
+this.prop.pyramid += 72
+wait(() => {
+for (let i = 0;i<10;i++) {
+for (let way = -(i / 2);way<i / 2;way++) {
+bullet({
+    speed: 2.5 + (i/10),
+    color: c,
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: y,
+    x: x+way*7.5,
+    angle: dtr(ev.deg+this.prop.pyramid),
+custom:{a:this.prop.pyramid+i,i:i*2},
+})
+}}
+},ev.i * 5)
+},{count:8})
+}
+    
+}}}
+functions.push(spell49)
