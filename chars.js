@@ -100,6 +100,7 @@ hitTest(invincible = false, grid) {
     if (this.invincible > 0) return false;
     const data = gps(this.x, this.y)
     const OnHit = grid[data.w][data.h].some(bullet => {
+   if (bullet.radius <= 0) return false; // ← 追加：判定無効化
         if (bullet.type === "laser") {
 if(bullet.timer < bullet.speed) return;
             // まだ発射準備中(timer < speed)は当たらない、が必要なら調整

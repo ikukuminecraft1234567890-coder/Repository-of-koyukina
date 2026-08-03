@@ -125,6 +125,54 @@ export function circle(fn, { count = 18, startDeg = 0, custom = null, step = "a"
         fn(ev)
     }
 }
+export function arc(
+    fn,
+    {
+        x = 0,
+        y = 0,
+        count = 18,
+        startDeg = 0,
+        length = 0,
+        custom = null,
+        step = "a"
+    },
+    rl = []
+) {
+    const astep = step !== "a" ? step : 360 / count;
+
+    for (let i = 0; i < count; i++) {
+        let baseDeg = i * astep;
+        let deg = (baseDeg + startDeg) % 360;
+
+        if (deg > 180) deg -= 360;
+
+        const rad = deg * Math.PI / 180;
+
+        const ev = {
+            count,
+            step: astep,
+            startDeg,
+            length,
+            i,
+            deg,
+            rad,
+
+            // オフセット
+            dx: Math.cos(rad) * length,
+            dy: Math.sin(rad) * length,
+
+            // 実際の座標
+            x: x + Math.cos(rad) * length,
+            y: y + Math.sin(rad) * length,
+
+            custom,
+            rl
+        };
+
+        rl.push(ev);
+        fn(ev);
+    }
+}
 
 /**
  * 弾を画面端（上下左右）で反射させる汎用関数

@@ -7,7 +7,7 @@ import {bullet,Bullet,CC} from "./bc.js"
 
 import {
 dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
-,keep,ccolor,ns,seed} from "./bullet.js"
+,keep,ccolor,ns,seed,arc} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 
@@ -2945,7 +2945,6 @@ for (let i =0;i<30;i++) {
 const ph = Math.random() < 0.5
 bullet({
             speed: 1.5,
-rd:0,
             color: "FF6500",
             w:16, h: 16,
             type: "amulet",
@@ -3220,3 +3219,212 @@ custom:{a:this.prop.pyramid+i,i:i*2},
     
 }}}
 functions.push(spell49)
+const spell50 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "虹符｢バレットトラッカー｣",
+dif:"h",
+desc:"",
+hint:"",
+nm:"おおwこれはめっちゃ気に入ってるけど難易度はうーんw初期位置自機狙い全方位<当たりスペカしかないw実は俺の中で34以降のスペカの影が謎に薄い。なんでかなwというよりかは作りすぎて10の価値が低くなってんのかな？あんまりにも難易度下げすぎた可能性もある。",
+ct:"なんか眠い時ほどいいスペカ思いつく傾向にある？個人的にめちゃくちゃ気に行ってる。もうむずくしてもいいけど万人受けを意識🤩なんだかんだもう50スペカにもなってしまった〜あと30で旧作含め100になるwそう考えるとすごいなあ〜",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999}},
+init() {
+this.speed = 1
+this.prop.s = true
+this.prop.a=1;
+this.prop.rng={s:999}
+gi(0.5)
+},
+time:30,
+run() {
+
+if (pfr % 240 === 0 || pfr === 1) {
+const x = Math.random() > 0.5 ? 0 : canvas.w
+const y = Half.y - 30
+const a = pf(x,y)
+bullet({
+            speed: 5.5,
+rd:0,
+            color: "FF6500",
+            w:16, h: 16,
+            type: "amulet",
+            y: y,
+            x: x,
+            angle: a,
+custom:this.prop.a,
+fnlist:[{f:0,loop:true,fn:function() {
+const c = "FF00B5"
+if (this.timer % 6 === 0 && this.timer < 60) {
+this.custom += 1
+const nx = this.x + random(-30,30)
+const ny = this.y + random(-30,30)
+const colors = ["FF0028","FF6A00","FFE900","92FF00","00FF3F","00FFF8","0018FF","7F00FF","F800FF","FF004A"]
+const color = colors[Math.floor(normal(this.custom,0,colors.length))]
+const speed = random(-0.5,0.5)
+const time = this.custom * 3 + 120
+    circle((ev) => {
+bullet({
+    speed: 0,
+    color: color,
+    rd:1,
+    w: 16,
+    h: 16, 
+    type: "pre",
+    y: ny,
+    x: nx,
+    angle: dtr(ev.deg),
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer > time) {
+this.type = "gummy"
+this.speed = 1.5+speed
+}}}]
+})
+},{count:27})
+
+}}}],
+
+        });
+}}
+
+
+}
+functions.push(spell50)
+const spell51 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "獄符｢回転磔｣",
+dif:"n",
+desc:"",
+hint:"完全パターン。",
+nm:"新機能を使ったスペカ。名前はお気に入り。難易度は簡単だけど結構珍しいスペカじゃない？元々は回転中にバラマキ置こうと思ったけど難しすぎるかなと🥲",
+ct:"作者がノーミスするくらいの難易度。特に難しくは無いけど、初見殺しは無駄に多い🤩",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null},
+init() {
+this.speed = 1
+this.prop.s = true
+this.prop.a=100;
+this.prop.rng={s:999}
+this.prop.loc = {x:Half.x,y:Half.y}
+gi(5)
+},
+time:37,
+run() {
+if (pfr % 1 === 0 && pfr < 1450 && pfr > 60) {
+this.prop.a -= 0.0625
+const nloc = this.prop.loc
+const t = pfr * 0.03;
+
+const nx = this.prop.loc.x + Math.cos(t) * 100;
+const ny = this.prop.loc.y + Math.sin(t) * 100;
+    arc((ev) => {
+bullet({
+x:ev.x,
+y:ev.y,
+angle:dtr(ev.deg),
+speed:5,
+type:"normal",
+color:"B02796",
+})
+},{x:nx,y:ny,length:this.prop.a,count:36})
+}
+if (pfr === 1500) {
+
+for (let i = 0;i<3;i++) {
+wait(() => {
+const x = players[0].x
+const y = players[0].y
+const a = pf(x,y)
+this.prop.a += 1
+const value = this.prop
+circle((ev) => {
+bullet({
+rd:0,
+noAuto:true,
+            speed: 1.5,
+            color: "FF6500",
+            w:48, h: 48,
+            type: "big2",
+            y: y,
+            x: x,
+            angle: dtr(ev.deg),
+custom:{p:ev.i+value.a,v:ev.i % 18,xy:{x:0,y:0}},
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer === 15) this.rd = 1
+    if (this.timer === 60) {
+        this.custom.decel = true; // 減速開始
+        if (this.custom.v) {
+            this.rd = 0;
+            this.color = "null";
+        }
+        const plus = this.custom.p / 4;
+        this.speed = 4;
+    }
+
+    if (this.custom.decel) {
+        this.speed -= 0.1;
+        if (this.speed <= -1) {
+            this.speed = -1;
+            this.custom.decel = false; // ここで加速フェーズへ切り替え
+        }
+    } else if (this.timer > 60) {
+        this.speed += 0.0045;
+    }
+
+    if (this.timer === 180) {
+        if (this.custom.v) {
+            this.rd = 1;
+            this.color = "FF6500";
+        }
+    }
+
+    this.w += 0.15;
+    this.h += 0.15;
+}}],
+
+        });
+},{count:72})},i*30)
+
+
+}}}}
+functions.push(spell51)
+const spell52 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "視符｢予知回転ギロチン｣",
+dif:"n",
+desc:"",
+hint:"完全パターン。",
+nm:"なんだこの..なんだこれ？よく分からないけどめちゃくちゃムズいです。",
+ct:"うおwどうやったの？",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null},
+init() {
+this.speed = 1
+this.prop.s = true
+this.prop.a=100;
+this.prop.rng={s:999}
+this.prop.loc = {x:Half.x,y:Half.y}
+gi(1.5)
+},
+time:37,
+run() {
+if (pfr % 1 === 0 && pfr % 240 > 0 && pfr % 240 < 225) {
+const b = this.prop.a += 0.5
+circle((ev) => {
+const x = Half.x;
+const y = Half.y;
+const base= pf(x,y)+dtr(b)
+bullet({
+    x:x,
+y:y,
+speed:6.5,
+type:"diamond",
+angle:dtr(ev.deg)+base,
+color:"FF9500"
+})},{count:4})
+
+}}}
+functions.push(spell52)
