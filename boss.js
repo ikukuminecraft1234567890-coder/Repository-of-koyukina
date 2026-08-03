@@ -3277,6 +3277,7 @@ bullet({
     angle: dtr(ev.deg),
 fnlist:[{f:0,loop:true,fn:function() {
 if (this.timer > time) {
+this.rd=1.0
 this.type = "gummy"
 this.speed = 1.5+speed
 }}}]
@@ -3428,3 +3429,92 @@ color:"FF9500"
 
 }}}
 functions.push(spell52)
+const spell53 = {
+name: "AI符「双螺旋の花冠」",
+dif:"h",
+desc:"",
+hint:"花弁は8方向対称。中心に寄りすぎると挟まれるので、花弁の隙間を追いかけるように螺旋状に動くと安定。",
+nm:"ど、どわーWwwwwwwwww俺これいらん感じ？！まあいいわ、俺がこれからaiを越えるんだよ🤩🤩🤩",
+ct:"aiに作らせた。試しにねwあれ、もしかしてこれ俺いらない感じ？ほな、また....",
+prop:{a:0,b:0,dense:0},
+init() {
+this.prop = {a:0,b:0,dense:0}
+gi(1)
+},
+time:35,
+run() {
+// 二重螺旋の花弁（回転しながら密度が徐々に上がる）
+if (pfr % 20 === 0) {
+this.prop.a += 6
+this.prop.dense = Math.min(this.prop.dense + 1, 10)
+const petals = 8
+const perPetal = 3 + Math.floor(this.prop.dense / 3)
+circle((ev) => {
+for (let k = 0; k < perPetal; k++) {
+const spread = k * 4
+wait(() => {
+bullet({
+    speed: 1.3 + k * 0.15,
+    color: "FF3D8A",
+    w: 14, h: 14,
+    type: "scale",
+    y: Half.y,
+    x: Half.x,
+    angle: dtr(ev.deg + this.prop.a + spread),
+setlist:[{f:40,e:2.2}]
+})
+bullet({
+    speed: 1.3 + k * 0.15,
+    color: "3DA8FF",
+    w: 14, h: 14,
+    type: "scale",
+    y: Half.y,
+    x: Half.x,
+    angle: dtr(ev.deg - this.prop.a - spread),
+setlist:[{f:40,e:2.2}]
+})
+}, k*3)
+}
+},{count:petals})
+}
+
+// 中心から伸びる自機狙いレーザー（間隔を保った警告→発射）
+if (pfr % 90 === 0 && pfr > 150) {
+this.prop.b += 1
+const count = Math.min(2 + Math.floor(this.prop.b/2), 4)
+for (let i = 0; i < count; i++) {
+wait(() => {
+const px = players[0].x
+const py = players[0].y
+const angle = pf(px, py)
+bullet({
+    speed: 150,
+    color: "FFD400",
+    w: 12, h: 999,
+    type: "laser",
+    y: Half.y,
+    x: Half.x,
+    angle: angle,
+    deleteFrame: 200
+})
+}, i*18)
+}
+}
+
+// 終盤、外周から薄い確認弾（避け道を可視化しつつ密度を足す）
+if (pfr % 45 === 0 && pfr > 600) {
+circle((ev) => {
+bullet({
+    speed: 1,
+    color: "FFFFFF",
+    w: 8, h: 8,
+    type: "normal",
+    y: Half.y,
+    x: Half.x,
+    angle: dtr(ev.deg),
+setlist:[{f:60,e:2.5}]
+})
+},{count:24, startDeg: pfr})
+}
+}}
+functions.push(spell53)
