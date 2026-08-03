@@ -173,7 +173,7 @@ export function bullet({
     rotate = [], slowF = 0, slowE = 1, fastF = Infinity, fastE = 1,
     highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
     setlist = [], fnlist = [], push = true, custom = [], seta = [],
-    active = true, rd = 1,
+    active = true, rd = 1,noAuto=false
 } = {}) {
     if (cfg) {
         // --- オブジェクトプール方式 ---
@@ -183,12 +183,12 @@ export function bullet({
             return null;
         }
         a.reset();
-        a.setter({
-            x, y, angle, speed, color, w, h, type, deleteFrame,
-            rotateE, rotateF, rotate, slowF, slowE, fastF, fastE,
-            highEx, slowEx, AcF, AcA, setlist, fnlist, custom, seta,
-            active: true,
-        });
+a.setter({
+    x, y, angle, speed, color, w, h, type, deleteFrame,
+    rotateE, rotateF, rotate, slowF, slowE, fastF, fastE,
+    highEx, slowEx, AcF, AcA, setlist, fnlist, custom, seta,
+    active: true, noAuto, rd   // ← rd を追加
+});
         a.active = true;
         a.i = bullets.length;
         bullets.push(a);
@@ -199,7 +199,7 @@ export function bullet({
             x, y, angle, speed, color, w, h, type, deleteFrame,
             rotateE, rotateF, rotate, slowF, slowE, fastF, fastE,
             highEx, slowEx, AcF, AcA, setlist, fnlist, push, custom, seta,
-            rd,
+            rd,noAuto
         });
     }
 }
@@ -215,7 +215,7 @@ export class Bullet {
         slowF = 0, slowE = 1,
         fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
         setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1,
-        active = cfg ? false : true,
+        active = cfg ? false : true,noAuto=false
     }) {
         this.custom = custom;
         this.x = x;
@@ -246,6 +246,7 @@ export class Bullet {
         this.AcA = AcA;
         this.seta = seta
         this.active = active;
+        this.noAuto=noAuto
         if (push && !cfg) bullets.push(this); // プール方式のときは bullet() 側で push 済み
         CC(type, [color]);
     }
@@ -272,7 +273,7 @@ export class Bullet {
         this.rotateE = 0;
         this.rotateF = Infinity;
         this.rotate = [];
-
+        this.noAuto = false
         this.slowF = Infinity;
         this.slowE = 1;
         this.fastF = Infinity;
@@ -297,7 +298,7 @@ export class Bullet {
         rotate = [],
         slowF = 0, slowE = 1,
         fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
-        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1, active = false,
+        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1, active = false,noAuto=false
     }) {
         this.custom = custom;
         this.x = x;
@@ -317,7 +318,7 @@ export class Bullet {
         this.rotateE = rotateE;
         this.rotateF = rotateF;
         this.rotate = rotate;
-
+        this.noAuto=noAuto
         this.slowF = slowF;
         this.slowE = slowE;
         this.fastF = fastF;
@@ -331,6 +332,8 @@ export class Bullet {
 
     update() {
         if (cfg && !this.active) return;
+if (this.type === "pre") this.rd = 0
+this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
         if (this.timer > this.slowF) {
             if (this.slowEx) this.speed *= this.slowE;
             else if (this.timer === this.slowF + 1) this.speed *= this.slowE;
@@ -431,7 +434,11 @@ this.setlist.forEach((e, i) => {
      *    弾が大量に出るほど配列インデックスがズレて無関係な弾まで消えるバグの原因になる。
      */
     shouldRemove() {
+if (this.noAuto) {
+    return this.timer >= this.deleteFrame;
+} else {
         return this.x < -50 || this.x > canvas.w + 50 || this.y < -50 || this.y > canvas.h + 50 || this.timer >= this.deleteFrame;
+}
     }
 
     /**
@@ -450,7 +457,7 @@ this.setlist.forEach((e, i) => {
     draw(ctx, debug = false) {
         if (cfg && !this.active) return;
         ctx.fillStyle = this.color;
-
+if (this.color === "null") return;
         // 💡 画像描画タイプとパス描画（fill）タイプで処理を分離させてバグを修正
         let isPathBullet = false;
         if (this.type === "laser") {
@@ -477,6 +484,50 @@ this.setlist.forEach((e, i) => {
         }
 
         switch (this.type) {
+    case "pre": {
+        // --- ✨ キラーン演出：明滅 + 拡縮しながら表示 ---
+        const t = this.timer;
+        const period = 30;                       // 明滅の周期(フレーム数)
+        const phase = (t % period) / period;      // 0 → 1
+
+        // sin波でパルス(0→1→0)を作る。Math.PIで半周期なので0-1-0の山になる
+        const pulse = Math.sin(phase * Math.PI);
+
+        const alpha = 0.4 + pulse * 0.6;           // 0.4〜1.0で明滅
+        const scale = 0.85 + pulse * 0.3;          // 0.85〜1.15で拡縮
+
+        idraw(
+            "pre",
+            this.x, this.y,
+            this.w * scale, this.h * scale,
+            this.angle, this.color,
+            alpha
+        );
+
+        // 中心に光の粒(スパークル)を重ねて「キラッ」感を強調
+        if (pulse > 0.7) {
+            ctx.save();
+            ctx.globalAlpha = (pulse - 0.7) / 0.3; // 山の頂点付近だけ出す
+            ctx.translate(this.x, this.y);
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowColor = "#fff6c8";
+            ctx.shadowBlur = 12;
+            const s = this.w * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(0, -s);
+            ctx.lineTo(s * 0.25, -s * 0.25);
+            ctx.lineTo(s, 0);
+            ctx.lineTo(s * 0.25, s * 0.25);
+            ctx.lineTo(0, s);
+            ctx.lineTo(-s * 0.25, s * 0.25);
+            ctx.lineTo(-s, 0);
+            ctx.lineTo(-s * 0.25, -s * 0.25);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        break;
+    }
             case "normal":
             case "クナイ":
             case "kunai":
@@ -498,6 +549,9 @@ this.setlist.forEach((e, i) => {
             case "om":
             case "star":
             case "kunai2":
+            case "heart":
+            case "big2":
+            case "pre":
                 let imgType = this.type;
                 if (imgType === "クナイ") imgType = "kunai";
                 else if (imgType === "御札") imgType = "amulet";
