@@ -407,3 +407,198 @@ export function seed(min, max, s = 1, { isFloat = true, ns: autoStep = false } =
 
   return val;
 }
+export function smooth(bull,target,time) {
+const smoothTime = target / time
+const snapshot = bull.timer 
+for (let i = 0;i<time;i++) wait(()=>{bull.angle+=(smoothTime)},i)
+}
+export function smoothSet(bull,target,time) {
+const smoothTime = target+bull.angle / time
+const snapshot = bull.timer 
+for (let i = 0;i<time;i++) wait(()=>{bull.angle=(smoothTime)},i)
+}
+
+/**
+ * 内積（扇状視界判定）と外積（半自機狙い補正）を組み合わせて射撃角度と位置関係を取得する関数
+ * 
+ * @param {number} x - 射撃元のX座標
+ * @param {number} y - 射撃元のY座標
+ * @param {number} angle - 基準となる射出方向（ラジアン）
+ * @param {number|Object} range - 許容角度（度数法）。数値なら -range〜+range、オブジェクトなら {min, max}
+ * @param {Object} [target] - 狙う対象（未指定時は players[0] を自動参照）
+ * @param {number} [bias=0.3] - 自機方向への補正強度（0.0〜1.0）
+ * @returns {Object} { angle: 最終的な発射角度(rad), relAngle: 相対角度(deg), inArea: 範囲内フラグ(bool), side: 左右判定(string) }
+ */
+export function getArea(x, y, angle, range, target = players[0], bias = 0.3) {
+    // 1. 引数 range の解析
+    let minDeg, maxDeg;
+    if (typeof range === "object" && range !== null) {
+        minDeg = range.min ?? -30;
+        maxDeg = range.max ?? 30;
+    } else {
+        const r = Math.abs(Number(range) || 0);
+        minDeg = -r;
+        maxDeg = r;
+    }
+
+    // ターゲットが存在しない場合のデフォルト返却
+    if (!target) {
+        return { angle, relAngle: 0, inArea: false, side: "none" };
+    }
+
+    // 2. ベクトルの準備
+    const fwdX = Math.cos(angle);
+    const fwdY = Math.sin(angle);
+
+    const dx = target.x - x;
+    const dy = target.y - y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist === 0) {
+        return { angle, relAngle: 0, inArea: true, side: "center" };
+    }
+
+    const toTargetX = dx / dist;
+    const toTargetY = dy / dist;
+
+    // 3. 【内積】なす角の計算
+    const dot = fwdX * toTargetX + fwdY * toTargetY;
+    const diffAngleRad = Math.acos(Math.max(-1, Math.min(1, dot)));
+    const diffAngleDeg = (diffAngleRad * 180) / Math.PI;
+
+    // 4. 【外積】左右の判定
+    // Canvas座標系（Y軸下向き）において:
+    // cross > 0: 基準方向から見て右側
+    // cross < 0: 基準方向から見て左側
+    const cross = fwdX * toTargetY - fwdY * toTargetX;
+    const sideSign = cross >= 0 ? 1 : -1;
+
+    // 基準ベクトルからの相対角度（左側: マイナス、右側: プラス）
+    const targetRelativeDeg = diffAngleDeg * sideSign;
+
+    // 5. 扇状範囲（minDeg 〜 maxDeg）の中にターゲットが入っているか判定
+    const isInSector = (targetRelativeDeg >= minDeg && targetRelativeDeg <= maxDeg);
+
+    // 左右表記の文字列判定
+    let sideStr = "center";
+    if (Math.abs(targetRelativeDeg) > 0.1) {
+        sideStr = sideSign > 0 ? "right" : "left";
+    }
+
+    // 6. 最終角度の算出
+    let finalAngleRad = angle;
+    if (isInSector) {
+        const shiftDeg = targetRelativeDeg * bias;
+        finalAngleRad = angle + dtr(shiftDeg);
+    }
+
+    // 欲しい情報をすべてまとめたオブジェクトを返す！
+    return {
+        angle: finalAngleRad,          // 計算後の発射角度 (rad)
+        relAngle: targetRelativeDeg,   // 基準方向からの相対角度 (deg) ※例: -25.5° や +40.0°
+        inArea: isInSector,            // 判定範囲内に入っているか (true / false)
+        side: sideStr                  // "left", "right", "center", "none"
+    };
+}
+
+
+/**
+ * 範囲内に自機がいる時だけ、精度をばらつかせた自機狙い角度を返す関数
+ * 
+ * @param {number} x - 射撃元のX座標
+ * @param {number} y - 射撃元のY座標
+ * @param {number} angle - 基準となる方向（ラジアン）
+ * @param {Object} range - 許容範囲 {min: 度数, max: 度数} （例: {min: -45, max: 45}）
+ * @param {number} [spread=15] - 狙いの荒さ・ブレ幅（度数法）。±15°なら最大15度ズレる
+ * @param {Object} [target=players[0]] - 狙う対象
+ * @returns {number} 決定された射撃角度（ラジアン）
+ */
+export function pfneo(x, y, angle, range = { min: -45, max: 45 }, spread = 15, target = players[0]) {
+    if (!target) return angle;
+
+    // 1. 自機への絶対角度を計算（Math.atan2）
+    const dx = target.x - x;
+    const dy = target.y - y;
+    const targetAngle = Math.atan2(dy, dx);
+
+    // 2. 基準角度（angle）と自機方向（targetAngle）の差分を求める（-Math.PI 〜 +Math.PI に正規化）
+    let diffRad = targetAngle - angle;
+    diffRad = Math.atan2(Math.sin(diffRad), Math.cos(diffRad));
+    const diffDeg = (diffRad * 180) / Math.PI;
+
+    // 3. 自機が range(min 〜 max) の視界内にいるかチェック
+    const minDeg = range.min ?? -45;
+    const maxDeg = range.max ?? 45;
+
+    if (diffDeg >= minDeg && diffDeg <= maxDeg) {
+        // --- 視界内の場合：粗い自機狙い ---
+        // (Math.random() - 0.5) で -0.5 ～ +0.5
+        // それに spread(例:15) * 2 を掛けることで -15° ～ +15° のランダムなブレを作る
+        const randomOffsetDeg = (Math.random() - 0.5) * 2 * spread;
+        const randomOffsetRad = (randomOffsetDeg * Math.PI) / 180;
+
+        return targetAngle + randomOffsetRad;
+    } else {
+        // --- 視界外の場合：基準角度をそのまま返す ---
+        return angle;
+    }
+}
+
+/**
+ * V字（またはV字を描く2方向）の弾配置を生成し、コールバックを実行する
+ * baseDegを軸として、左右に±spreadDegだけ開いた2方向に弾を配置する。
+ * countを増やすと、その2方向に沿って時間差なしで並ぶ複数弾（V字の"線"の密度）になる。
+ *
+ * @param {Function} fn - 各弾で呼ばれるコールバック。引数は配置情報オブジェクト(ev)
+ * @param {Object} opts
+ * @param {number} [opts.x=0] - 発生源のX座標
+ * @param {number} [opts.y=0] - 発生源のY座標
+ * @param {number} [opts.baseDeg=90] - V字の軸となる中心角度（度）。90なら下向き
+ * @param {number} [opts.spreadDeg=30] - 軸から左右に開く角度（度）
+ * @param {number} [opts.count=1] - 片側あたりの弾数（V字の腕1本あたりの弾数）
+ * @param {number} [opts.length=0] - 発生源からのオフセット距離（0なら発生源そのままの座標）
+ * @param {*} [opts.custom=null] - コールバックに渡す任意データ
+ * @returns {Array} rl - 生成された配置情報の配列
+ * @example
+ * vshape(ev => {
+ *   bullet(ev.x, ev.y, ev.deg, 3, "cyan", "normal");
+ * }, { x: entity.x, y: entity.y, baseDeg: 90, spreadDeg: 30, count: 5 });
+ */
+export function VSpawn(fn, { x = 0, y = 0, baseDeg = 90, spreadDeg = 30, count = 1, length = 0, custom = null, spacing = 60, moveDeg = null } = {}, rl = []) {
+    const sides = [-1, 1];
+
+    for (const side of sides) {
+        for (let i = 0; i < count; i++) {
+            let deg = normal(baseDeg + side * spreadDeg, -180, 180);
+            const rad = dtr(deg);
+
+            const dist = length + i * spacing;
+
+            // moveDeg が指定されていればそちらを進行角度に、なければ deg をそのまま使う
+            const moveRad = moveDeg !== null ? dtr(normal(moveDeg + side * spreadDeg, -180, 180)) : rad;
+
+            const ev = {
+                x: x + Math.cos(rad) * dist,
+                y: y + Math.sin(rad) * dist,
+                dx: Math.cos(rad) * dist,
+                dy: Math.sin(rad) * dist,
+                deg,
+                rad,          // 配置用の角度
+                moveRad,      // 進行方向用の角度（新規）
+                dist,
+                side: side < 0 ? "left" : "right",
+                i,
+                count,
+                baseDeg,
+                spreadDeg,
+                custom,
+                rl
+            };
+
+            rl.push(ev);
+            fn(ev);
+        }
+    }
+
+    return rl;
+}
