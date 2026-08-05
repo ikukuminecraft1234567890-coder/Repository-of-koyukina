@@ -7,7 +7,7 @@ import {bullet,Bullet,CC} from "./bc.js"
 
 import {
 dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
-,keep,ccolor,ns,seed,arc} from "./bullet.js"
+,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 
@@ -3518,3 +3518,227 @@ setlist:[{f:60,e:2.5}]
 }
 }}
 functions.push(spell53)
+const spell54 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "幾学｢放射状弾幕の方程式｣",
+dif:"n",
+desc:"",
+hint:"",
+nm:"結構初期パターンから変えましたよと。個人的にそろそろノーミステキストの概念消すのもありではある(？)",
+ct:"結構すき。安置変わるのいいね",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=100;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:35,
+run() {
+const xl = [50,canvas.w-50,Half.x]
+const snap = this.prop.a
+if (pfr % 60=== 0 || pfr === 1) {
+const Target = dtr(random(-45,45))
+for (let i = 0;i<300;i+=30) {
+
+const SpawnX = xl[normal(this.prop.ol,0,3)]+random(0,0)
+const SpawnY = Half.y - 30
+this.prop.ol += 1
+this.prop.a += 6
+wait(() =>{
+arc((ev) => {
+const snapshot = Target
+bullet({
+rd:0.65,
+    x:ev.x,
+y:ev.y,
+speed:0.5,
+type:"simple",
+angle:dtr(ev.deg+snap),
+color:"00E1FF",
+w:16,
+h:16,
+custom:snapshot,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer > 12) this.speed = 1
+if (this.timer === 120) {
+const target = this.custom
+smooth(this,target,60)
+}}}]
+})
+},{count:24,x:SpawnX,y:Half.y - 30,length:15})
+},i/4)}
+}}}
+functions.push(spell54)
+const spell55 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "夜符｢不死蝶乱舞｣",
+dif:"h",
+desc:"",
+hint:"",
+nm:"めちゃくちゃ良くない！？！？？名前の乱舞とは、蝶が群がって動く事という意味もある。夜は単純に虫なので(？)",
+ct:"めちゃくちゃ良くない！？！？名前もスペカもクオリティ高いと思う！！久々の良スペカ🤩気分いい🤩🤩個人的にかなり高得点",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=100;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:35,
+run() {
+if (pfr % 240 === 0 || pfr === 1) {
+const x = Half.x;
+const y = Half.y
+const angle = pfr === 1 ? dtr(90) : random(-180,180)
+bullet({
+rd:0.65,
+    x:x,
+y:y,
+speed:0.5,
+type:"fly",
+angle:angle,
+color:"FF00D7",
+w:48,
+h:48,
+fnlist:[{f:0,fn:function() {
+reverse(this)
+if (this.timer ===1) {
+const a = 0.5 / 60
+for (let i = 0;i<60;i++) wait(()=>{this.speed+=a},i)
+}
+if (this.timer % 60 === 0) {
+    gspiral((ev) =>{
+const c = ["FF0028","FF6A00","FFE900","92FF00","00FF3F","00FFF8","0018FF","7F00FF","F800FF","FF004A"][Math.floor(Math.random()*10)]
+        bullet({
+rd:0.65,
+    x:this.x+random(-5,5),
+y:this.y+random(-5,5),
+speed:1.5,
+type:"fly",
+angle:dtr(ev.deg),
+color:c,
+w:32,
+h:32,
+    })
+},{count:12,turn:6})
+}},loop:true}]
+})
+}
+}}
+functions.push(spell55)
+const spell56 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+name: "幻符｢幻視崩壊｣",
+dif:"h",
+desc:"",
+hint:"",
+nm:"幻視と幻符で被ってるのは反省点。難易度は高いけどある程度法則はあるから耐えれる。",
+ct:"ムズい。結構難易度は高いかな。あとちょっと重くなる場面あるかもw",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:35,
+run() {
+if ((pfr % 30 === 0 || pfr === 1)) {
+if (pfr % 360 === 0) this.prop.bool = !this.prop.bool
+const rx = Half.x;
+const ry = Half.y
+const deg = 90;
+const sp = 7.5
+const sp2 = 45
+const b = this.prop.bool
+VSpawn((ev) => {
+const r = sp
+const n= {x:random(-r,r),y:random(-r,r)}
+const x = ev.x+n.x
+const y = ev.y+n.y
+const rangle = dtr(deg+this.prop.a)
+const angle = ev.rad + Math.PI
+const speed = 1
+function s(a,bo) {
+    const cyc = pfr % 240
+const mp = bo ? 0.25 : -0.25
+if (cyc >180) {
+a.speed = 0;
+const test = a.x + mp
+const newX = test > canvas.w - 1 || test <= 1
+if (!newX) a.x = test 
+a.rd = 0;
+a.color = "FFFFFF";
+} else {
+a.speed = speed  
+a.rd = 0.65;
+a.color = "FF0017";
+}}
+bullet({
+rd:0.65,
+    x:x,
+y:y,
+speed:0.5,
+type:"knife",
+angle:dtr(90),
+color:"FF0017",
+w:16,
+h:16,
+setlist:[{e:speed,f:12}],
+custom:0,
+fnlist:[{f:0,fn:function() {
+if (this.custom > 0){
+const a =reverse(this)
+    if (a) this.custom -= 1
+}
+s(this,b)
+},
+loop:true}]
+})
+bullet({
+rd:0.65,
+    x:x,
+y:y,
+speed:0.5,
+type:"knife",
+angle:-dtr(90),
+color:"FF0017",
+w:16,
+h:16,
+setlist:[{e:speed,f:12}],
+custom:1,
+fnlist:[{f:0,fn:function() {
+if (this.custom > 0){
+const a =reverse(this)
+    if (a) this.custom -= 1
+}
+s(this,!b)
+},
+loop:true}]
+})
+},{x:rx,y:ry, baseDeg : -90, spreadDeg:  sp2+random(-5,5), count : 30, length:0,spacing:10})
+    
+}}}
+functions.push(spell56)

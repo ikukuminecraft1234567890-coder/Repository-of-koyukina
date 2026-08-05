@@ -1,7 +1,14 @@
 const imgList = new Map();
 import { bullets, canvas, ctx, players } from "./sys.js"
-import { cfg } from "./logs/cfg.js"
+import { cfg , superOptimal} from "./logs/cfg.js"
+import {stat} from "./engine.js"
 const asset = "./assets/";
+
+// --- 💡 パレット直塗り画像で該当する色名一覧 ---
+const PALETTE_COLORS = new Set([
+    "crim", "red", "purple", "pink", "cobalt", "blue", "cyan",
+    "aqua", "lime", "green", "olive", "gold", "yellow", "orange", "white"
+]);
 
 // --- 💡 オブジェクトプール用の配列（cfg=true のときのみ実質使用） ---
 export const spaceb = [];
@@ -74,6 +81,22 @@ async function setColor(img, color, glowAmount = 300) {
     return finalCanvas.toDataURL("image/png");
 }
 
+/**
+ * パレット直塗り画像（assets/pallets/${color}${type}.png）を
+ * そのまま Canvas にロードして imgList にキャッシュする
+ */
+function loadPaletteImage(type, color, key) {
+    const palImg = new Image();
+    palImg.src = `${asset}pallets/${color}${type}.png`;
+    palImg.onload = () => {
+        const c = document.createElement("canvas");
+        c.width = palImg.width;
+        c.height = palImg.height;
+        c.getContext("2d").drawImage(palImg, 0, 0);
+        imgList.set(key, c);
+    };
+}
+
 export async function CC(type, colors) {
     let imgType = type;
     if (imgType === "クナイ") imgType = "kunai";
@@ -85,13 +108,28 @@ export async function CC(type, colors) {
     else if (imgType === "米弾") imgType = "diamond";
     else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
     else if (imgType === "laser") imgType = "laser";
+
+    const colorArray = Array.isArray(colors) ? colors : [colors];
+
+    // --- 💡 パレット色のみのリクエストは baseImg のロードすら不要 ---
+    const paletteRequests = colorArray.filter(c => PALETTE_COLORS.has(c));
+    const glowRequests = colorArray.filter(c => !PALETTE_COLORS.has(c));
+
+    paletteRequests.forEach(color => {
+        const key = `${type}-${color}`;
+        if (imgList.has(key)) return;
+        imgList.set(key, "loading");
+        loadPaletteImage(imgType, color, key);
+    });
+
+    if (!glowRequests.length) return;
+
     const baseImg = new Image();
     baseImg.src = asset + imgType + ".png";
 
     await new Promise(resolve => baseImg.onload = resolve);
-    const colorArray = Array.isArray(colors) ? colors : [colors];
 
-    colorArray.forEach(color => {
+    glowRequests.forEach(color => {
         const key = `${type}-${color}`;
         if (imgList.has(key)) return;
 
@@ -117,6 +155,13 @@ function idraw(type, x, y, w, h, angle, color, alpha = 1) {
     if (!cached || cached === "loading") {
         if (!cached) {
             imgList.set(key, "loading");
+
+            // --- 💡 パレット色ならグロー処理をスキップして直接読み込む ---
+            if (PALETTE_COLORS.has(color)) {
+                loadPaletteImage(type, color, key);
+                return;
+            }
+
             const baseImg = new Image();
             baseImg.src = asset + type + ".png";
             baseImg.onload = function() {
@@ -332,6 +377,8 @@ export class Bullet {
 
     update() {
         if (cfg && !this.active) return;
+//superOptimal True
+if (!superOptimal) {
 if (this.type === "pre") this.rd = 0
 this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
         if (this.timer > this.slowF) {
@@ -426,7 +473,106 @@ this.setlist.forEach((e, i) => {
             this.y += Math.sin(this.angle) * this.speed;
         }
         this.timer++;
-    }
+    } 
+//superOptimal = false
+if (superOptimal && stat.pfr % 2 === 0) {
+
+if (this.type === "pre") this.rd = 0
+this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
+        if (this.timer > this.slowF) {
+            if (this.slowEx) this.speed *= this.slowE;
+            else if (this.timer === this.slowF + 1) this.speed *= this.slowE;
+            if (this.timer > this.AcF) this.angle = this.AcA;
+        }
+        if (this.timer > this.fastF) {
+            if (this.fastEx) this.speed *= this.fastE;
+            else if (this.timer === this.fastF + 1) this.speed *= this.fastE;
+        }
+
+    if (this.setlist.length) {let newspeed = this.speed;
+        let speedMultiplier = 1;
+this.setlist.forEach((e, i) => {
+            const isLoop = e.loop ?? false;
+            const type = e.type ?? "set";
+            const isNext = e.next ?? true;
+
+            const next = this.setlist[i + 1];
+            const endFrame = (isNext && next) ? next.f : Infinity;
+
+            const isActive = (isLoop && this.timer >= e.f && this.timer < endFrame) ||
+                             (!isLoop && this.timer === e.f);
+
+            if (isActive) {
+                const val = (typeof e.e === "function") ? e.e.call(this) : e.e;
+                if (type === "x") {
+                    speedMultiplier = val;
+                } else {
+                    newspeed = val;
+                }
+            }
+        });
+
+        this.speed = newspeed * speedMultiplier;
+}
+      if (this.fnlist.length) this.fnlist.forEach((e) => {
+            const isLoop = e.loop ?? false;
+            const isActive = isLoop ? (this.timer >= e.f) : (this.timer === e.f);
+            if (isActive && typeof e.fn === "function") {
+                e.fn.call(this);
+            }
+        });
+
+    if (this.seta.length)this.seta.forEach((e, i) => {
+            const isLoop = e.loop ?? false;
+            const type = e.type ?? "set";
+            const isNext = e.next ?? true;
+
+         const next = this.seta[i + 1];
+            const endFrame = (isNext && next) ? next.f : Infinity;
+
+            const isActive = (isLoop && this.timer >= e.f && this.timer < endFrame) ||
+                             (!isLoop && this.timer === e.f);
+
+            if (isActive) {
+                const val = (typeof e.e === "function") ? e.e.call(this) : e.e;
+                this.angle = val;
+            }
+        });
+
+      if (this.rotate.length){
+          
+      const looplist = []
+        let LastAngle = this.angle
+        this.rotate.forEach((r) => {
+            if (r.loop && r.f <= this.timer && r.lf > this.timer) looplist.push(r)
+        });
+        const tr = this.rotate.find(r => r.f === this.timer);
+        if (tr) looplist.push(tr);
+
+        [...new Set(looplist)].forEach((targetRotate) => {
+            if (targetRotate.a === "target") {
+                LastAngle = pf(this.x, this.y, 0, players[0]);
+            } else if (typeof targetRotate.a === "function") {
+                LastAngle = targetRotate.a.call(this);
+            } else {
+                LastAngle = targetRotate.a;
+            }
+        })
+        this.angle = LastAngle
+}
+        if (this.timer >= this.rotateF) {
+            this.angle += this.rotateE;
+        }
+        const is = this.type === "laser"
+        if (!is) {
+            this.x += (Math.cos(this.angle) * this.speed)*2;
+        }
+        if (!is) {
+            this.y += (Math.sin(this.angle) * this.speed)*2;
+        }
+        this.timer+=2;
+          
+    }}
 
     /**
      * 削除すべきかどうかの「判定のみ」を行う。配列からの実際の除去は呼び出し側(engine.js)が担当する。
@@ -460,28 +606,32 @@ if (this.noAuto) {
 if (this.color === "null") return;
         // 💡 画像描画タイプとパス描画（fill）タイプで処理を分離させてバグを修正
         let isPathBullet = false;
-        if (this.type === "laser") {
-            if (this.timer >= this.speed) {
-                // 💡 本体レーザーを召喚(元の不透明な color をそのまま使用)
-                idraw("laser", this.x, this.y, this.w, this.h, this.angle, this.color, 1);
-            } else {
-                // 💡 予告中：laserwait.png を透明度0→1で徐々にはっきりさせる
-                if (this.waitAlpha === undefined) this.waitAlpha = 0;
-                if (this.waitAlpha < 1) this.waitAlpha += 0.05;
+   if (this.type === "laser") {
+    if (this.timer >= this.speed - 12) {
+        // 💡 本体レーザーを召喚(元の不透明な color をそのまま使用)
+        // 💡 表示開始(speed-12)から12フレームかけて見た目の太さを1→wへ線形補間(当たり判定のwは変えない)
+        const growElapsed = this.timer - (this.speed - 12);
+        const growT = Math.min(Math.max(growElapsed / 12, 0), 1);
+        const drawW = 1 + (this.w - 1) * growT;
+        idraw("laser", this.x, this.y, drawW, this.h, this.angle, this.color, 1);
+    } else {
+        // 💡 予告中：laserwait.png を透明度0→1で徐々にはっきりさせる
+        if (this.waitAlpha === undefined) this.waitAlpha = 0;
+        if (this.waitAlpha < 1) this.waitAlpha += 0.05;
 
-                if (this.colorFactor === undefined) this.colorFactor = 0;
-                if (this.colorFactor < 1) this.colorFactor += 0.05;
+        if (this.colorFactor === undefined) this.colorFactor = 0;
+        if (this.colorFactor < 1) this.colorFactor += 0.05;
 
-                const r = 255 - (255 - 128) * this.colorFactor;
-                const g = 255 - (255 - 128) * this.colorFactor;
-                const b = 255 - (255 - 128) * this.colorFactor;
+        const r = 255 - (255 - 128) * this.colorFactor;
+        const g = 255 - (255 - 128) * this.colorFactor;
+        const b = 255 - (255 - 128) * this.colorFactor;
 
-                const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
+        const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
 
-                idraw("laserwait", this.x, this.y, this.w, this.h, this.angle, waitColor, Math.min(this.waitAlpha, 1));
-            }
-            return;
-        }
+        idraw("laserwait", this.x, this.y, this.w, this.h, this.angle, waitColor, Math.min(this.waitAlpha, 1));
+    }
+    return;
+}
 
         switch (this.type) {
     case "pre": {
@@ -552,6 +702,9 @@ if (this.color === "null") return;
             case "heart":
             case "big2":
             case "pre":
+            case "simple":
+            case "fly":
+            case "small":
                 let imgType = this.type;
                 if (imgType === "クナイ") imgType = "kunai";
                 else if (imgType === "御札") imgType = "amulet";
