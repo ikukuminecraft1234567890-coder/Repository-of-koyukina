@@ -7,7 +7,14 @@ import {
 import { functions } from "./boss.js"
 import { bullet, Bullet } from "./bc.js"
 import { cfg } from "./logs/cfg.js"
-
+let y=0;
+let my=0
+const imgl = {
+img1:new Image(),
+img2:new Image(),
+src1:"",
+src2:""
+}
 export function endless() {
     const check = document.createElement('input');
     check.id = "check";
@@ -73,6 +80,48 @@ export function gameLoop() {
     drawFps(ctx)
     const fn = functions[spelln]
     functions[spelln].run()
+if (fn.img) {
+    const bgPath = "./assets/bg/" + fn.img;
+    const maskPath = fn.mask ? "./assets/bg/" + fn.mask : "./assets/bg/flame.png";
+
+    // パスが変わった時だけ src をセット
+    if (imgl.src1 !== bgPath) {
+        imgl.src1 = bgPath;
+        imgl.img1.src = bgPath;
+    }
+    if (imgl.src2 !== maskPath) {
+        imgl.src2 = maskPath;
+        imgl.img2.src = maskPath;
+    }
+
+    const speed = fn.imgSpeed ?? 3;
+    y += speed;
+    if (y >= canvas.h) y = 0;
+
+    ctx.clearRect(0, 0, canvas.w, canvas.h);
+
+    // 背景を流す
+    if (imgl.img1.complete && imgl.img1.naturalWidth > 0) {
+        ctx.globalAlpha = fn.imgAlpha ?? 0.25;
+        ctx.drawImage(imgl.img1, 0, y, canvas.w, canvas.h);
+        ctx.drawImage(imgl.img1, 0, y - canvas.h, canvas.w, canvas.h);
+    }
+
+    // マスクも同じように流す（速度・向きを変えたい場合は別途 my を用意）
+const mys = fn.maskSpeed ?? 0
+my += mys
+    if (imgl.img2.complete && imgl.img2.naturalWidth > 0) {
+        ctx.globalAlpha = fn.maskAlpha ?? 0.5;
+        ctx.drawImage(imgl.img2, 0, my, canvas.w, canvas.h);
+        ctx.drawImage(imgl.img2, 0, my - canvas.h, canvas.w, canvas.h);
+    }
+
+    ctx.globalAlpha = 1.0;
+
+    // 全体を暗くするオーバーレイ
+    ctx.fillStyle = 'rgba(10, 10, 20, 0.7)';
+    ctx.fillRect(0, 0, canvas.w, canvas.h);
+}
     const timeLeft = fs(stat.pfr) >= fn.time ? 0 : fn.time - fs(stat.pfr);
     ctx.fillStyle = timeLeft <= 3 ? "red" : "white";   // 3秒以下で赤文字にする
 

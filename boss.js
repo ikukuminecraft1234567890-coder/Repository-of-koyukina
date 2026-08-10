@@ -3742,3 +3742,263 @@ loop:true}]
     
 }}}
 functions.push(spell56)
+const spell57 = {
+name: "混符｢弾幕祭り・懐｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"どことなく懐かしさを覚える色合いでしょう？シンプルながら難しい弾幕です。名前もどことなく懐かしい感じのシンプルさに。ノスタルジックな弾幕なんて作れたんだね。",
+nm:"なぜ懐かしいかと言うと、黒背景+強めの色は昔の機械などのuiに使われていたからかな？我ながらすごく懐かしい弾幕になったと思う。",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:23,
+run() {
+if ((pfr % 6 === 0 || pfr === 1)) {
+const colors = [
+  "crim",
+  "pink",
+  "cobalt",
+  "green",
+  "gold",
+  "white"
+];
+
+if (this.prop.a > 60)this.prop.bool = false;
+if (this.prop.a <= -60)this.prop.bool = true;
+const a = this.prop.bool ?  5 : -5
+this.prop.a += a
+if (pfr % 360 === 0) this.prop.bool = !this.prop.bool
+const rx = Half.x;
+const ry = Half.y
+const deg = 90;
+const cy = (Half.y - 30) + random(-30,30)
+const cx = random(30,canvas.w-30)
+const count = 18 + random(-25,18)
+const speed = 3.5+random(-2,0.5)
+const color = colors[Math.floor(Math.random()*colors.length)]
+circle((ev) => {
+bullet({
+rd:0.65,
+    x:cx,
+y:cy,
+speed:0.5,
+type:"big",
+angle:dtr(ev.deg),
+color:color,
+w:16,
+h:16,
+setlist:[{e:speed,f:30}],
+custom:0,
+})
+
+},{count:count})
+    
+}}}
+functions.push(spell57)
+const spell58 = {
+name: "落符｢大剣落としの大渦｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"割かしムズい。大剣の動きに結構力入れた。あと最初渦の停止の仕組み雑に作りすぎてばかおもくなったのでしっかりかるくした。計算数は減らすのが大事w",
+nm:"謎に弾を消さないようにしたので時間発狂でもある。nmはかなりムズいかと😅",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:23,
+run() {
+if ((pfr % 6 === 0 || pfr === 1)) {
+const colors = [
+  "crim",
+  "pink",
+  "cobalt",
+  "green",
+  "gold",
+  "white"
+];
+if (pfr % 300 === 0 || pfr === 60) {
+const x = random(32,canvas.w-32);
+const y = 125;
+bullet({
+x:x,
+y:y,
+angle:pf(x,y),
+    type:"kunai2",
+color:"white",
+w:128,
+h:128,
+speed:1.5,
+custom:false,
+fnlist:[{
+f:0,
+fn:function() {
+const k = keep(this,50)
+console.log(k)
+if (k) {
+this.speed = 0;
+this.custom = true
+return;
+}
+if (!this.custom) this.speed = (this.timer * 0.08)
+},loop:true
+}],
+})
+}
+if (this.prop.a > 60)this.prop.bool = false;
+if (this.prop.a <= -60)this.prop.bool = true;
+const a = 36
+this.prop.a += a
+if (pfr % 360 === 0) this.prop.bool = !this.prop.bool
+const rx = Half.x;
+const ry = Half.y
+const deg = 90;
+const cy = (Half.y - 30)
+const cx = Half.x
+const size = 16;
+const c = this.prop.a
+const gt = 0.00166
+circle((ev) => {
+const d = Math.floor(random(60,300))
+bullet({
+rd:0.65,
+    x:cx,
+y:cy,
+speed:1.5,
+type:"big",
+angle:dtr(ev.deg+c),
+color:"kunai2",
+w:size,
+h:size,
+fnlist:[{f:d,fn:function() {
+console.log(this.custom)
+this.speed=0
+}}],
+})
+
+},{count:9})
+    
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell58)
+const spell59 = {
+name: "赤符｢人口月面クレーター｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"名前はよく分からないな？とりあえず難易度は高いと思う。自機狙いの挙動が制作時間の6割くらい握ってる気がする。",
+nm:"よく分からない弾幕だけど割と気に入ってる。ムズい",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:23,
+run() {
+if ((pfr % 6 === 0 || pfr === 1)) {
+const cy = (Half.y - 30)
+const cx = Half.x
+if (pfr % 30 === 0) {
+    bullet({
+rd:0.65,
+    x:cx,
+y:cy,
+speed:0.5,
+type:"simple",
+angle:pf(cx,cy),
+color:"FFF700",
+w:32,
+h:32,
+fnlist:[{f:0,fn:function() {
+if (this.timer < 30) this.speed += (2/30)
+if (this.timer > 100) this.speed -= (4/40)
+if (this.timer > 200) this.deleteFrame=0
+},loop:true}],
+})
+}
+const colors = [
+  "crim",
+  "pink",
+  "cobalt",
+  "green",
+  "gold",
+  "white"
+]
+if (this.prop.a > 60)this.prop.bool = false;
+if (this.prop.a <= -60)this.prop.bool = true;
+const o = 25.71
+const a =o
+this.prop.a += a
+if (pfr % 360 === 0) this.prop.bool = !this.prop.bool
+const rx = Half.x;
+const ry = Half.y
+const deg = 90;
+const size = 24;
+const c = normal(this.prop.a,-180,180)
+const gt = 0.00166
+circle((ev) => {
+const d = Math.floor(random(60,300))
+bullet({
+rd:0.65,
+    x:cx,
+y:cy,
+speed:0.5,
+type:"kunai2",
+angle:dtr(ev.deg+(c)),
+color:"red",
+w:size,
+h:size,
+setlist:[{f:12,e:1.5}]
+})
+
+},{count:18})
+    
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell59)

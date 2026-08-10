@@ -337,14 +337,14 @@ export function gspiral(fn, { count = 60, a = 4, stepDeg = 15, startDeg = 0, tur
     }
 }
 
-export function keep(b) {
+export function keep(b,m=25) {
     const Width = canvas.w
     const Height = canvas.h
     const margin = (b.w || 0) / 2
-    const minX = margin - 25
-    const maxX = Width - margin + 25
-    const minY = margin - 25
-    const maxY = Height - margin + 25
+    const minX = margin - m
+    const maxX = Width - margin + m
+    const minY = margin - m
+    const maxY = Height - margin + m
 
     let clamped = false
 
