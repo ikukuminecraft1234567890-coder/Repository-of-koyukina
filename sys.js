@@ -5,7 +5,7 @@ let fx = 0
 let fy = 0
 const MX = 384
 const MY = 448
-
+const pools = 4500
 // グローバル変数を最上部で明示的に定義
 window.keyboardState = window.keyboardState || {};
 window.Allkeys = window.Allkeys || {};
@@ -53,10 +53,12 @@ let lastTouchY = 0
 import { functions } from "./boss.js"
 import { nsnew, rpfr, setent } from "./engine.js"
 
-export function start(index, bool) {
+export function start(index, bool,max,nowz) {
     players.forEach(e => e.remove());
+rpfr()
     entitys.length = 0;
     bullets.length = 0;
+if (globalThis._waitTasks) globalThis._waitTasks.clear(); 
     spelln = index;
     nsnew(index);
     const fn = functions[index];
@@ -125,7 +127,7 @@ export function start(index, bool) {
 function inits() {
     // 💡 cfg=true のときだけオブジェクトプールをプリアロケートする
     if (cfg) {
-        initPool(5000);
+        initPool(pools);
     }
 
     canvas.addEventListener("touchmove", (e) => {

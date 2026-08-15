@@ -15,13 +15,6 @@ img2:new Image(),
 src1:"",
 src2:""
 }
-export function endless() {
-    const check = document.createElement('input');
-    check.id = "check";
-    check.type = "checkbox";
-    check.textContent = "エンドレスモード";
-    document.body.append(check)
-}
 const ondebug = false; // aa
 let lastTime = performance.now();
 let fps = 0;
@@ -32,7 +25,13 @@ export const stat = {
     pfr: 0,
     entity: null,
     nowspell: Infinity,
-    gameId: null
+    gameId: null,
+    isChallenge:false,
+    nowzanki:0,
+    numbers:[],
+    nownumber:0,
+    maxz:0,
+    ctxt:"",
 }
 const rb = document.createElement('button');
 rb.id = "btn";
@@ -43,9 +42,31 @@ const cb = document.createElement('button');
 cb.id = "btn";
 cb.type = "button";
 cb.textContent = "戻る";
-
+const nb = document.createElement('button');
+nb.id = "btn";
+nb.type = "button";
+nb.textContent = "次へ行く";
 function cbpush() { location.reload(); }
+function nbpush() {
+clearAllUI()
+stat.nownumber = stat.nownumber+1
+if (stat.nownumber === stat.numbers.length) {
+const m = stat.maxz - stat.nowzanki
+     const txt = document.createElement("div");
+txt.textContent = " チャレンジクリアおめでとうございます！合計ミス数は、"+m+"です！クリアテキスト:"+stat.ctxt
+       document.body.append(txt,cb)
+        cb.addEventListener("click", cbpush);
+} else {
+const m = stat.maxz - stat.nowzanki
 
+     const txt = document.createElement("div");
+txt.textContent = " 現在の合計ミス数は、"+m+"です！"
+       document.body.appendChild(txt)
+const nn = stat.numbers[stat.nownumber] - 1
+clearAllUI()
+start(nn)
+}
+}
 function rbpush() {
     cancelAnimationFrame(stat.gameId);
     // 💡 ボタンが押された「今」、画面にあるキャンバスをピンポイントで取得する
@@ -77,7 +98,6 @@ export function gameLoop() {
 
     stat.pfr += 1
     ctx.clearRect(0, 0, canvas.w, canvas.h);
-    drawFps(ctx)
     const fn = functions[spelln]
     functions[spelln].run()
 if (fn.img) {
@@ -144,17 +164,23 @@ my += mys
 
 
 
-    if (fn.time === fs(stat.pfr) && players[0].zanki > 0 && !check.checked) {
+    if (fn.time === fs(stat.pfr) && players[0].zanki > 0) {
+clearAllUI()
         const miss = players[0].zanki
+stat.nowzanki = miss
+const m = stat.maxz - stat.nowzanki
+     const ntxt = document.createElement("div");
+ntxt.textContent = " 現在の合計ミス数は、"+m+"です！"
+    if (stat.isChallenge) document.body.appendChild(ntxt)
         cancelAnimationFrame(stat.gameId);
         const txt = document.createElement("div");
         const cv = document.getElementById("gameCanvas")
         const missAmount = players[0].maxzanki - miss
-        let text = `おめでとうございます！！\nミス数:${players[0].maxzanki - miss}\n\n\nクリア説明文:${fn.ct}`
+        let text = `クリアおめでとうございます！！\nミス数:${players[0].maxzanki - miss}\n\n\nクリア説明文:${fn.ct}`
         if (missAmount === 0) {
             text = `ノーミスクリアおめでとうございます！ノーミスクリア説明文:${fn.nm}`
         }
-        cv.remove()
+
         txt.textContent = text
         const allData = JSON.parse(localStorage.getItem("sd")) || {};
         console.log("ミス数", missAmount)
@@ -174,20 +200,25 @@ my += mys
         localStorage.setItem("sd", JSON.stringify(allData));
 
         cancelAnimationFrame(stat.gameId);
+if (!stat.isChallenge) {
         document.body.append(cb, rb)
         cb.addEventListener("click", cbpush);
         rb.addEventListener("click", rbpush);
         document.body.append(txt, cb, rb)
+} else {
+        document.body.appendChild(nb)
+        nb.addEventListener("click", nbpush)
+}
         return;
     }
 
     players.forEach((p) => {
-        if (p.death && !check.checked) {
-
+        if (p.death) {
             cancelAnimationFrame(stat.gameId);
             cb.addEventListener("click", cbpush);
             rb.addEventListener("click", rbpush);
-            document.body.append(cb, rb)
+        if (stat.isChallenge) document.body.appendChild(cb)
+        if (!stat.isChallenge) document.body.append(cb, rb)
             return;
         }
         p.update();
@@ -214,6 +245,7 @@ my += mys
     ];
 
     // 💡 cfg で弾の更新・削除方式を切り替える
+if (stat.pfr % 60 === 0) console.log(bullets.length)
     if (cfg) {
         // --- オブジェクトプール方式 ---
         // active な弾のみ更新・描画。削除対象なら releaseToPool() で明示的に swap-pop → spaceb へ返却。
@@ -260,6 +292,7 @@ my += mys
             }
         }
     }
+    drawFps(ctx)
     stat.gameId = requestAnimationFrame(gameLoop)
 }
 
@@ -328,4 +361,50 @@ export function drawFps(ctx) {
     ctx.font = "16px monospace";
     ctx.fillText(`FPS: ${fps} (${Math.round(1000 / fps)}ms)`, 10, 40);
     ctx.restore();
+}
+
+export function cf() {
+clearMainUI()
+    const dat = {
+        zan:5,
+number:[30,3,2],
+ctxt:"あ"
+    }
+stat.nowzanki = dat.zan;
+stat.maxz = dat.zan;
+stat.numbers = dat.number;
+const n = (dat.number[0] -1)
+console.log(n)
+stat.ctxt = dat.ctxt
+stat.isChallenge = true;
+start(n)
+}
+// 💡セレクタベースでメインUI（index.html由来の要素）を一括削除する関数
+export function clearMainUI() {
+    const selectors = [
+        "#mainUiWrap",
+        "#div",
+        "#btn",          // 「遊ぶ」ボタン（同idの rb/cb/nb も一緒に消える点に注意）
+        "#id",           // sp（スペル詳細プレビュー）
+        "#topImages",
+        "#spellListOverlay",
+        "#latestBtn",
+        "#randomBtn",
+        "#customBtn",
+    ];
+
+    selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => el.remove());
+    });
+}
+// 💡idやセレクタを一切無視して、body直下の要素を問答無用で全部消す
+export function clearAllUI() {
+    document.body.innerHTML = "";
+}
+
+// 💡上とほぼ同じだが、ゲーム用canvasだけは巻き込まないようにしたい場合用
+export function clearAllUIExceptCanvas() {
+    Array.from(document.body.children).forEach(el => {
+        if (el.id !== "gameCanvas") el.remove();
+    });
 }

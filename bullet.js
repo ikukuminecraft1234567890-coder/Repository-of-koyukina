@@ -77,10 +77,10 @@ const my = 448 * 2
  * // 使い方
  * gameInit(0.5, "ボス", [ {type: "gummy", colors: this.list} ]);
  */
-export function gi(playerSize = 1, bulletTypes = [], it = 120, zanki) {
+export function gi(playerSize = 1, bulletTypes = [], it = 120, zankia) {
     // 1. フレームカウンタのリセット
     pfr = 0;
-
+const zanki = stat.isChallenge ? stat.nowzanki : zankia
     // 2. プレイヤーの生成（位置やサイズ、色などは固定、判定サイズだけ可変）
     // ※内部で globalThis に自動登録されるか、players配列にプッシュされる想定
     const playerObj = new Player(canvas.w / 2, canvas.h - 50, 15, "magenta", playerSize, it, zanki);
@@ -598,6 +598,113 @@ export function VSpawn(fn, { x = 0, y = 0, baseDeg = 90, spreadDeg = 30, count =
             rl.push(ev);
             fn(ev);
         }
+    }
+
+    return rl;
+}
+/**
+ * Way弾（扇状に広がる弾幕）を生成し、コールバックを実行する
+ * angleを中心として、countの数だけ扇状に等間隔（またはisEx時は不等間隔）に弾を配置する。
+ *
+ * @param {Function} fn - 各弾で呼ばれるコールバック。引数は配置情報オブジェクト(ev)
+ * @param {Object} opts
+ * @param {number} [opts.count=1] - Way数（弾の本数）
+ * @param {number} [opts.x=0] - 発生源のX座標
+ * @param {number} [opts.y=0] - 発生源のY座標
+ * @param {number} [opts.length=0] - 発生源からのオフセット距離
+ * @param {boolean} [opts.isEx=false] - trueの場合、way間の角度stepをi（何way目か）に応じて倍化し、中心から離れるほど広がりが加速する不等間隔配置にする
+ * @param {string|false} [opts.oneside=false] - "left" または "right" を指定すると、中心角度から見てその片側のwayのみ生成する。falseなら両側
+ * @param {number} [opts.angle=0] - 扇の中心となる基準角度（度）
+ * @param {number} [opts.spreadDeg=90] - 扇の開き角度（度）。中心角度から左右にこの範囲でway弾が広がる
+ * @param {number} [opts.lock=null] - 指定すると、他の角度計算を一切行わずこの角度（度）に全弾を固定する
+ * @param {*} [opts.custom=null] - コールバックに渡す任意データ
+ * @returns {Array} rl - 生成された配置情報の配列
+ * @example
+ * Way(ev => {
+ *   bullet(ev.x, ev.y, ev.rad, 3, "cyan", "normal");
+ * }, { count: 7, x: entity.x, y: entity.y, angle: 90, spreadDeg: 60, length: 20 });
+ *
+ * @example
+ * // lock指定：全弾が90度固定（扇状にならず一点集中）
+ * Way(ev => bullet(ev.x, ev.y, ev.rad, 3, "red", "normal"),
+ *   { count: 5, x: entity.x, y: entity.y, lock: 90 });
+ *
+ * @example
+ * // oneside指定：中心から右半分のwayのみ生成
+ * Way(ev => bullet(ev.x, ev.y, ev.rad, 3, "lime", "normal"),
+ *   { count: 5, angle: 90, spreadDeg: 60, oneside: "right" });
+ */
+export function way(fn, {
+    count = 1,
+    x = 0,
+    y = 0,
+    length = 0,
+    isEx = false,
+    oneside = false,
+    angle = 0,
+    spreadDeg = 90,
+    lock = null,
+    rad = true,
+    custom = null
+} = {}, rl = []) {
+    // radがtrueなら、angleとlockをラジアン→度数に変換して以降は度数で統一して扱う
+    const angleDeg = rad ? angle * 180 / Math.PI : angle;
+    const lockDeg = (lock !== null && rad) ? lock * 180 / Math.PI : lock;
+
+    for (let i = 0; i < count; i++) {
+        let deg;
+
+        if (lockDeg !== null) {
+            // lock指定時：他の角度計算を一切適用せず固定角度のみ使用
+            deg = normal(lockDeg, -180, 180);
+        } else {
+            // t: 0〜1 の正規化位置（countが1なら中央扱い）
+            let localT = count > 1 ? i / (count - 1) : 0.5;
+
+            if (oneside === "left") {
+                // 中心〜左端のみを 0〜1 に再マッピング
+                localT = count > 1 ? (i / (count - 1)) * 0.5 : 0;
+            } else if (oneside === "right") {
+                // 中心〜右端のみを 0〜1 に再マッピング
+                localT = count > 1 ? 0.5 + (i / (count - 1)) * 0.5 : 1;
+            }
+
+            let offsetT = localT - 0.5; // -0.5（左端）〜 0（中心）〜 +0.5（右端）
+
+            if (isEx) {
+                // way間のstep自体をiに応じて倍化 → 不等間隔（中心から離れるほど広がりが加速）
+                const sign = offsetT < 0 ? -1 : 1;
+                const progress = i / Math.max(1, count - 1); // 0〜1
+                const exFactor = Math.pow(Math.abs(offsetT) * 2, 1 + progress);
+                offsetT = sign * exFactor * 0.5;
+            }
+
+            deg = normal(angleDeg + offsetT * spreadDeg, -180, 180);
+        }
+
+        const radVal = dtr(deg);
+
+        const ev = {
+            i,
+            count,
+            angle: angleDeg,
+            deg,
+            rad: radVal,
+            spreadDeg,
+            isEx,
+            oneside,
+            lock: lockDeg,
+            length,
+            x: x + Math.cos(radVal) * length,
+            y: y + Math.sin(radVal) * length,
+            dx: Math.cos(radVal) * length,
+            dy: Math.sin(radVal) * length,
+            custom,
+            rl
+        };
+
+        rl.push(ev);
+        fn(ev);
     }
 
     return rl;

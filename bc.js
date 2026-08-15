@@ -188,6 +188,45 @@ function idraw(type, x, y, w, h, angle, color, alpha = 1) {
     ctx.drawImage(cached, -w / 2, -h / 2, w, h);
     ctx.restore();
 }
+// idraw を2つに分離: キャッシュ解決用と描画用
+function resolveImg(type, color) {
+    const key = `${type}-${color}`;
+    let cached = imgList.get(key);
+
+    if (!cached) {
+        imgList.set(key, "loading");
+        if (PALETTE_COLORS.has(color)) {
+            loadPaletteImage(type, color, key);
+        } else {
+            const baseImg = new Image();
+            baseImg.src = asset + type + ".png";
+            baseImg.onload = function() {
+                setColor(baseImg, color).then(dataUrl => {
+                    const coloredImg = new Image();
+                    coloredImg.src = dataUrl;
+                    coloredImg.onload = function() {
+                        const resCanvas = document.createElement("canvas");
+                        resCanvas.width = baseImg.width;
+                        resCanvas.height = baseImg.height;
+                        resCanvas.getContext("2d").drawImage(coloredImg, 0, 0);
+                        imgList.set(key, resCanvas);
+                    };
+                });
+            };
+        }
+    }
+    return key; // "loading" でも key だけ返し、後で再解決できるようにする
+}
+
+// 描画専用：既にキャッシュ済みの canvas を直接受け取る
+function drawCached(cachedCanvas, x, y, w, h, angle, alpha = 1) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.drawImage(cachedCanvas, -w / 2, -h / 2, w, h);
+    ctx.restore();
+}
 
 /**
  * プール初期化（cfg=true のときだけ呼ぶ。5000個プリアロケート）
@@ -218,7 +257,7 @@ export function bullet({
     rotate = [], slowF = 0, slowE = 1, fastF = Infinity, fastE = 1,
     highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
     setlist = [], fnlist = [], push = true, custom = [], seta = [],
-    active = true, rd = 1,noAuto=false
+    active = true, rd = 1,noAuto=false,size=undefined,
 } = {}) {
     if (cfg) {
         // --- オブジェクトプール方式 ---
@@ -232,7 +271,7 @@ a.setter({
     x, y, angle, speed, color, w, h, type, deleteFrame,
     rotateE, rotateF, rotate, slowF, slowE, fastF, fastE,
     highEx, slowEx, AcF, AcA, setlist, fnlist, custom, seta,
-    active: true, noAuto, rd   // ← rd を追加
+    active: true, noAuto, rd,size   // ← rd を追加
 });
         a.active = true;
         a.i = bullets.length;
@@ -244,7 +283,7 @@ a.setter({
             x, y, angle, speed, color, w, h, type, deleteFrame,
             rotateE, rotateF, rotate, slowF, slowE, fastF, fastE,
             highEx, slowEx, AcF, AcA, setlist, fnlist, push, custom, seta,
-            rd,noAuto
+            rd,noAuto,size
         });
     }
 }
@@ -260,23 +299,23 @@ export class Bullet {
         slowF = 0, slowE = 1,
         fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
         setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1,
-        active = cfg ? false : true,noAuto=false
+        active = cfg ? false : true,noAuto=false,size=undefined
     }) {
         this.custom = custom;
         this.x = x;
         this.y = y;
         this.angle = angle;
         this.speed = speed;
-        this.w = w;
-        this.h = type !== "laser" ? h : 999;
+        this.w = size ? size : w;
+        this.h = type !== "laser" ? size ? size : h : 999;
         this.radius = rd <= 0 ? 0 : (w * rd) / 2;
         this.rd = rd
         this.color = color;
         this.type = type;
         this.timer = 0;
         this.deleteFrame = deleteFrame;
-        this.setlist = setlist;
-        this.fnlist = fnlist;
+       // this.setlist = setlist;
+       // this.fnlist = fnlist;
         this.rotateE = rotateE;
         this.rotateF = rotateF;
         this.rotate = rotate;
@@ -310,11 +349,14 @@ export class Bullet {
         this.color = "FFFFFF";
         this.type = "nomal";
         this.h = this.type !== "laser" ? 0 : 999;
+        this.size = null
         this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2;
         this.timer = 0;
         this.deleteFrame = Infinity;
-        this.setlist = [];
-        this.fnlist = [];
+        //this.setlist = [];
+        //this.fnlist = [];
+this.map?.clear()
+this.smap?.clear()
         this.rotateE = 0;
         this.rotateF = Infinity;
         this.rotate = [];
@@ -329,6 +371,7 @@ export class Bullet {
         this.AcA = 0;
         this.seta = []
         this.active = false
+    this.cachedImg = null;   
     }
 
     /**
@@ -343,23 +386,23 @@ export class Bullet {
         rotate = [],
         slowF = 0, slowE = 1,
         fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
-        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1, active = false,noAuto=false
+        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1, active = false,noAuto=false,size=undefined
     }) {
         this.custom = custom;
         this.x = x;
         this.y = y;
         this.angle = angle;
         this.speed = speed;
-        this.w = w;
-        this.h = type !== "laser" ? h : 999;
+        this.w = size ? size : w;
+        this.h = type !== "laser" ? size ? size : h : 999;
         this.radius = rd <= 0 ? 0 : (w * rd) / 2;
         this.rd = rd
         this.color = color;
         this.type = type;
         this.timer = 0;
         this.deleteFrame = deleteFrame;
-        this.setlist = setlist;
-        this.fnlist = fnlist;
+       // this.setlist = setlist;
+       // this.fnlist = fnlist;
         this.rotateE = rotateE;
         this.rotateF = rotateF;
         this.rotate = rotate;
@@ -373,8 +416,43 @@ export class Bullet {
         this.AcF = AcF;
         this.AcA = AcA;
         this.seta = seta
+this.imgKey = `${type}-${color}`;
+    resolveImg(type, color); // ロード開始 or 既存キャッシュ確認（発火だけ）
+    this.cachedImg = null;   
+    if (fnlist) {
+
+    if (!this.map) {
+        this.map = new Map();
+    } else {
+        this.map.clear();
     }
 
+    for (let i = 0; i < fnlist.length; i++) {
+        const e = fnlist[i];
+ const f = e.f | 0
+this.map.set(f,{f:f,l:e.loop,fn:e.fn})
+}}
+    if (setlist) {
+
+    if (!this.smap) {
+        this.smap = new Map();
+    } else {
+        this.smap.clear();
+    }
+for (let i = 0; i < setlist.length; i++) {
+    const e = setlist[i];
+    const f = e.f | 0;
+    this.smap.set(f, { f: f, l: e.loop, e: e.e });
+}
+        
+    }
+}
+scolor(c) {
+this.color = c
+    this.imgKey = `${this.type}-${c}`;
+    resolveImg(this.type, c); // ロード開始 or 既存キャッシュ確認（発火だけ）
+    this.cachedImg = null;   
+}
     update() {
         if (cfg && !this.active) return;
 //superOptimal True
@@ -391,49 +469,42 @@ this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
             else if (this.timer === this.fastF + 1) this.speed *= this.fastE;
         }
 
-    if (this.setlist.length) {let newspeed = this.speed;
-        let speedMultiplier = 1;
-this.setlist.forEach((e, i) => {
-            const isLoop = e.loop ?? false;
-            const type = e.type ?? "set";
-            const isNext = e.next ?? true;
+const func = this.map.get(this.timer);
 
-            const next = this.setlist[i + 1];
-            const endFrame = (isNext && next) ? next.f : Infinity;
-
-            const isActive = (isLoop && this.timer >= e.f && this.timer < endFrame) ||
-                             (!isLoop && this.timer === e.f);
-
-            if (isActive) {
-                const val = (typeof e.e === "function") ? e.e.call(this) : e.e;
-                if (type === "x") {
-                    speedMultiplier = val;
-                } else {
-                    newspeed = val;
-                }
-            }
-        });
-
-        this.speed = newspeed * speedMultiplier;
+// 新しくループ処理が来たら保持する
+if (func && func.l) {
+    this.activeLoop = func; 
 }
-      if (this.fnlist.length) this.fnlist.forEach((e) => {
-            const isLoop = e.loop ?? false;
-            const isActive = isLoop ? (this.timer >= e.f) : (this.timer === e.f);
-            if (isActive && typeof e.fn === "function") {
-                e.fn.call(this);
-            }
-        });
 
+// 単発イベントがあれば実行
+if (func && !func.l) {
+    func.fn.call(this);
+}
+
+// 登録済みのループ処理があれば毎フレーム実行
+if (this.activeLoop && this.timer >= this.activeLoop.f) {
+    this.activeLoop.fn.call(this);
+}
+const sfunc = this.smap.get(this.timer);
+
+if (sfunc && !sfunc.l) {
+    const val = (typeof sfunc.e === "function") ? sfunc.e.call(this) : sfunc.e;
+    this.speed = val; // もしくは元のsetlist仕様に合わせて speed/x倍率など
+}
+if (this.sactiveLoop && this.timer >= this.sactiveLoop.f) {
+    const val = (typeof this.sactiveLoop.e === "function") ? this.sactiveLoop.e.call(this) : this.sactiveLoop.e;
+    this.speed = val;
+}
     if (this.seta.length)this.seta.forEach((e, i) => {
             const isLoop = e.loop ?? false;
             const type = e.type ?? "set";
             const isNext = e.next ?? true;
 
          const next = this.seta[i + 1];
-            const endFrame = (isNext && next) ? next.f : Infinity;
+            const endFrame = (isNext && next) ? Math.floor(next.f) : Infinity;
 
-            const isActive = (isLoop && this.timer >= e.f && this.timer < endFrame) ||
-                             (!isLoop && this.timer === e.f);
+            const isActive = (isLoop && this.timer >= Math.floor(e.f) && this.timer < endFrame) ||
+                             (!isLoop && this.timer === Math.floor(e.f));
 
             if (isActive) {
                 const val = (typeof e.e === "function") ? e.e.call(this) : e.e;
@@ -451,7 +522,7 @@ this.setlist.forEach((e, i) => {
         const tr = this.rotate.find(r => r.f === this.timer);
         if (tr) looplist.push(tr);
 
-        [...new Set(looplist)].forEach((targetRotate) => {
+        looplist.forEach((targetRotate) => {
             if (targetRotate.a === "target") {
                 LastAngle = pf(this.x, this.y, 0, players[0]);
             } else if (typeof targetRotate.a === "function") {
@@ -476,7 +547,6 @@ this.setlist.forEach((e, i) => {
     } 
 //superOptimal = false
 if (superOptimal && stat.pfr % 2 === 0) {
-
 if (this.type === "pre") this.rd = 0
 this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
         if (this.timer > this.slowF) {
@@ -549,7 +619,7 @@ this.setlist.forEach((e, i) => {
         const tr = this.rotate.find(r => r.f === this.timer);
         if (tr) looplist.push(tr);
 
-        [...new Set(looplist)].forEach((targetRotate) => {
+        looplist.forEach((targetRotate) => {
             if (targetRotate.a === "target") {
                 LastAngle = pf(this.x, this.y, 0, players[0]);
             } else if (typeof targetRotate.a === "function") {
@@ -600,151 +670,146 @@ if (this.noAuto) {
         spaceb.push(this);
     }
 
-    draw(ctx, debug = false) {
-        if (cfg && !this.active) return;
-        ctx.fillStyle = this.color;
-if (this.color === "null") return;
-        // 💡 画像描画タイプとパス描画（fill）タイプで処理を分離させてバグを修正
-        let isPathBullet = false;
-   if (this.type === "laser") {
-    if (this.timer >= this.speed - 12) {
-        // 💡 本体レーザーを召喚(元の不透明な color をそのまま使用)
-        // 💡 表示開始(speed-12)から12フレームかけて見た目の太さを1→wへ線形補間(当たり判定のwは変えない)
-        const growElapsed = this.timer - (this.speed - 12);
-        const growT = Math.min(Math.max(growElapsed / 12, 0), 1);
-        const drawW = 1 + (this.w - 1) * growT;
-        idraw("laser", this.x, this.y, drawW, this.h, this.angle, this.color, 1);
-    } else {
-        // 💡 予告中：laserwait.png を透明度0→1で徐々にはっきりさせる
-        if (this.waitAlpha === undefined) this.waitAlpha = 0;
-        if (this.waitAlpha < 1) this.waitAlpha += 0.05;
+// draw() 内、画像描画タイプの分岐を書き換え
+draw(ctx, debug = false) {
+    if (cfg && !this.active) return;
+    ctx.fillStyle = this.color;
+    if (this.color === "null") return;
 
-        if (this.colorFactor === undefined) this.colorFactor = 0;
-        if (this.colorFactor < 1) this.colorFactor += 0.05;
+    let isPathBullet = false;
 
-        const r = 255 - (255 - 128) * this.colorFactor;
-        const g = 255 - (255 - 128) * this.colorFactor;
-        const b = 255 - (255 - 128) * this.colorFactor;
+    if (this.type === "laser") {
+        if (this.timer >= this.speed - 12) {
+            const growElapsed = this.timer - (this.speed - 12);
+            const growT = Math.min(Math.max(growElapsed / 12, 0), 1);
+            const drawW = 1 + (this.w - 1) * growT;
+            idraw("laser", this.x, this.y, drawW, this.h, this.angle, this.color, 1);
+        } else {
+            if (this.waitAlpha === undefined) this.waitAlpha = 0;
+            if (this.waitAlpha < 1) this.waitAlpha += 0.05;
 
-        const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
+            if (this.colorFactor === undefined) this.colorFactor = 0;
+            if (this.colorFactor < 1) this.colorFactor += 0.05;
 
-        idraw("laserwait", this.x, this.y, this.w, this.h, this.angle, waitColor, Math.min(this.waitAlpha, 1));
+            const r = 255 - (255 - 128) * this.colorFactor;
+            const g = 255 - (255 - 128) * this.colorFactor;
+            const b = 255 - (255 - 128) * this.colorFactor;
+
+            const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
+
+            idraw("laserwait", this.x, this.y, this.w, this.h, this.angle, waitColor, Math.min(this.waitAlpha, 1));
+        }
+        return;
     }
-    return;
-}
 
-        switch (this.type) {
-    case "pre": {
-        // --- ✨ キラーン演出：明滅 + 拡縮しながら表示 ---
-        const t = this.timer;
-        const period = 30;                       // 明滅の周期(フレーム数)
-        const phase = (t % period) / period;      // 0 → 1
+    switch (this.type) {
+        case "pre": {
+            const t = this.timer;
+            const period = 30;
+            const phase = (t % period) / period;
+            const pulse = Math.sin(phase * Math.PI);
 
-        // sin波でパルス(0→1→0)を作る。Math.PIで半周期なので0-1-0の山になる
-        const pulse = Math.sin(phase * Math.PI);
+            const alpha = 0.4 + pulse * 0.6;
+            const scale = 0.85 + pulse * 0.3;
 
-        const alpha = 0.4 + pulse * 0.6;           // 0.4〜1.0で明滅
-        const scale = 0.85 + pulse * 0.3;          // 0.85〜1.15で拡縮
+            idraw(
+                "pre",
+                this.x, this.y,
+                this.w * scale, this.h * scale,
+                this.angle, this.color,
+                alpha
+            );
 
-        idraw(
-            "pre",
-            this.x, this.y,
-            this.w * scale, this.h * scale,
-            this.angle, this.color,
-            alpha
-        );
+            if (pulse > 0.7) {
+                ctx.save();
+                ctx.globalAlpha = (pulse - 0.7) / 0.3;
+                ctx.translate(this.x, this.y);
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "#fff6c8";
+                ctx.shadowBlur = 12;
+                const s = this.w * 0.25;
+                ctx.beginPath();
+                ctx.moveTo(0, -s);
+                ctx.lineTo(s * 0.25, -s * 0.25);
+                ctx.lineTo(s, 0);
+                ctx.lineTo(s * 0.25, s * 0.25);
+                ctx.lineTo(0, s);
+                ctx.lineTo(-s * 0.25, s * 0.25);
+                ctx.lineTo(-s, 0);
+                ctx.lineTo(-s * 0.25, -s * 0.25);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+            break;
+        }
+        case "normal":
+        case "クナイ":
+        case "kunai":
+        case "御札":
+        case "amulet":
+        case "グミ":
+        case "gummy":
+        case "ナイフ弾":
+        case "knife":
+        case "大弾":
+        case "big":
+        case "鱗弾":
+        case "scale":
+        case "米弾":
+        case "diamond":
+        case "陰陽玉":
+        case "陰陽弾":
+        case "onmyoutama":
+        case "om":
+        case "star":
+        case "kunai2":
+        case "heart":
+        case "big2":
+        case "simple":
+        case "fly":
+        case "small":
+        case "arrow":
+        case "orb":
+            // 💡 ここをキャッシュ解決方式に変更
+            if (!this.cachedImg) {
+                const c = imgList.get(this.imgKey);
+                if (c && c !== "loading") {
+                    this.cachedImg = c;
+                } else {
+                    break; // まだロード中なら今フレームは描画スキップ
+                }
+            }
+            drawCached(this.cachedImg, this.x, this.y, this.w, this.h, this.angle);
+            break;
 
-        // 中心に光の粒(スパークル)を重ねて「キラッ」感を強調
-        if (pulse > 0.7) {
-            ctx.save();
-            ctx.globalAlpha = (pulse - 0.7) / 0.3; // 山の頂点付近だけ出す
-            ctx.translate(this.x, this.y);
-            ctx.fillStyle = "#ffffff";
-            ctx.shadowColor = "#fff6c8";
-            ctx.shadowBlur = 12;
-            const s = this.w * 0.25;
+        case "四角":
+            isPathBullet = true;
             ctx.beginPath();
-            ctx.moveTo(0, -s);
-            ctx.lineTo(s * 0.25, -s * 0.25);
-            ctx.lineTo(s, 0);
-            ctx.lineTo(s * 0.25, s * 0.25);
-            ctx.lineTo(0, s);
-            ctx.lineTo(-s * 0.25, s * 0.25);
-            ctx.lineTo(-s, 0);
-            ctx.lineTo(-s * 0.25, -s * 0.25);
-            ctx.closePath();
+            ctx.rect(this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
             ctx.fill();
-            ctx.restore();
-        }
-        break;
-    }
-            case "normal":
-            case "クナイ":
-            case "kunai":
-            case "御札":
-            case "amulet":
-            case "グミ":
-            case "gummy":
-            case "ナイフ弾":
-            case "knife":
-            case "大弾":
-            case "big":
-            case "鱗弾":
-            case "scale":
-            case "米弾":
-            case "diamond":
-            case "陰陽玉":
-            case "陰陽弾":
-            case "onmyoutama":
-            case "om":
-            case "star":
-            case "kunai2":
-            case "heart":
-            case "big2":
-            case "pre":
-            case "simple":
-            case "fly":
-            case "small":
-                let imgType = this.type;
-                if (imgType === "クナイ") imgType = "kunai";
-                else if (imgType === "御札") imgType = "amulet";
-                else if (imgType === "グミ") imgType = "gummy";
-                else if (imgType === "ナイフ弾") imgType = "knife";
-                else if (imgType === "大弾") imgType = "big";
-                else if (imgType === "鱗弾") imgType = "scale";
-                else if (imgType === "米弾") imgType = "diamond";
-                else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "om") imgType = "onmyoutama";
-                idraw(imgType, this.x, this.y, this.w, this.h, this.angle, this.color);
-                break;
-
-            case "四角":
-                isPathBullet = true;
-                ctx.beginPath();
-                ctx.rect(this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
-                ctx.fill();
-                ctx.closePath();
-                break;
-            default:
-                // Circleなどのデフォルトパス描画
-                isPathBullet = true;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-                break;
-        }
-
-if (debug) {
-            ctx.save();
-            ctx.strokeStyle = "lime";
-            ctx.lineWidth = 1;
+            ctx.closePath();
+            break;
+        default:
+            isPathBullet = true;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.fill();
             ctx.closePath();
-            ctx.restore();
-        }
+            break;
     }
+
+    if (debug) {
+        ctx.save();
+        ctx.strokeStyle = "lime";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.closePath();
+        ctx.restore();
+    }
+}
 
     // Bullet クラス内に追加
     hitTestLaser(px, py, hitboxRadius) {

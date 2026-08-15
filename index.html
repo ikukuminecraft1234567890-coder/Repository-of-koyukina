@@ -128,6 +128,50 @@
             background: #444;
         }
 
+        /* 💡追加：右上の「ランダム」ボタン（最新ボタンの隣に固定表示） */
+        #randomBtn {
+            position: fixed !important;
+            top: 8px !important;
+            right: 76px !important;
+            left: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+            transform: none !important;
+            z-index: 999 !important;
+            background: #333;
+            color: #fff;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        #randomBtn:hover {
+            background: #444;
+        }
+
+        /* 💡追加：左上の「カスタム実行」ボタン（テスト用関数を実行するだけの可変ボタン） */
+        #customBtn {
+            position: fixed !important;
+            top: 8px !important;
+            left: 8px !important;
+            right: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+            transform: none !important;
+            z-index: 999 !important;
+            background: #333;
+            color: #fff;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        #customBtn:hover {
+            background: #444;
+        }
+
         /* 💡追加：スペル一覧モーダル */
         #spellListOverlay {
             position: fixed;
@@ -222,7 +266,7 @@
     <script type="module">
         import { start } from './sys.js';
         import { functions } from "./boss.js";
-        import { endless,stat } from "./engine.js";
+        import { stat,cf } from "./engine.js";
 
         // 💡追加：16x16画像のdif値ごとのパス対応表（あとで自由に書き換えてください）
         const difImageMap = {
@@ -268,6 +312,18 @@
         latestBtn.type = "button";
         latestBtn.textContent = "最新";
 
+        // 💡追加：右上の「ランダム」ボタン（有効なスペルの中から1つを即プレイ）
+        const randomBtn = document.createElement('button');
+        randomBtn.id = "randomBtn";
+        randomBtn.type = "button";
+        randomBtn.textContent = "ランダム";
+
+        // 💡追加：左上の「カスタム実行」ボタン（指定した関数を実行するだけ・中身は自由に書き換えてOK）
+        const customBtn = document.createElement('button');
+        customBtn.id = "customBtn";
+        customBtn.type = "button";
+        customBtn.textContent = "実行";
+
         // 💡追加：スペル一覧モーダル（オーバーレイ＋パネル）
         const spellListOverlay = document.createElement('div');
         spellListOverlay.id = "spellListOverlay";
@@ -311,10 +367,17 @@
         topImages.append(img64, img16);
 
         mainUiWrap.append(input, listOpenBtn);
-        document.body.append(topImages, latestBtn, mainUiWrap, button, div, sp, spellListOverlay);
+        document.body.append(topImages, latestBtn, randomBtn, customBtn, mainUiWrap, button, div, sp, spellListOverlay);
 
-        // 初期化処理の実行
-        endless();
+        // 初期化処
+
+        // 💡追加：カスタム関数実行用ボタンの処理。中身はテストのたびに自由に書き換えてOK。
+        function customFunction() {
+cf()
+
+        }
+
+        customBtn.addEventListener("click", customFunction);
 
         // 💡追加：指定スペル番号(1始まり)でクリア状況を取得するヘルパー
         function getClearInfo(index0) {
@@ -413,6 +476,8 @@
             topImages.remove();
             spellListOverlay.remove();
             latestBtn.remove();
+            randomBtn.remove();
+            customBtn.remove();
 
             cancelAnimationFrame(stat.gameId);
             start(sn);
@@ -433,7 +498,27 @@
             div.textContent = "プレイ可能なスペルカードが見つかりませんでした。";
         }
 
+        // 💡追加：ランダムボタン押下時の処理。有効なスペル(null/undefinedでないもの)の
+        // インデックスを集めておき、その中から1つを無作為に選んで即プレイする。
+        function playRandomSpell() {
+            const validIndexes = [];
+            for (let i = 0; i < functions.length; i++) {
+                if (functions[i]) validIndexes.push(i);
+            }
+
+            if (validIndexes.length === 0) {
+                div.style.backgroundColor = "white";
+                div.style.color = "#D40014";
+                div.textContent = "プレイ可能なスペルカードが見つかりませんでした。";
+                return;
+            }
+
+            const pick = validIndexes[Math.floor(Math.random() * validIndexes.length)];
+            startSpell(pick);
+        }
+
         latestBtn.addEventListener("click", playLatestSpell);
+        randomBtn.addEventListener("click", playRandomSpell);
 
         // ボタンクリック時の処理（バリデーションとゲーム開始）
         function buttonPush() {
@@ -551,3 +636,4 @@ const a = clear ? "block" : "none"
     </script>
 </body>
 </html>
+

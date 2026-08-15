@@ -7,7 +7,7 @@ import {bullet,Bullet,CC} from "./bc.js"
 
 import {
 dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
-,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn} from "./bullet.js"
+,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn,way} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 
@@ -597,7 +597,7 @@ wait(() => {bullet({
 custom:spawn,
 fnlist:[{f:0,loop:true,fn:function() {
     if (this.custom + 180 <= pfr) {
-this.color = "FF2812"
+this.scolor("FF2812")
 this.speed += 0.022222
 if (this.custom + 180 === pfr) this.angle = pf(this.x,this.y)
     }
@@ -675,7 +675,7 @@ wait(() => {bullet({
 custom:{s:spawn,x:this.owner.x,y:this.owner.y},
 fnlist:[{f:0,loop:true,fn:function() {
     if (this.custom.s + 180 === pfr) {
-this.color = "FF2812"
+this.scolor("FF2812")
 this.speed = 4
 this.angle = pf(this.x,this.y,0,this.owner,this.custom.x,this.custom.y)
     }
@@ -985,15 +985,15 @@ s:random(1.5,3),
                     // 毎フレーム全体の角度を進める（pfrを利用して回転）
                     // 1フレームごとに1.5度回転（お好みで速度を調整してください）
 if (this.timer === 180) {
-this.color = "FF0050"
+this.scolor("FF0050")
 this.custom.b = false }
 if (this.timer === 240) {
-this.color = "2800FF"
+this.scolor("2800FF")
 this.rd = 1
     this.radius = (this.w * this.rd) /2
-this.color = "2800FF"
+this.scolor("2800FF")
 if (Math.random() < 0.25) {
-this.color = "00FF68"
+this.scolor("00FF68")
     this.angle = random(-180,180)
 this.speed = 1
 }
@@ -1621,7 +1621,7 @@ custom:this.prop.d,
 fnlist:[{f:1,fn:function() {
 this.angle = dtr(normal(ev.deg,60,120))
 }},{f:25,fn:function() {
-this.color = "FF0050"
+this.scolor("FF0050")
 this.angle = dtr(ev.deg+this.custom)}}]
 })
 },ev.i*2)},{count:72})
@@ -1660,7 +1660,7 @@ custom:60,
 fnlist:[{f:0,loop:true,fn:function() {
 if (this.custom > this.timer) {
 this.speed = 1.5
-    this.color = "FF0053"
+    this.scolor("FF0053")
 this.angle += dtr(random(30,60))
 }
 }}]
@@ -1679,7 +1679,7 @@ custom:60,
 fnlist:[{f:0,loop:true,fn:function() {
 if (this.custom > this.timer) {
 this.speed = 1.5
-    this.color = "FF0053"
+    this.scolor("FF0053")
 this.angle += dtr(random(30,60))
 }
 }}]
@@ -2104,7 +2104,7 @@ bullet({
 custom:Math.random() > 0.5,
 fnlist:[{f:0,loop:true,fn:function() {
 if (this.custom)reverse(this)
-if (this.timer > this.deleteFrame - 30) this.color = "E7008C"
+if (this.timer > this.deleteFrame - 30) this.scolor("E7008C")
 }}],
 deleteFrame:180,
 })
@@ -3358,7 +3358,7 @@ if (this.timer === 15) this.rd = 1
         this.custom.decel = true; // 減速開始
         if (this.custom.v) {
             this.rd = 0;
-            this.color = "null";
+            this.scolor("null")
         }
         const plus = this.custom.p / 4;
         this.speed = 4;
@@ -3377,7 +3377,7 @@ if (this.timer === 15) this.rd = 1
     if (this.timer === 180) {
         if (this.custom.v) {
             this.rd = 1;
-            this.color = "FF6500";
+            this.scolor("FF6500")
         }
     }
 
@@ -4317,3 +4317,633 @@ imgSpeed:1.75,
 imgAlpha:0.25,
 }
 functions.push(spell63)
+const spell64 = {
+name: "魚符｢大タウナギの突進｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"誘導したらあとは下がりながらちょんよけして真下に来たら無敵時間で上がるだけなので楽。誘導禁止なら割とむずい",
+nm:"この弾幕誘導メインに行かないとムズいので普通にすげえ！どうやったんです？",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:30,
+run() {
+if ((pfr === 1)) {
+const spr = 60
+// 自分の座標 (fromX, fromY) から 目標座標 (toX, toY) への角度
+const cy = (Half.y - 30)
+const cx = Half.x
+const t = {x:players[0].x,y:players[0].y}
+const f = {x:cx,y:cy}
+const dx = t.x - f.x;
+const dy = t.y - f.y
+const angle = Math.atan2(dy, dx); // ラジアン
+
+const sp = [4]
+const size = 16
+const ax = random(-15,15)
+const ay = random(-15,15)
+const ang = normal(pfr,-180,180)
+const bx = players[0].x + cx
+const by = players[0].y + cy
+const basic = {
+    rd:0.65,
+s:1.5,
+type:"scale",
+color:"red",
+}
+bullet({
+rd:0.65,
+    x:Half.x,
+y:Half.y,
+speed:4.5,
+type:basic.type,
+angle:pf(cx,cy),
+color:basic.color,
+size:48,
+custom:0,
+fnlist:[{f:0,fn:function() {
+const born = {f:60,s:3.5}
+const a = reverse(this)
+if (a) {this.angle = pf(this.x,this.y)}else if (pfr % 120 === 0) smoothSet(this,pf(this.x,this.y),60)
+if (a) {
+    this.speed = 0;
+this.custom = born.f
+}
+if (this.custom > 0) {
+    this.custom -= 1
+this.speed += born.s / born.f
+}
+const xydiv = 3
+const x = this.x + (Math.sin(this.timer/xydiv) * 10)
+const y = this.y + (Math.cos(this.timer/xydiv) * 10)
+const s = basic.s + random(-0.3,0,3)
+const size = 16 + random(-3,3)
+const t = size > 18 ? "big" : size < 15 ? "small" : "normal" 
+const col = t === "small" ? "FF000C" : basic.color
+const pfsprX = random(-5,5)
+const pfsprY = random(-5,5)
+const pfX = x + pfsprX
+const pfY = y + pfsprY
+bullet({
+rd:0.65,
+    x:x,
+y:y,
+speed:s,
+type:t,
+angle:pf(pfX,pfY),
+color:col,
+size:size,
+fnlist:[{f:30,fn:function() {
+this.angle = normal(pfr,-180,180) / 2
+}}],
+})
+},loop:true}]
+})
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell64)
+const spell65 = {
+name: "層符｢多次元宇宙論｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"元の名前は数符｢サインコサイン全方位｣。速度を変える過程でレイヤーっぽくなったのでこっちに。",
+nm:"元々脳内だとサインコサイン使えば星みたいになるのかなーっと思ってたけど現実は違ったwまあこれはこれでいいかな！",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(0.5)
+},
+time:30,
+run() {
+if ((pfr === 1) || pfr % 15 === 0) {
+const spr = 60
+// 自分の座標 (fromX, fromY) から 目標座標 (toX, toY) への角度
+const cy = (Half.y - 30)
+const cx = Half.x
+const t = {x:players[0].x,y:players[0].y}
+const f = {x:cx,y:cy}
+const dx = t.x - f.x;
+const dy = t.y - f.y
+const angle = Math.atan2(dy, dx); // ラジアン
+
+const sp = [4]
+const size = 16
+const ax = random(-15,15)
+const ay = random(-15,15)
+const ang = normal(pfr,-180,180)
+const bx = players[0].x + cx
+const by = players[0].y + cy
+const basic = {
+    rd:0.65,
+s:1.5,
+type:"scale",
+color:"red",
+}
+arc((ev) => {
+const xydiv = 4
+const scV = pfr
+const x = ev.x + Math.cos(scV / xydiv) * 10
+const y = ev.y + Math.sin(scV / xydiv) * 10
+const SCA = (Math.cos(scV / xydiv) + Math.sin(scV / xydiv)) * 360
+const A = normal(SCA,-180,180)
+const angle = dtr(ev.deg+A)
+const speed = 1.5 + normal(SCA,-1,1)
+bullet({
+rd:0.65,
+    x:x,
+y:y,
+speed:speed,
+type:basic.type,
+angle:angle,
+color:basic.color,
+size:16,
+custom:0,
+})
+},{length:15,x:cx,y:cy,count:72})
+}
+}   ,
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell65)
+const spell66 = {
+name: "大回転｢夢幻回転矢｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"名前通り回転スペカ。符と名前に回転入ってるのは良くない。こういうことたまにあるんだよなー",
+nm:"回転スペカは久々。鯉の迷路とおなじかもwでも進化を感じるね！",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true,loc:{x:0,y:0}},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+this.prop.loc = {x:Half.x,y:Half.y}
+gi(0.5)
+},
+time:30,
+run() {
+if ((pfr === 1) || pfr % 2  === 0) {
+this.prop.loc.x + 30
+this.prop.a += 3
+this.prop.s += 0.5
+const spr = 60
+// 自分の座標 (fromX, fromY) から 目標座標 (toX, toY) への角度
+const cy = (Half.y - 30)
+const cx = Half.x
+
+const sp = [4]
+const size = 16
+const ax = random(-15,15)
+const ay = random(-15,15)
+const ang = normal(pfr,-180,180)
+const bx = players[0].x + cx
+const by = players[0].y + cy
+const basic = {
+    rd:0.65,
+s:1.5,
+type:"arrow",
+color:"red",
+}
+const bs = this.prop.a
+circle((ev) => {
+const s = normal(this.prop.s,-1.5,1.5)
+for (let i = 0;i<4;i++) {
+if (i % 10 !== 0) continue
+const Ax = this.prop.loc.x + (i)
+const Bx = this.prop.loc.x - (i)
+const y = this.prop.y
+const A = this.prop.a
+const xl = [Ax,Bx]
+const sl = [{f:60,e:3}]
+const mut = (2.5+s)*1.5
+xl.forEach((e)=>{
+bullet({
+rd:0.65,
+    x:e,
+y:Half.y,
+speed:0,
+type:basic.type,
+angle:dtr(ev.deg+i+bs),
+color:basic.color,
+size:32,
+setlist:[{f:0,e:2.5+s},{f:90,e:mut}],
+})
+})
+}},{count:8})
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell66)
+//ナイフが停止、加速、じきねらいにへんこう、2Way段発車、停止の繰り返し
+const spell67 = {
+name: "刺符｢アンプリファイドダガー｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"自機狙い + 弾から弾 + 反射 < 最高の組み合わせw弾数は少ないのにムズいでしょ？やっぱ弾のサイズは正義！w",
+nm:"巨大弾への抵抗は多少あったんですが、たまにはいいかなーと！東方原作らしく弾数少ない高難易度弾幕を作れるように精進していきたい！",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:0,a:1,rng:{s:999},bool:false},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+gi(1.5)
+},
+time:35,
+run() {
+if ((pfr === 1) || pfr % 240 === 0) {
+const spr =pfr === 1 ? 0 : seed(-90,90,this.prop.rng+pfr,{ns:true})
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"knife",
+color:"red",
+}
+bullet({
+rd:0.65,
+    x:Half.x,
+y:Half.y,
+speed:0,
+type:basic.type,
+angle:dtr(90),
+color:basic.color,
+size:96,
+custom:{s:spr,c:0,},
+fnlist:[{f:60,loop:true,fn:function() {
+keep(this,50)
+const cyc = pfr % basic.tempo
+const turn = Math.floor(basic.tempo * 0.75)
+if (cyc > turn) this.speed = 0
+if (cyc < turn-1) {
+this.angle = pf(this.x,this.y)+dtr(this.custom.s)
+this.speed = 3.5
+}
+if (cyc === 0) {
+this.custom.c += 1
+const b = this.custom.c>2
+if (b) this.custom.c = 0;
+way((ev) => {
+const b2 = b && ev.i === 1
+const c = b2 ? "blue" : "red"
+bullet({
+rd:0.65,
+    x:ev.x,
+y:ev.y,
+speed:1.5,
+type:basic.type,
+angle:dtr(ev.deg),
+color:c,
+size:48,
+custom:{b:b2,ca:4},
+fnlist:[{f:0,fn:function(){
+if (this.custom.ca === 0) {
+    this.scolor("green")
+}
+if(this.custom.b && this.custom.ca>0) {
+const is = reverse(this)
+if (is) this.custom.ca -= 1
+}},loop:true}]
+})
+
+},{x:this.x,y:this.y,length:30,count:2,angle:this.angle})
+}
+
+}}]
+})
+}
+
+    
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell67)
+//プレイヤーの左右に御札の列、ランダムな所に青御札でそこだけ消える
+const spell68 = {
+name: "記憶｢迫る御札｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"名前に困ったー！命名難しいよね！難易度は中間くらいなのでノーマルにw",
+nm:"この弾幕かなり気に入ってるけど、少しバランス調整むずかったw",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:0,a:1,rng:{s:999},bool:false},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+gi(1.5)
+},
+time:40,
+run() {
+if ((pfr === 1) || pfr % 73 === 0) {
+const spr =pfr === 1 ? 0 : seed(-90,90,this.prop.rng+pfr,{ns:true})
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"amulet",
+color:"red",
+}
+const xp = random(30,100)
+const xl = [{x:players[0].x - xp,a:0},{x:players[0].x + xp,a:180}]
+const Ydiv = 31
+const Size = 16
+const a = Math.floor(random(0,Ydiv)) * Math.floor(canvas.w / Ydiv)
+for (let i = 0;i< canvas.h;i+=Math.floor(canvas.w / Ydiv)) {
+const colB = i === a
+console.log(i,a)
+const col = colB ? "blue" : "red"
+xl.forEach((x) => {
+bullet({
+rd:1,
+    x:x.x,
+y:i,
+speed:0,
+type:basic.type,
+angle:dtr(x.a),
+color:col,
+size:Size,
+custom:colB,
+fnlist:[{f:60,fn:function(){
+
+if(!this.custom) {this.speed = 1.5} else {
+this.speed = 1.5
+const dist = Math.abs(players[0].x - this.x)
+    if (dist < 10) this.deleteFrame = 0
+}
+},loop:true}]
+})
+})
+
+    
+}
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell68)
+const spell69 = {
+name: "星符｢ドラゴンメテオ｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"一見するとよく分からない..いやほんとによく分からないな？まあそんな感じの。一応考え抜かれてて、テーマは移動ですね。全方位ながらに自機狙いと不規則な隙間を置くことである程度の移動を要求されます。ところで星弾って久々だね？使い所がムズいんすよ。レーザーくらい初登場からあんま使われてない気がする。最近はグミ弾もあんま出世してませんねー。ちなみにこのオーブ弾は初登場が今回です。未登場の弾種はあと二種類ほどあるのでお楽しみに。",
+nm:"はい。助かりました(スペル70参照)むずかったなと思う。運ゲー要素強いかも^^;なんだかんだもう50スペカにもなってしまった〜 <とか言ってから、20も追加で作ってしまいましたねw確か50に到達したのが7/25くらいかな？懐かしくはないねwそういえば今は昔と違って原作のスペカ名を改造して使うのがなくなったなーwそれを踏まえて今回はそのまま流用しましたよ！",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:0,a:1,rng:{s:999},bool:false},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+gi(1.5)
+},
+time:40,
+run() {
+if ((pfr === 1) || pfr % 3 === 0) {
+this.prop.a += random(0.5,36)
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+
+}
+const y = Half.y - 40;
+const x = Half.x
+const angle = this.prop.a
+if (pfr % 60 === 0)bullet({
+rd:basic.rd,
+    x:x,
+y:y,
+speed:basic.s,
+type:"orb",
+angle:pf(x,y),
+color:basic.color,
+size:64,
+})
+way((ev) => {
+bullet({
+rd:basic.rd,
+    x:ev.x,
+y:ev.y,
+speed:basic.s,
+type:basic.type,
+angle:dtr(ev.deg),
+color:basic.color,
+size:basic.size,
+})
+
+},{x:x,y:y,length:random(15,60),count:15,angle:angle})
+
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell69)
+
+const spell70 = { // 修正箇所：改行による宣言の分断を解消し、正しくオブジェクトを代入
+desc:"真実｢真・純粋な弾幕地獄｣",
+dif:"l",
+hint:"",
+ct:"真・純粋な弾幕地獄ということで。スペル7のリメイク、と思いきや完全初期型のコードです。当時はこれをクリアできなくて、弱体化を数回したのがスペル7ですね。10倍のスペル70の節目なので没保管庫から引っ張り出してきました。こいつの作成から早1,2ヶ月ぶりかな？ノーミステキストに続く",
+nm:"思い返すと1ヶ月程で63個もスペルを作ったのは純粋にすごいと思うwなう(2026/08/16 06:51:03)最後のスペル！ってテキストもありましたね〜今はもうないけど、実は密かに復活させようかなと思ってたりw今見るとすごい拙いコードだし弾幕としてのクオリテイは低いw当時からは機能が増えたし、コードのクオリティも大きく上がったなーと。ちなみにこれしたいがためだけにスペル69は今68のコピペのままでなんも作ってませんw案すらないよ。助けて。なう(2026/08/16 07:19:20)助かりました。そういうえばこの弾幕コード、今4949行で5000近い+129KB(12万9000文字)なのすごいよね！俺すごw長く描きすぎてここ見切れてない？大丈夫？wとりあえず、これでおわりとします。あ、ゲームは終わりませんよwここが終わります",
+//自機狙い弾
+prop:true,
+step:8,
+init() {
+this.step=8
+this.prop=true
+gi(1.75)
+},
+time:1,
+run() {
+if (pfr % 600 === 0) bullets.length = 0
+if (pfr % 30 === 0) {
+console.log(bullets.length)
+circle((ev) => {
+wait(() => {
+const dispersion1 = random(1,30) / ev.i
+const dispersion2 = random(30,60) / ev.i
+const dispersion3 = random(100,600) / ev.i
+const dispersion4 = random(1,30) / ev.i
+for (let i = -50;i<100;i+=50) {
+if (i % 2 === 0 && Math.random() > 0.35)bullet({
+    speed:3, // スピード5
+    color:"F11D22", 
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: Half.y - 50,
+    x: Half.x+i,
+    angle: dtr(ev.deg + dispersion1),
+})
+}
+if (pfr >= sp(10)) {
+if (ev.i % 2 === 0) bullet({
+    speed:4, // スピード5
+    color:"272DB0", 
+    w: 48,
+    h: 48, 
+    type: "gummy",
+    y: Half.y - 50,
+    x: Half.x,
+    angle: dtr(ev.deg + dispersion2),
+})
+}
+if (pfr >= sp(20)) {
+bullet({
+    speed:2, // スピード5
+    color:"FFF23B", 
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: Half.y - 50,
+    x: Half.x,
+    angle: dtr(ev.deg + dispersion3),
+})
+}
+if (pfr >=sp(30)) {
+const x = random(60,270)
+if (pfr % 90 === 0)circle((eev) => {
+bullet({
+    speed:0.5, // スピード5
+    color:"88FF47", 
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: Half.y,
+    x: x,
+    angle: dtr(eev.deg),
+setlist:[{f:20,e:2.5}]
+})
+
+},{count:54})}
+if (pfr >=sp(40)) {
+const x = pf(Half.x,Half.y)
+if (pfr % 90 === 0) for (let i = -15;i<15;i++) {
+const angle = random(-360,360)
+bullet({
+    speed:0, // スピード5
+    color:"3F0BC7", 
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: Half.y,
+    x: Half.x + i / 6,
+    angle: dtr(x+angle),
+setlist:[{f:60,e:1.5}]
+})
+
+}}
+if (pfr >=sp(50)) {
+if (pfr % 15 === 0) for (let i = 0;i<2;i++) {
+const x = pf(Half.x + i,Half.y + i)
+
+wait(() => {bullet({
+    speed:1, // スピード5
+    color:"D65AC4", 
+    w: 16,
+    h: 16, 
+    type: "gummy",
+    y: Half.y,
+    x: Half.x,
+    angle: x,
+setlist:[{f:30,e:1.5}]
+})
+},i*4)
+}}
+if (pfr >=sp(60)) {
+bullet({
+    speed:1, // スピード5
+    color:"FFFFFF", 
+    w: 64,
+    h: 64, 
+    type: "gummy",
+    y: Half.y,
+    x: Half.x,
+    angle: dtr(ev.deg),
+setlist:[{f:30,e:1.5}]
+})
+}
+},ev.i)
+},{count:18})
+}
+    
+}}
+functions.push(spell70)
