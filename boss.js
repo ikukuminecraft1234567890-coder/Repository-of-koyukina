@@ -4002,3 +4002,318 @@ imgSpeed:1.75,
 imgAlpha:0.25,
 }
 functions.push(spell59)
+const spell60 = {
+name: "狂符｢東方紅魔狂〜薄霧の日〜｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"最近ムズいの作りすぎてる？いやそうでも無い？とりあえず60記念ということで。シンプルに難しい弾幕になりました！ランダム要素でかいw",
+nm:"おお！やりますぎ。この弾幕、なんだかんだ運ゲーでもあるのでムズい",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:23,
+run() {
+if ((pfr % 11 === 0 || pfr === 1)) {
+this.prop.a += 1
+this.prop.s += random(0,7)
+const cy = (Half.y - 30)
+const cx = Half.x
+const sp = [1.5,1.75,2.5]
+const c = sp[normal(this.prop.a,0,3)]
+const s = normal(this.prop.s,-180,180)
+const gt = 0.00166
+const size = 16
+const az = random(-15,15)
+const ay = random(-15,15)
+arc((ev) => {
+bullet({
+rd:0.65,
+    x:ev.x+az,
+y:ev.y+ay,
+speed:c,
+type:"diamond",
+angle:dtr(ev.deg+s),
+color:"red",
+w:size,
+h:size,
+setlist:[{f:12,e:c}]
+})
+
+},{count:54,x:cx,y:cy,length:10})
+    
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell60)
+const spell61 = {
+name: "純符｢悠久弾幕結界｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"ムズい。純符の名を冠するだけある。そういえば純符は久々かな？40スペルぶりくらい。この弾幕、2Phaseに別れてるんですよ。気に入ってる。",
+nm:"おお！この弾幕運ゲー強いのでやりますね。純符の概念を実は忘れてたからあんまないって言うのは内緒な！",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:60,
+run() {
+if ((pfr % 1 === 0 || pfr === 1) && pfr < 2400) {
+this.prop.a += 1
+this.prop.s += random(0,7)
+const cy = (Half.y - 30)
+const cx = Half.x
+const sp = [4]
+const c = sp[normal(this.prop.a,0,3)]
+const s = normal(this.prop.s,-180,180)
+const gt = 0.00166
+const size = 16
+const az = random(-15,15)
+const ay = random(-15,15)
+const ao = Math.floor(random(0,300))
+bullet({
+rd:0.65,
+    x:cx,
+y:cy,
+speed:c,
+type:"amulet",
+angle:dtr(s),
+color:"aqua",
+w:size,
+h:size,
+setlist:[{f:ao,e:0}]
+})
+bullet({
+rd:0.65,
+    x:cx,
+y:cy,
+speed:c/2,
+type:"amulet",
+angle:-dtr(s),
+color:"gold",
+w:size,
+h:size,
+setlist:[{f:ao,e:0},{f:2400,e:3}]
+})
+
+if (pfr % 60===0)arc((ev) => {
+bullet({
+rd:0.65,
+    x:ev.x,
+y:ev.y,
+speed:c,
+type:"small",
+angle:dtr(ev.deg+s),
+color:"FF002C",
+w:12,
+h:12,
+setlist:[{f:12,e:c}]
+})
+
+
+},{count:36,x:cx,y:cy,length:10})
+
+
+} else {
+this.prop.ol += 0.5
+    bullet({
+rd:0.65,
+    x:Half.x,
+y:Half.y,
+speed:3,
+type:"scale",
+angle:dtr(this.prop.ol),
+color:"blue",
+w:12,
+h:12,
+setlist:[{f:12,e:3}]
+})
+}
+    
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell61)
+const spell62 = {
+name: "円符｢恒久弾幕波紋｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"当たり判定x0.65に最近ハマってる。ほぼ全部0.65入れてる。そんな当たり判定を活用した弾幕。少しずつ加速して行く+毎回配置が変わります。",
+nm:"おお！気合いの要素の割には難易度が低いかも？個人的には見て避けるだけなので楽。",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:50,
+run() {
+if ((pfr === 1) || pfr % 120 === 0) {
+this.prop.a += 135
+this.prop.s += 0.1
+const cy = (Half.y - 30)
+const cx = Half.x
+const sp = [4]
+const c = sp[normal(this.prop.a,0,3)]
+const s = normal(this.prop.a,-180,180)
+const gt = 0.00166
+const size = 16
+const ax = random(-15,15)
+const ay = random(-15,15)
+const bx = cx + ax
+const by = cy + ay
+const spee = 0.5+this.prop.s
+arc((ev) => {
+bullet({
+rd:0.65,
+    x:ev.x,
+y:ev.y,
+speed:spee,
+type:"small",
+angle:dtr(ev.deg+s)+pf(ev.x,ev.y),
+color:"FF002C",
+w:12,
+h:12
+})
+
+
+},{count:144,x:bx,y:by,length:10})
+    
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell62)
+const spell63 = {
+name: "永符｢永劫弾幕世界｣",
+dif:"h",
+desc:"",
+hint:"残り時間が60,30秒で弾消しが発動します",
+ct:"時間発狂。途中で加速地帯避けるの不可能じゃん！でNmできないのは宜しくないからって言うことで当たり判定無くした。元々これのせいで実質NM前提の難易度でした笑。あと、この弾幕の、自機狙い > 円に変化良いよね。どんどん使っていく。そういえばここ3つの弾幕全部○○弾幕○○なのは意図的です。",
+nm:"やりますね！この弾幕、実は7つのフェーズがあって、それぞれ弾の種類と角度とスピードと数が違うんですよね！数は円の弾幕のサイズっすw120S弾幕にしては出来がいいと思う。",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:true,a:1,rng:{s:999},loc :null,custom:0,ol:0,bool:true},
+init() {
+this.speed = 1
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.custom = 0
+this.prop.loc = {x:Half.x,y:Half.y}
+this.prop.ol = 1;
+this.prop.bool = true;
+gi(1)
+},
+time:120,
+run() {
+if ((pfr === 1) || pfr % 60 === 0) {
+this.prop.a += 1
+this.prop.s += random(0,7)
+const cy = (Half.y - 30)
+const cx = Half.x
+const sp = [4]
+const c = sp[normal(this.prop.a,0,3)]
+const s = normal(this.prop.s,-180,180)
+const gt = 0.00166
+const size = 16
+const ax = random(-15,15)
+const ay = random(-15,15)
+const bx = cx + ax
+const by = cy + ay
+
+const lf = 60
+const ite = Math.min(7,pfr / 600)
+const fl = [0,10,20,30,40,50,15]
+const tl = ["small","simple","scale","kunai2","big","normal","amulet"]
+const sl = [2,2,2.5,2.75,2.5,2.2,1,3]
+const al = [0,1.5,10,45,90,180,-45]
+const cl = [36,36,36,27,27,18,9]
+for (let i = 0;i<ite;i++) {
+const f = lf - fl[i]
+const t = tl[i]
+const s = sl[i]
+const a = al[i]
+const c = cl[i]
+arc((ev) => {
+bullet({
+rd:0.65,
+    x:ev.x,
+y:ev.y,
+speed:s,
+type:t,
+angle:pf(ev.x,ev.y),
+color:"FF002C",
+custom:{a:ev.deg,b:a},
+fnlist:[{f:f,fn:function() {
+    this.angle = dtr(this.custom.a+this.custom.b)
+this.speed = 0.25
+}}],
+w:12,
+h:12
+})
+},{count:c,x:bx,y:by,length:10})
+}
+if (pfr === 3600 || pfr === 5400) bullets.forEach((e)=> {
+e.rd = 0;
+e.color = "FFFFFF"
+e.speed*=4
+})
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell63)
