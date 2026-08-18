@@ -2,7 +2,7 @@ import { Entity, Player } from "./chars.js";
 import {
     canvas, ctx, players, bullets,
     updateFrame, frame, Half, entitys, spelln, start
-    , internal, gps, updateGamepad
+    , internal, gps, updateGamepad,pbs
 } from './sys.js';
 import { functions } from "./boss.js"
 import { bullet, Bullet } from "./bc.js"
@@ -222,8 +222,8 @@ if (!stat.isChallenge) {
             return;
         }
         p.update();
-        // if (frame % 5 === 0) p.OnShot(false); // 通常
-        //if (frame % 15 === 0) p.OnShot(true);  // ホーミング
+      //  if (frame % 5 === 0) p.OnShot(false); // 通常
+     //   if (frame % 15 === 0) p.OnShot(true);  // ホーミング
         p.draw(ctx, ondebug);
     });
 
@@ -236,6 +236,11 @@ if (!stat.isChallenge) {
         if (e.ny !== e.y) e.y += (e.ny - e.y) / e.speed;
 
         e.draw(ctx, true);
+e.hitTests()
+if (e.hp <= 0) {
+                entitys.splice(i, 1);
+                continue;
+}
     }
 
 
@@ -276,7 +281,6 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
             registerBulletToGrid(b, grid);
         }
     }
-
     if (players[0]) {
         // player.hitTest の中身で `grid` を使って some() を回す
         players[0].hitTest(false, grid);
@@ -292,6 +296,14 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
             }
         }
     }
+        for (let i = pbs.length - 1; i >= 0; i--) {
+            const b = pbs[i];
+            b.update();
+            b.drawI(ctx);
+            if (b.shouldRemove()) {
+                pbs.splice(i, 1);
+                continue;
+            }}
     drawFps(ctx)
     stat.gameId = requestAnimationFrame(gameLoop)
 }

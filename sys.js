@@ -48,6 +48,8 @@ export let isTouching = false;
 export const entitys = []
 export let player = { x: 0, y: 0 }
 export let bullets = []
+export const pbs = []
+export function pbpush(b) {pbs.push(b)}
 let lastTouchX = 0
 let lastTouchY = 0
 import { functions } from "./boss.js"

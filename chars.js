@@ -1,15 +1,18 @@
 import { 
     canvas, ctx, players, bullets,
     updateFrame, frame, Half, isTouching, entitys
-,internal,gps} from './sys.js';
+,internal,gps,pbs} from './sys.js';
 import {Bullet} from "./bc.js"
+import {PlayerBullet} from "./pb.js"
+import {pf}from"./bullet.js"
 export class Entity {
-    constructor(name, x, y, radius, color, speed, ap = true, rd) {
+    constructor(name, x, y, radius, color, speed, ap = true, rd,hp=100) {
         this.name = name;
         this.x = x;
         this.y = y;
         this.ny = y;
         this.nx = x;
+        this.hp = hp;
         this.radius = radius;
         this.color = color;
         this.currentBaseColor = color;
@@ -33,6 +36,7 @@ export class Entity {
     }
     draw(ctx, debug = false) {
         ctx.fillStyle = this.color;
+this.color = this.currentBaseColor
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -51,6 +55,24 @@ export class Entity {
         this.nx = x;
         this.ny = y;
     }
+hitTests() {
+    const OnHit = pbs.find((bullet) => {
+   if (bullet.radius <= 0) return false; // ← 追加：判定無効化
+        if (bullet.type === "laser") {
+if(bullet.timer < bullet.speed) return;
+            // まだ発射準備中(timer < speed)は当たらない、が必要なら調整
+            return bullet.hitTestLaser(this.x, this.y, this.hitboxRadius);
+        }
+        const dx = bullet.x - this.x;
+        const dy = bullet.y - this.y;
+        return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * 0.6), 2);
+    });
+    if (OnHit) {
+this.color = "white"
+this.hp -= OnHit.damage
+    }
+    return OnHit;
+}
 }
 
 
@@ -82,16 +104,22 @@ this.it = it ?? 120
 
     OnShot(a = false) {
         if (!window.Allkeys.z && !isTouching) return;
-        if (!a) return new Bullet({ x: this.x, y: this.y, angle: -Math.PI / 2, speed: 15, color: "red", w: 15, h: 15, type: "PlayerBullet", deleteFrame: 180, isPB: true, PBdmg: 12 });
-
+        if (!a) {
+new PlayerBullet({ x:-5, y: 10, angle: -Math.PI / 2, speed: 30, color: "red",size:16, type: "amulet",damage:12 });
+new PlayerBullet({ x:5, y: 10, angle: -Math.PI / 2, speed: 30, color: "red",size:16, type: "amulet",damage:12 });
+}
         let near = null, minDist = Infinity;
         for (const e of entitys) {
             if (e === this) continue;
             const d = Math.hypot(e.x - this.x, e.y - this.y);
             if (d < minDist) [minDist, near] = [d, e];
         }
-        if (near) new Bullet({ x: this.x, y: this.y, angle: pf(this.x, this.y, 0, near), speed: 30, color: "green", w: 15, h: 15, type: "PlayerBullet", deleteFrame: 180, isPB: true, PBdmg: 1 });
+        if (near) {
+new PlayerBullet({ x: -15, y: 0, angle: pf(this.x, this.y, 0, near), speed: 15, color: "green",size:16, type: "amulet", damage:3.5});
+new PlayerBullet({ x: 15, y: 0, angle: pf(this.x, this.y, 0, near), speed: 15, color: "green", size:16, type: "amulet", damage:3.5});
     }
+}
+
 
 hitTest(invincible = false, grid) {
     if (this.invincible > 0) return false;

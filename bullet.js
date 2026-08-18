@@ -85,7 +85,7 @@ const zanki = stat.isChallenge ? stat.nowzanki : zankia
     // ※内部で globalThis に自動登録されるか、players配列にプッシュされる想定
     const playerObj = new Player(canvas.w / 2, canvas.h - 50, 15, "magenta", playerSize, it, zanki);
     // 3. ボスエンティティの生成
-    entity = new Entity("ボス", Half.x, Half.y - 80, 20, "purple", 3, true);
+    entity = new Entity("ボス", Half.x, Half.y - 80, 20, "purple", 3, true,20,Infinity);
 
     // 4. 弾種・カラーパレットの事前登録（引数があれば一括処理）
     for (const config of bulletTypes) {
@@ -377,9 +377,8 @@ export function ccolor(r, g, b) {
 
 export function ns(s = 1) {
   let x = (s === 0 ? 1 : s) >>> 0;
-  x ^= x << 13;
-  x ^= x >>> 17;
-  x ^= x << 5;
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5; // 2周目
   return x >>> 0;
 }
 

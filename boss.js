@@ -4948,3 +4948,233 @@ setlist:[{f:30,e:1.5}]
     
 }}
 functions.push(spell70)
+const spell71 = {
+name: "周符｢二重短剣｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"シードに変えたのが英断かは諸説あるw完全ランダムのが良かったかな？まあともかく、個人的にナイフスペカは自信作多い！ノーミスクリア狙える良スペカでしょ？",
+nm:"私はこういうぐるぐる弾好きなんすよ！気合いの中でもいい感じかな？最近ここ書くのだるい(？)。シードは毎回初期シード変えるだけである程度調整しやすいのがいいね",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:40,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+
+}
+if (pfr % 120 === 0) {
+this.prop.y = Half.y;
+this.prop.x = Half.x;
+}
+if ((pfr === 1) || pfr % 30 === 0) {
+const r = {s:this.prop.rng}
+this.prop.s += 1
+this.prop.x += seed(-100,100,{s:8901+pfr*301},{ns:true})
+this.prop.y += seed(-30,30,{s:4973+pfr*301},{ns:true})
+bullet({
+rd:basic.rd,
+    x:this.prop.x,
+y:this.prop.y,
+speed:0,
+type:"pre",
+angle:3,
+color:basic.color,
+size:64,
+deleteFrame:60,
+})
+const y = Half.y - 40;
+const x = Half.x
+const angle = this.prop.a
+const ns = this.prop.s > 2 ? 0.75 : basic.s
+const col = this.prop.s > 2 ? "blue" : this.prop.s === 1 ? "green" : "red"
+const ways = this.prop.s>2 ? 36 : this.prop.s === 1 ? 36 : 54
+const isFn = this.prop.s === 1
+if (this.prop.s>2) this.prop.s = 0
+const so = this.prop.a
+spiral((ev) => {
+wait(() => {
+this.prop.a += 36
+bullet({
+rd:0.5,
+    x:this.prop.x,
+y:this.prop.y,
+speed:basic.s,
+type:"knife",
+angle:dtr(ev.deg+this.prop.a),
+color:col,
+size:32,
+custom:isFn,
+setlist:[{f:60,e:ns}],
+fnlist:[{f:45,fn:function() {
+    if(this.custom) {
+        const na = dtr(seed(-90,90,{s:(pfr*1503)+(so*3)+334},{ns:true}))
+smooth(this,na,120)
+this.speed = this.speed * 0.75
+    }
+}}]
+})
+},ev.i/3)
+},{count:ways})
+
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell71)
+const spell72 = {
+name: "夜景｢起き上がる矢の雨｣",
+dif:"n",
+desc:"",
+hint:"赤矢は自機狙いですわよ",
+ct:"こういう下から上系は避けにくいから面白いと思う。あと矢がアホほど見にくかったので背景の設定を変更した。こういう柔軟さがデータ駆動のメリットよね〜。閑話休題、この弾幕どう？個人的に結構悪くないと思う。途中で曲がるのと赤弾は自機狙いかのがいいよね",
+nm:"背景をいつものペール+ジャパン2からジャパン2+ネイチャーにしてさらにスライド速度を変えました。これでも結構変わるでしょ？元々は死ぬほど見にくかったけどこれで改善しました。背景システムいい",
+speed:1,
+list:[],
+//自機狙い弾
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:40,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+
+}
+if ((pfr % 2 === 0)) {
+const x = random(0,canvas.w)
+const y = canvas.h;
+const f = random(30,120)
+const is = Math.random() <0.5
+const col = is ? "red" : "blue"
+const ang = is ? pf(x,y) : dtr(-90)
+bullet({
+rd:0.85,
+    x:x,
+y:y,
+speed:0,
+type:"arrow",
+angle:ang,
+color:col,
+size:32,
+setlist:[{f:18,e:2}],
+fnlist:[{f:f,fn:function(){
+const na = dtr(random(-90,90))
+smooth(this,na,60)
+}}]
+})
+}
+},
+    img:"./japan2.png",
+mask:"./nature.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:0.75,
+imgAlpha:0.25,
+}
+functions.push(spell72)
+const spell73 = {
+name: "新幻想｢鎖拘束｣",
+dif:"h",
+desc:"",
+hint:"クナイ弾は周期的です",
+ct:"ぐるぐるさせる系自機狙い弾幕。本来はもうちょいムズクシタイケド、しっかり難易度を下げる。楽しめると思いますわよ。なう(2026/08/18 23:50:03)最後のスペカ。71〜73書いた感想としては自信作多い。あと強化月間なので今後も似たようないいスペカ量産したい！",
+nm:"速度違い自機狙いの発想は紅魔郷三面から。良いよねアレ。ちなみに難易度は71,72より少し高いのでハード認定。",
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:40,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+
+}
+if ((pfr % 15 === 0)) {
+if (pfr % 60 === 0) {
+this.prop.a += 36
+circle((ev) => {
+bullet({
+    angle:dtr(ev.deg+this.prop.a),
+x:Half.x,
+y:Half.y,
+size:16,
+type:"scale",
+color:"blue",
+speed:2,
+})},{count:36})
+}
+this.prop.x += 15
+const x =normal(this.prop.x,0,canvas.w)
+for (let i = 1;i<30;i++) {
+wait(() => {
+const s = i * 0.1
+const angle = pf(x,Half.y)
+bullet({
+rd:0.65,
+    x:x,
+y:Half.y,
+speed:s,
+type:"kunai",
+angle:angle,
+color:"red",
+size:16,
+})
+
+},i/2)
+
+}
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell73)
