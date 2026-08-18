@@ -469,7 +469,7 @@ this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
             else if (this.timer === this.fastF + 1) this.speed *= this.fastE;
         }
 
-const func = this.map.get(this.timer);
+const func = this.map?.get(this.timer);
 
 // 新しくループ処理が来たら保持する
 if (func && func.l) {
@@ -485,7 +485,7 @@ if (func && !func.l) {
 if (this.activeLoop && this.timer >= this.activeLoop.f) {
     this.activeLoop.fn.call(this);
 }
-const sfunc = this.smap.get(this.timer);
+const sfunc = this.smap?.get(this.timer);
 
 if (sfunc && !sfunc.l) {
     const val = (typeof sfunc.e === "function") ? sfunc.e.call(this) : sfunc.e;
