@@ -7,7 +7,7 @@ import {bullet,Bullet,CC} from "./bc.js"
 
 import {
 dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
-,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn,way} from "./bullet.js"
+,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn,way,select} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 
@@ -5178,3 +5178,220 @@ imgSpeed:1.75,
 imgAlpha:0.25,
 }
 functions.push(spell73)
+const spell74 = {
+name: "斜符｢変則弾雨(イレギュラーバラージ)｣",
+dif:"h",
+desc:"",
+hint:"シード式です",
+ct:"シード式いいよね。さて、初登場の種類である銃弾が登場。あと少し未登場あったはず。これどうすか？無茶振りにしては上手く対応できたかなと。",
+nm:"割と悪くない。やっぱ弾のサイズデカくすると良い感じになるね。",
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:35,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+
+}
+const P = 140
+const cyc = pfr % P
+const P2 = Math.floor(P / 2)
+const arr = [-90,90,0,180]
+if (pfr % 3 === 0 && pfr % P < P2) {
+this.prop.x = !this.prop.x
+const S = 64
+const baseX = this.prop.x ? -S : S
+const count = 54
+circle((ev) => {
+bullet({
+    angle:dtr(90),
+x:(ev.i*count)+baseX+seed(-32,32,{s:8901+pfr*301},{ns:true}),
+y:0,
+size:16,
+type:"gun",
+color:"aqua",
+speed:3,
+custom:{b:true,f:false,r:Math.random()>0.5,c:"aqua"},
+fnlist:[{f:0,fn:function() {
+if (pfr % P > P2) {
+    this.scolor("white")
+this.rd = 0
+this.speed = 0
+this.custom.f = true
+const ratio = 1 - ((pfr % P) / P2);
+
+    // 最大値 1 ～ 最小値 0.025 の間で補間
+    const magnitude = (0.025 + (1 - 0.025) * ratio) * random(0.5,1.5);
+
+    // 方向（右: +1 / 左: -1）を判定して乗算
+    const dir = this.custom.r ? -1 : 1;
+    const B = dir * magnitude;
+
+this.x += B
+}
+if (pfr % P < P2) {
+this.rd = 1
+this.scolor(this.custom.c)
+this.speed = this.custom.b ? 3 : 1.75
+if(this.custom.b && this.custom.f) {
+this.custom.b = false
+const c = seed(0,180,{s:8901+ev.i*30+pfr*301},{ns:true})
+this.angle = dtr(c)
+this.custom.c = "green"
+}
+}
+},loop:true}]
+})
+},{count:count})}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell74)
+const spell75 = {
+name: "桜霊「スワローテイルアミュレット」",
+dif:"h",
+desc:"",
+hint:"シード式です",
+ct:"どう？！スペカ27に匹敵する自信作！！個人的にはかなりいい！難易度と楽しさの両立に成功！難易度も6フレーム御札弾に遅延つけて下げました。偉い。この弾幕の隠し自機狙いは、御札Y軸、大弾ベースアングルです。気付けたかな？",
+nm:"気に入ってる作品。27と対抗可能！かなり自信作です。よくやった！今回のアプデで最高傑作かも",
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+
+}
+const s = seed(0,1,{s:pfr*4373+464},{ns:true})>0.5
+const x = s ? canvas.w : 0
+const angle = s ? -180 : 0
+const Dy = players[0].y
+const y = seed(Dy-32,Dy+32,{s:pfr*205+3651},{ns:true})
+if (pfr % 51 === 0)bullet({
+    angle:dtr(angle),
+x:x,
+y:y,
+size:16,
+type:"amulet",
+color:"purple",
+speed:3,
+fnlist:[{f:0,fn:function() {
+this.speed -= 0.0115
+if (this.speed <= 0) this.speed -= 0.005
+},loop:true}]
+})
+
+if (pfr % 35 === 0) {
+this.prop.bool += 1
+if (this.prop.bool > 1) this.prop.bool = -1;
+const b = this.prop.bool
+way((ev) => {
+const xO = ev.x + b*30
+const aO = b*10
+bullet({
+    angle:dtr(ev.deg+aO),
+x:xO,
+y:ev.y,
+size:48,
+type:"big2",
+color:"red",
+speed:3,
+fnlist:[{f:0,fn:function() {
+if (this.timer < 180) this.speed -= 0.01111
+},loop:true}]
+})
+},{count:13.5,x:Half.x,y:0,angle:pf(Half.x,0),spreadDeg:90})
+}
+
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell75)
+const spell77 = {
+name: "結界剣｢次元斬｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"割とむずいのかな？なう(2026/08/19 23:18:29)最後のスペカ。74〜76書いた感想としては75が最高傑作。強化月間らしく悪くないスペカ多め。強化月間では目標がひとつあって弾数1100を越えないんですよね絶対に。全体的に今回のアプデはムズいかな？やりすぎてたらすまんw",
+nm:"まあまあムズい。レーザーと言いながらレーザーを使ってはないような(笑)",
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+}
+if (pfr % 60 === 0) {
+const x = Half.x;
+const y = Half.y;
+circle((ev) => {
+wait(() => {bullet({
+    angle:dtr(ev.deg+this.prop.a),
+x:x,
+y:y,
+size:32,
+type:"gummy",
+color:"red",
+speed:1.5,
+rd:0.5,
+})
+},ev.i)
+},{count:72})}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell77)

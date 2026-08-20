@@ -708,3 +708,6 @@ export function way(fn, {
 
     return rl;
 }
+export function select(arr) {
+    return arr[Math.floor(Math.random()*arr.length)]
+}

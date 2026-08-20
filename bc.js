@@ -771,6 +771,7 @@ draw(ctx, debug = false) {
         case "small":
         case "arrow":
         case "orb":
+        case "gun":
             // 💡 ここをキャッシュ解決方式に変更
             if (!this.cachedImg) {
                 const c = imgList.get(this.imgKey);
@@ -804,7 +805,7 @@ draw(ctx, debug = false) {
         ctx.strokeStyle = "lime";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.radius*this.rd, 0, Math.PI * 2);
         ctx.stroke();
         ctx.closePath();
         ctx.restore();
