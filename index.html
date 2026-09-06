@@ -4,7 +4,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>東方封魔録Season2 - Modular</title>
+    <title>東方封魔録Season2 - Modular
+</title>
     <style>
         canvas {
             image-rendering: -moz-crisp-edges;
@@ -22,6 +23,8 @@
             word-break: break-all; 
         }
 
+
+
         body { 
             background: #222; 
 
@@ -34,10 +37,23 @@
             display: flex;
             flex-direction: column;
             justify-content: center; 
-            align-items: center;     
+            align-items: center;
+
+
+
+
+
+
+
+
+
+
+
+
             height: 100vh;           
         }
         
+
         canvas, #gameCanvas {
             background: #000;
 
@@ -54,6 +70,7 @@
             max-height: 100vh;
             aspect-ratio: 384 / 448;
         }
+
 
         /* 💡追加：画面上部に表示する可変画像用のスタイル */
         #topImages {
@@ -148,6 +165,26 @@
         }
         #randomBtn:hover {
             background: #444;
+        }
+
+        /* 💡追加：ロゴ画像（ランダムボタンの下、中央寄りの空白スペースに配置） */
+        #logoImg {
+            position: fixed !important;
+            top: 140px !important;
+            left: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+            transform: translateX(-50%) !important;
+            z-index: 998 !important;
+            width: min(92vw, 480px) !important;
+            height: 60px !important;
+            object-fit: contain;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+        #logoImg.hidden {
+            opacity: 0;
         }
 
         /* 💡追加：左上の「カスタム実行」ボタン（テスト用関数を実行するだけの可変ボタン） */
@@ -324,6 +361,12 @@
         customBtn.type = "button";
         customBtn.textContent = "実行";
 
+        // 💡追加：ロゴ画像（ランダムボタンの下の空白スペースに配置）
+        const logoImg = document.createElement('img');
+        logoImg.id = "logoImg";
+        logoImg.src = "./assets/logo.png";
+        logoImg.alt = "ロゴ";
+
         // 💡追加：スペル一覧モーダル（オーバーレイ＋パネル）
         const spellListOverlay = document.createElement('div');
         spellListOverlay.id = "spellListOverlay";
@@ -367,7 +410,7 @@
         topImages.append(img64, img16);
 
         mainUiWrap.append(input, listOpenBtn);
-        document.body.append(topImages, latestBtn, randomBtn, customBtn, mainUiWrap, button, div, sp, spellListOverlay);
+        document.body.append(topImages, latestBtn, randomBtn, customBtn, logoImg, mainUiWrap, button, div, sp, spellListOverlay);
 
         // 初期化処
 
@@ -478,6 +521,7 @@ cf()
             latestBtn.remove();
             randomBtn.remove();
             customBtn.remove();
+            logoImg.remove();
 
             cancelAnimationFrame(stat.gameId);
             start(sn);
@@ -625,6 +669,14 @@ const a = clear ? "block" : "none"
         button.addEventListener("click", buttonPush);
         input.addEventListener("input", checkInput);
 
+        // 💡追加：文字入力欄にフォーカスしたらロゴを隠し、離れたら再表示する
+        input.addEventListener("focus", () => {
+            logoImg.classList.add("hidden");
+        });
+        input.addEventListener("blur", () => {
+            logoImg.classList.remove("hidden");
+        });
+
         // タッチ制御用（必要に応じてセットアップ）
         setTimeout(() => {
             const canvasElement = document.getElementById("gameCanvas");
@@ -636,4 +688,3 @@ const a = clear ? "block" : "none"
     </script>
 </body>
 </html>
-

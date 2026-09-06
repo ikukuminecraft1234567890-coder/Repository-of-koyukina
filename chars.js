@@ -6,7 +6,7 @@ import {Bullet} from "./bc.js"
 import {PlayerBullet} from "./pb.js"
 import {pf}from"./bullet.js"
 export class Entity {
-    constructor(name, x, y, radius, color, speed, ap = true, rd,hp=100) {
+    constructor(name, x, y, radius, color, speed, ap = true, rd, hp = 100) {
         this.name = name;
         this.x = x;
         this.y = y;
@@ -19,12 +19,15 @@ export class Entity {
         this.speed = speed;
         this.MySpeed = speed;
         this.hitboxRadius = rd;
+        // mov用の慣性管理
+        this.movInertia = true;
+        this.movCurrentSpeed = 0; // 現在の実移動速度（加速していく値）
         if (name !== "Player" && ap) entitys.push(this);
     }
+
     update() {
         if (this.y < this.targetY) this.y += this.speed;
-        this.ny = this.y;
-        this.nx = this.x;
+        this.moveToTarget();
     }
 
     Move(Direction = { x: 0, y: 0 }) {
@@ -34,9 +37,54 @@ export class Entity {
         this.x = Nx;
         this.y = Ny;
     }
+
+mov(x, y, inertia = true, speed = this.speed) {
+    this.nx = x;
+    this.ny = y;
+    this.movInertia = inertia;
+    this.movSpeed = speed;
+}
+
+moveToTarget(speed = this.movSpeed ?? this.speed) {
+    // 目標に到達していたら何もしない
+    if (this.x === this.nx && this.y === this.ny) {
+        this.movCurrentSpeed = 0;
+        return;
+    }
+
+    const dx = this.nx - this.x;
+    const dy = this.ny - this.y;
+    const dist = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+
+    const accel = 0.15;
+
+    if (this.movInertia) {
+        this.movCurrentSpeed = Math.min(speed, this.movCurrentSpeed + accel);
+    } else {
+        this.movCurrentSpeed = speed;
+    }
+
+    const moveSpeed = Math.min(this.movCurrentSpeed, dist);
+
+    const nx = this.x + Math.cos(angle) * moveSpeed;
+    const ny = this.y + Math.sin(angle) * moveSpeed;
+
+    if (nx < 0 || nx > (canvas.w || 280) || ny < 0 || ny > (canvas.h || 480)) return;
+
+    this.x = nx;
+    this.y = ny;
+
+    if (Math.hypot(this.nx - this.x, this.ny - this.y) < 0.5) {
+        this.x = this.nx;
+        this.y = this.ny;
+        this.movCurrentSpeed = 0;
+    }
+}
+
     draw(ctx, debug = false) {
         ctx.fillStyle = this.color;
-this.color = this.currentBaseColor
+        this.color = this.currentBaseColor
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -51,28 +99,24 @@ this.color = this.currentBaseColor
         }
     }
 
-    mov(x, y) {
-        this.nx = x;
-        this.ny = y;
-    }
-hitTests() {
-    const OnHit = pbs.find((bullet) => {
-   if (bullet.radius <= 0) return false; // ← 追加：判定無効化
-        if (bullet.type === "laser") {
-if(bullet.timer < bullet.speed) return;
-            // まだ発射準備中(timer < speed)は当たらない、が必要なら調整
-            return bullet.hitTestLaser(this.x, this.y, this.hitboxRadius);
+    hitTests() {
+        const OnHit = pbs.find((bullet) => {
+            if (bullet.radius <= 0) return false; // ← 追加：判定無効化
+            if (bullet.type === "laser") {
+                if (bullet.timer < bullet.speed) return;
+                // まだ発射準備中(timer < speed)は当たらない、が必要なら調整
+                return bullet.hitTestLaser(this.x, this.y, this.hitboxRadius);
+            }
+            const dx = bullet.x - this.x;
+            const dy = bullet.y - this.y;
+            return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * 0.6), 2);
+        });
+        if (OnHit) {
+            this.color = "white"
+            this.hp -= OnHit.damage
         }
-        const dx = bullet.x - this.x;
-        const dy = bullet.y - this.y;
-        return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * 0.6), 2);
-    });
-    if (OnHit) {
-this.color = "white"
-this.hp -= OnHit.damage
+        return OnHit;
     }
-    return OnHit;
-}
 }
 
 

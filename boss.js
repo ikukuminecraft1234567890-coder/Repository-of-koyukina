@@ -7,7 +7,7 @@ import {bullet,Bullet,CC} from "./bc.js"
 
 import {
 dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
-,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn,way,select} from "./bullet.js"
+,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn,way,select,corner,smoothFn,Seed,SeedKey,formula,time} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 
@@ -5343,16 +5343,16 @@ imgSpeed:1.75,
 imgAlpha:0.25,
 }
 functions.push(spell75)
-const spell77 = {
-name: "結界剣｢次元斬｣",
-dif:"h",
+const spell76 = {
+name: "｢幻想祭祀｣",
+dif:"n",
 desc:"",
 hint:"",
-ct:"割とむずいのかな？なう(2026/08/19 23:18:29)最後のスペカ。74〜76書いた感想としては75が最高傑作。強化月間らしく悪くないスペカ多め。強化月間では目標がひとつあって弾数1100を越えないんですよね絶対に。全体的に今回のアプデはムズいかな？やりすぎてたらすまんw",
-nm:"まあまあムズい。レーザーと言いながらレーザーを使ってはないような(笑)",
+ct:"珍しい挙動。安置潰そうとしたらとんでもないサイズのシンプル弾を置くことにwなんとサイズは256ですwww全方位反転弾幕良いね",
+nm:"ムズいけど気に入ってる。ムズくしすぎたWwwwwwwwww強化月間とはこれ如何に🤨",
 prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
 init() {
-this.prop.s = 0
+this.prop.s =0
 this.prop.a=0;
 this.prop.rng={s:999}
 this.prop.bool = true;
@@ -5360,7 +5360,7 @@ this.prop.x = Half.x;
 this.prop.y = Half.y
 gi(1)
 },
-time:30,
+time:20,
 run() {
 const basic = {
 tempo:60,
@@ -5370,12 +5370,35 @@ type:"star",
 color:"red",
 size:16,
 }
-if (pfr % 60 === 0) {
+const h = 240
+const tempo = 30
+const cyc = pfr % h
+const am = 3
 const x = Half.x;
 const y = Half.y;
+if (h-1 === cyc) this.prop.s = 0
+const Arr = corner()
+const angleArr = [45,135,315,225]
+if (pfr % 30 === 0)Object.values(Arr).forEach((e,i) => {
+bullet({
+    angle:dtr(angleArr[i]),
+x:e.x,
+y:e.y,
+size:256,
+type:"simple",
+color:"yellow",
+speed:1.5,
+rd:1.3,
+setlist:[{f:30,e:-1.5}]
+})
+})
+if (pfr % tempo === 0 && this.prop.s < am) {
+this.prop.s += 1
+this.prop.a += 72
 circle((ev) => {
-wait(() => {bullet({
-    angle:dtr(ev.deg+this.prop.a),
+
+bullet({
+    angle:dtr(ev.deg+this.prop.a)+pf(x,y),
 x:x,
 y:y,
 size:32,
@@ -5383,9 +5406,82 @@ type:"gummy",
 color:"red",
 speed:1.5,
 rd:0.5,
+setlist:[{f:30,e:1.5},{f:150,e:-2.5}]
 })
-},ev.i)
-},{count:72})}
+bullet({
+    angle:dtr(ev.deg-(this.prop.a/2))+pf(x,y),
+x:x,
+y:y,
+size:16,
+type:"amulet",
+color:"blue",
+speed:1.5,
+rd:0.5,
+setlist:[{f:30,e:1.6},{f:145,e:-3}]
+})
+},{count:54})}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell76)
+//全方位御札毎フレーム速度元帥マイナスになったらじきねらいにして速度を上書き
+//全方位反射 > 高速化 > 反射を15回繰り返してその後停止、2秒後にスピードつけて避けさせるズレを利用した弾幕
+//3s事にアングルが完全にランダムに変わる全方位反射
+//ヒストリーオブムーン(新月〜満月を使った弾幕)
+const spell77 = {
+name: "火符｢アグニシャイン下級｣",
+dif:"e",
+desc:"",
+hint:"",
+ct:"今度は逆に簡単すぎたw時間伸ばしても良かったかな？432Way反射全方位アングルランダム&そのうち28発自機狙いとかいう属性モリモリ弾幕。遅いので簡単です。速度大切",
+nm:"最初の速度は1.5だったけどムズすぎたので0.75に。自機狙い弾を入れたのはもちろん真下でくねくねしてたら勝てるやつの対策。",
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:20,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+}
+const x = Half.x;
+const y = Half.y;
+if (pfr===1) {
+circle((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:x,
+y:y,
+size:16,
+type:"big",
+color:"red",
+speed:0.75,
+rd:0.5,
+custom:ev.i,
+fnlist:[{f:0,loop:true,fn:function() {
+reverse(this)
+    if (this.timer % 60 === 0 && this.custom % 15 !== 0) smooth(this,dtr(random(-180,180)),60)
+if (this.timer % 60 === 0 && this.custom % 15 === 0) this.angle=pf(this.x,this.y)
+}}]
+})
+},{count:432})
+}
 },
     img:"./japan2.png",
 mask:"./pale.png",
@@ -5395,3 +5491,2170 @@ imgSpeed:1.75,
 imgAlpha:0.25,
 }
 functions.push(spell77)
+const spell78 = {
+name: "想起｢妖童餓鬼の断食｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"我ながら上手い。再現度高くない？ちなみにちなむと難易度は普通に高い。",
+nm:"地味に白ウロコは初使用？",
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:20,
+run() {
+const cyc = pfr % 300;
+if (cyc === 180) bullets.forEach((e) => {
+e.scolor("white")
+e.speed = e.speed * 0.5;
+})
+if (cyc === 0) bullets.forEach((e) => {
+e.scolor("blue")
+e.speed = e.speed * 2;
+})
+const basic = {
+tempo:60,
+    rd:0.65,
+s:1.5,
+type:"star",
+color:"red",
+size:16,
+}
+const x = Half.x;
+const y = Half.y - 30;
+if (pfr===1 || pfr % 300 === 0) {
+for (let i = 0;i<canvas.w;i+=canvas.w/15) {
+const rand = random(-90,90)
+const progress = (i/(canvas.w/15)+1)/15
+wait(() => {
+
+arc((ev) => {
+const Pf = Math.random < 0.15 ? pf(ev.x,ev.y) : 0
+bullet({
+    angle:dtr(ev.deg+rand+Pf),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"scale",
+color:"blue",
+speed:1.5,
+rd:0.5,
+custom:{a:ev.deg+rand,i:progress},
+fnlist:[{f:0,loop:true,fn:function() {
+const V = Math.floor(this.custom.i * 30)
+const Tim1 = V
+const Tim2 = 41 + V
+if (this.timer === Tim1) smooth(this,dtr(180),40)
+if (this.timer === Tim2) smooth(this,dtr(180),40)
+
+if (this.timer === 90+V) {
+const Target = random(-0.5,0.5)
+for (let iS = 0;iS<30;iS++) wait(()=>{this.speed+=Target/30},iS)
+}}}],
+})
+},{count:54,x:i,y:y,length:0})
+
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"scale",
+color:"blue",
+speed:1.5,
+rd:0.65,
+custom:{a:ev.deg+rand,i:progress},
+fnlist:[{f:0,loop:true,fn:function() {
+const V = Math.floor(this.custom.i * 30)
+const Tim1 = V
+const Tim2 = 41 + V
+if (this.timer === Tim1) smooth(this,dtr(180),40)
+if (this.timer === Tim2) smooth(this,dtr(180),40)
+
+if (this.timer === 81+V) {
+this.angle = dtr(random(-180,1))
+}}}],
+})
+},{count:22,x:i,y:y,length:15})
+},progress*15)
+}
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell78)
+const spell79 = {
+name: "忍術｢クナイスプリンクラー｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"実は1000弾越えてません。970前後で耐えてますw実は..というかまあ普通に自機狙いですりあと個人的にムズいので3秒短縮して27sです。今回の弾幕新システム2つ使ってます。スムーズに動かすやつの関数版とシード値の簡易版です",
+nm:"シード値の新機能が神。this.seeds[0].random(min,max)で終わる",
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.y = Half.y
+gi(1)
+},
+time:27,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+this.prop.s += 1
+if (pfr % 2 === 0) {
+const angle = dtr(-90+random(-45,45))
+const A = 100;
+const X = Half.x;
+const Arr = [A,-A];
+const y = canvas.h
+const Pers = [30,45,60,120,34,25]
+const Index = normal(pfr,0,Pers.length)
+Arr.forEach((e) => {
+bullet({
+    angle:angle,
+x:Half.x+e,
+y:y,
+size:32,
+type:"scale",
+color:"blue",
+speed:3.5,
+rd:0.5,
+custom:Pers[Index],
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer === 1)smoothFn((ev) => {
+this.speed = 3.5 - ev.now
+},{target:3,f:240})
+if (this.timer > 180 && this.timer % this.custom === 0) {
+    bullet({
+    angle:0,
+x:this.x,
+y:this.y,
+size:16,
+type:"kunai",
+color:"red",
+speed:1.5,
+rd:0.5,
+fnlist:[{f:0,fn:function(){
+const s = pf(this.x,this.y)+dtr(SeedKey.random(this,-45,45))
+this.angle = s
+}}]
+})
+}
+}}],
+})
+})
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell79)
+const spell80 = {
+name: "弾幕｢弾幕の血｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"300ほど？さて、東東100個のスペカに到達しましたね。嬉しい！旧作20今作80=100‼️振り返ると色々追加されましたね〜テクスチャにシードにコールバックに軽量化にと、旧作からは大きく進化したと言えます。",
+nm:"名前つけるのに困った。",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:27,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+this.prop.s += 1
+if (pfr % 25 === 0 || pfr === 1) {
+const x = Half.x;
+const y = 0;
+const a = Math.floor(this.seeds[2].random(-15,15)+120)
+const angle = pf(x,y)
+    bullet({
+    angle:angle,
+x:x,
+y:y,
+size:32,
+type:"simple",
+color:"red",
+speed:1.5,
+rd:0.65,
+custom:a,
+fnlist:[{f:0,loop:true,fn:function(){
+this.speed=1.5
+}}]
+})
+}
+if (pfr % 7 === 0) {
+this.prop.bool += 1
+if (this.prop.bool > 1) this.prop.bool = -1;
+const b = this.prop.bool
+const x = Half.x+b*100;
+const y = 30;
+const angleSpread = this.seeds[0].random(-45,45)
+const base = pf(x,y) + dtr(angleSpread)
+const count = this.seeds[1].random(7,14)
+way((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"big",
+color:"yellow",
+speed:7.5,
+rd:0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer === 1)smoothFn((ev) => {
+this.speed += -ev.v
+},{target:3.5,f:15})
+if (this.timer === 20)smoothFn((ev) => {
+this.speed += -ev.v
+},{target:2,f:40})
+}}]
+})
+
+},{count:count,x,y,angle:base,length:30})
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell80)
+const spell81 = {
+name: "｢弾幕迷宮 -バレットラビリンス-｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"1200弾出てるけど気にしない、気にしない。2000発までは誤差w難しかったので27 > 26sにしました。27でもクリアしてるからセーフ。個人的に神弾幕",
+nm:"ここ書くのめんどい！解放してる人おらんてwただし描きます。あまり舐めるなよ！？",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0},
+init() {
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:26,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+this.prop.s += 1
+const cyc = pfr % 190
+if (cyc === 189) {
+this.prop.a = this.seeds[99].random(-50,50)
+this.prop.s = this.seeds[34].random(-15,15)
+this.prop.bool = !this.prop.bool
+}
+if (pfr % 3 === 0 && cyc < 30) {
+//const x = players[0].x;
+//const y = players[0].y;
+const x = Half.x + this.prop.a
+const ry = this.prop.bool ? 300 : 100
+const y=ry+this.prop.s
+const base = pf(x,y)+dtr(180)
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"big",
+color:"yellow",
+speed:1.5,
+rd:0.65,
+custom:1,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer<30) this.rd = 0.00
+if (this.timer>30) this.rd=1.00
+}},{f:120,fn:function(){this.angle+=dtr(180)}},{f:180,loop:true,fn:function(){
+if (this.custom <= 0) return
+const a = reverse(this)
+if (a) this.custom -= 1
+}}]
+})
+
+},{count:36,x,y,angle:base,length:3})
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell81)
+const spell82 = {
+name: "蝶符｢ミスティックフライヤー｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"700発。81の調整前。個人的に神弾幕！実は真の100スペカ目はこれ。旧作20は19のコピペ、23か27は旧作の輸入なため2つ減らすと完全100スペカになるのはこれ。",
+nm:"個人的に傑作",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:26,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+this.prop.s += 1
+const cyc = pfr % 190
+if (cyc === 189) {
+this.prop.a = this.seeds[99].random(-50,50)
+this.prop.s = this.seeds[34].random(-15,15)
+this.prop.bool = !this.prop.bool
+}
+if (pfr % 3 === 0 && cyc < 30) {
+this.prop.bool2=!this.prop.bool2
+const color = this.prop.bool2 ? "FF00FC" : "pink"
+const x = players[0].x;
+const y = players[0].y;
+const base = pf(x,y)+dtr(180)
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"fly",
+color:color,
+speed:2,
+rd:0.65,
+custom:1,
+vsize:32,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer<30) this.rd = 0.00
+if (this.timer>30) this.rd=1.00
+}},{f:120,fn:function(){this.angle+=dtr(180)}},{f:180,loop:true,fn:function(){
+if (this.custom <= 0) return
+const a = reverse(this)
+if (a) this.custom -= 1
+}}]
+})
+
+},{count:36,x,y,angle:base,length:3})
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell82)
+const spell83 = {
+name: "束符｢弾幕柱｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"1回詐欺円筒膨張って名前で別の弾幕だったけど作り直した。すご俺(？)なかなかめんどくさいタイプの弾幕",
+nm:"ムズい！反射系はなかなかムズいんだよねーしかも最後分散し始める",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:50,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+this.prop.s += 1
+const cyc = pfr % 300
+if (cyc === 189) {
+this.prop.s = this.seeds[34].random(-15,15)
+this.prop.bool = !this.prop.bool
+}
+if (pfr % 30 === 0 && pfr < 720) {
+this.prop.s += 72
+for (let i = 0;i<15;i+=3) {
+for (let yy = 0;yy<75;yy+=15){
+const color = "blue"
+const x = Half.x+i
+const y = normal(this.prop.y,0,canvas.h)+yy
+const base = this.prop.s
+bullet({
+    angle:base,
+x:x,
+y:y,
+size:16,
+type:"amulet",
+color:color,
+speed:1.5,
+rd:0.65,
+custom:{c:1,o:Math.random()>0.6},
+fnlist:[{f:0,loop:true,fn:function() {
+const b = reverse(this)
+if (b) this.custom.c+=1
+if (this.custom.c===11&&this.custom.o) {
+this.custom.c++
+this.angle += dtr(random(-180,180))
+}
+}}]
+})
+}
+}
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell83)
+//一次元弾幕 上下移動のみ、横移動のみで定期的に切り替わる。上下は横から来る、横は縦から
+const spell84 = {
+name: "線符｢一次元弾幕｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"一次元テーマの弾幕はあんまないでしょー！シード値システムに加えて枠外に出ると積みます(消えない爆速クソデカ反射36Way×300回)。神弾幕",
+nm:"発案した時あまりの良さに覚醒した。長すぎたかな時間",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:50,
+run() {
+function end(b) {
+    b.custom.f = true
+for (let yc = 0;yc<300;yc+=10) {
+wait(() => {
+circle((ev)=> {
+bullet({
+    angle:dtr(ev.deg),
+x:Half.x,
+y:Half.y,
+size:64,
+type:"simple",
+color:"red",
+speed:7.5,
+rd:1,
+fnlist:[{f:0,loop:true,fn:function(){reverse(this)}}]
+    })
+},{count:36})
+    },yc)
+}}
+//一次元弾幕 上下移動のみ、横移動のみで定期的に切り替わる。上下は横から来る、横は縦から
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+const cyc = pfr % 2400
+if (cyc < 1200) {
+this.prop.s += 3
+if (pfr % 1 === 0) {
+this.prop.bool = !this.prop.bool
+const angle = this.prop.bool ? dtr(90) : dtr(-90)
+const y = this.prop.bool ? 0 : canvas.h
+const x = (normal(this.prop.s,0,canvas.w)) + this.seeds[0].random(-35,35)
+bullet({
+    angle:angle,
+x:x,
+y:y,
+size:16,
+type:"amulet",
+color:"aqua",
+speed:1.5,
+rd:0.65,
+})
+}
+if (cyc === 30) {
+const y = players[0].y;
+const x = 0;
+const base = dtr(0)
+const limit = 60
+for (let i = -limit;i<limit;i+=limit)bullet({
+    angle:base,
+x:x,
+y:y+i,
+size:16,
+type:"laser",
+color:"red",
+speed:60,
+rd:0.65,
+deleteFrame:1200,
+custom:{d:y+i,o:players[0].y,f:false},
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer < this.speed*2) return;
+console.log("Y:",players[0].y - this.d,"N:",this.y,"O:",this.custom.o)
+    if (players[0].y - this.custom.d > limit+15 && this.y <= this.custom.o && !this.custom.f) {
+        end(this)
+    }
+    if (this.custom.d - players[0].y > limit+15 && this.y >= this.custom.o && !this.custom.f) {
+        end(this)
+    }    
+}}]
+})
+}
+
+} else {
+this.prop.a += 3
+if (pfr % 2 === 0) {
+const sp = this.prop.a
+const Y1 = players[0].y;
+const Y2 = Half.y + this.seeds[1].random(-75,75)
+const x1 = 0
+const x2 = canvas.w - 30
+bullet({
+    angle:dtr(0),
+x:x1,
+y:Y1,
+size:24,
+type:"scale",
+color:"green",
+speed:0.5,
+rd:0.65,
+deleteFrame:1200,
+fnlist:[{f:0,loop:true,fn:function() {
+    if (this.timer %30 ===0) this.angle=pf(this.x,this.y)
+if (pfr % 2400 <= 30) this.deleteFrame=0
+reverse(this)
+}}]
+})
+if (pfr % 60 === 0) circle((ev) => {
+bullet({
+    angle:dtr(ev.deg+sp),
+x:x2,
+y:Y2,
+size:24,
+type:"scale",
+color:"gold",
+speed:1.5,
+rd:0.65,
+deleteFrame:1200,
+})
+},{count:36})
+}
+if (cyc === 1230) {
+bullets.forEach(e=>e.deleteFrame=0)
+const limit = 60;
+    const y = 0;
+const x = players[0].x;
+const base = dtr(90)
+for (let i = -60;i<60;i+=60)bullet({
+    angle:base,
+x:x+i,
+y:y,
+size:16,
+type:"laser",
+color:"red",
+speed:60,
+rd:0.65,
+custom:{d:x+i,o:players[0].x,f:false},
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer < this.speed*2) return;
+console.log("X:",players[0].x - this.d,"N:",this.x,"O:",this.custom.o)
+    if (players[0].x - this.custom.d > limit+15 && this.x <= this.custom.o && !this.custom.f) {
+        end(this)
+    }
+    if (this.custom.d - players[0].x > limit+15 && this.x >= this.custom.o && !this.custom.f) {
+        end(this)
+    }    
+}}]
+})
+}
+}
+    
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell84)
+const spell85 = {
+name: "道化｢サーカスボール｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"見た目に力入れてて軽くて楽しい！力作🤩",
+nm:"実は簡単すぎて調整ミスったために86が爆誕。",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+const dat = {
+decrease:{count:9,space:30,angle:72},
+inital:{count:72,space:150,angle:90},
+frequency:6,
+}
+const x = Half.x;
+const y = Half.y - 60
+if (pfr===1 || pfr % 360 === 0) {
+for (let i = 0;i<dat.frequency;i++) {
+
+const angle = dtr(dat.inital.angle + (i*dat.decrease.angle))
+const count = dat.inital.count - (i*dat.decrease.count)
+const space = dat.inital.space - (i*dat.decrease.space)
+const astep = 360 / count
+    // 偶数層と奇数層でstartDegを半ステップずらす → ジグザグに見える
+    const startDeg = (i % 2 === 0) ? 0 : astep 
+arc((ev) => {
+const color = ev.i % 2 === 0 ? "blue" : "red"
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"normal",
+color:color,
+speed:0,
+rd:0.65,
+custom:{itsPf:true,x,y},
+setlist:[{f:3,e:1.5},{f:18,e:1.15}],
+fnlist:[{f:0,loop:true,fn:function() {
+this.angle = pf(this.custom.x,this.custom.y)
+}}],
+vsize:15
+})
+    
+},{count:count,x:x,y:y,angle:angle,length:space,startDeg:startDeg})
+}
+}
+
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell85)
+const spell86 = {
+name: "混乱｢曲芸弾幕｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"サーカスボールの進化版。高難易度すぎたので分離。",
+nm:"この分け方いいね。いつか常用するかも",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+const dat = {
+decrease:{count:9,space:20,angle:72},
+inital:{count:72,space:150,angle:90},
+frequency:6,
+}
+const x = Half.x;
+const y = Half.y - 60
+if (pfr===1 || pfr % 360 === 0) {
+for (let i = 0;i<dat.frequency;i++) {
+
+const angle = dtr(dat.inital.angle + (i*dat.decrease.angle))
+const count = dat.inital.count - (i*dat.decrease.count)
+const space = dat.inital.space - (i*dat.decrease.space)
+const astep = 360 / count
+    // 偶数層と奇数層でstartDegを半ステップずらす → ジグザグに見える
+    const startDeg = (i % 2 === 0) ? 0 : astep 
+arc((ev) => {
+const color = ev.i % 2 === 0 ? "blue" : "red"
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"normal",
+color:color,
+speed:0,
+rd:0.65,
+custom:{itsPf:true,x,y},
+setlist:[{f:3,e:1.5},{f:18,e:1.15}],
+fnlist:[{f:0,loop:true,fn:function() {
+this.angle = pf(this.custom.x,this.custom.y)
+}}],
+vsize:15
+})
+    
+},{count:count,x:x,y:y,angle:angle,length:space,startDeg:startDeg})
+}
+}
+
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell86)
+const spell87 = {
+name: "星符｢星の降る街｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"見た目重視。割といいんじゃない？？？",
+nm:"実はこの名前、スペル100完成してから難易度名前説明を書いてる。",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+if (time(60))  {
+this.prop.a += 32;
+const a = this.prop.a
+formula(ev => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"normal",
+color:"red",
+speed:0,
+rd:0.65,
+custom:ev.i,
+fnlist:[{f:60,fn:function() {
+this.angle += dtr(180)
+wait(()=>{this.angle+=(this.custom)},60)
+this.speed = 1.5
+}}]
+})
+  }, { count: 120, m: 6, n1: 0.3, n2: 1.7, n3: 1.7, scale: 100,x:Half.x,y:Half.y,angle:a });
+
+}
+if (time(60)) {
+const x = this.seeds[34].random(0,canvas.w)
+const y = 0
+for (let i = 0;i<30;i++) wait(() => {
+way((ev) => {
+bullet({
+    angle:pf(ev.x,ev.y)+dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"big",
+color:"blue",
+speed:3.5,
+rd:0.65,
+custom:ev.i,
+})
+},{count:3,x,y,length:1,spreadDeg:15})
+},i)
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell87)
+//直線から降りてきてからの横に並び直す弾幕
+const spell88 = {
+name: "空符｢晴のち弾幕｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"クソムズイ。パターン化が大切。",
+nm:"テストでかなり弱体化を繰り返した",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:25,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+if (time(2)) {
+const x = this.seeds[31].random(0,canvas.w)
+const y = 0
+const angleS = [
+{a:dtr(this.seeds[16].random(0,180)),s:2.5,color:"blue",type:"big",size:24}
+]
+if (time(60)) angleS.push({a:pf(x,y),s:2,color:"red",type:"big",size:24})
+angleS.forEach((angle) => {
+for (let i = 0;i<2;i++) wait(() => {
+way((ev) => {
+bullet({
+    angle:angle.a,
+x:ev.x,
+y:ev.y,
+size:angle.size,
+type:angle.type,
+color:angle.color,
+speed:angle.s,
+rd:0.65,
+custom:dtr(ev.deg)+angle.a,
+fnlist:[{f:30,fn:function(){
+this.angle=this.custom}}]
+})
+},{count:4,x,y,length:0,spreadDeg:15})
+},i*16)
+})
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell88)
+const spell89 = {
+name: "糸符｢蜘蛛の狩り｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"かっこいい。いい感じ。",
+nm:"ここ書くのめんどい！()けど個人的に少しムズいか？むずくしすぎたというかレーザー少なくても良かったかも",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:25,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+if (time(30)) {
+const x = Half.x
+const y = Half.y - 80
+this.prop.bool = !this.prop.bool
+const rev = this.prop.bool ? 90 : -90
+this.prop.a += 72;
+const p = this.prop.a
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg+180+p),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"small",
+color:"mag",
+speed:0,
+rd:0.65,
+custom:ev.i,
+fnlist:[{f:ev.i*2,fn:function(){
+this.scolor("red")}},{f:240,fn:function(){this.speed = 3.5}},{f:241,loop:true,fn:function() {
+if (this.timer ===300) {
+this.angle += dtr(rev)
+bullet({
+    angle:this.angle,
+x:this.x,
+y:this.y,
+size:16,
+type:"laser",
+color:"red",
+speed:60,
+rd:0.65,
+deleteFrame:90
+})
+}
+}}]
+})
+},{count:36,x,y,length:30})
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg+180+p),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"big",
+color:"blue",
+speed:7.5,
+rd:0.65,
+custom:ev.i,
+fnlist:[{f:20+6,fn:function(){
+this.deleteFrame=0}}]
+})
+},{count:72,x,y,length:0})
+}
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell89)
+const spell90 = {
+name: "冬符｢新・パーフェクトサマーアイス｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"今回のアプデむずくしすぎた？90の大台に相応しいね。",
+nm:"実はパーフェクトサマーアイス取得チャレンジの動画みて思いついた",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+if (time(30)) {
+this.prop.a += 72
+const sp2 = this.seeds[1].random(0,0)
+const x = Half.x
+const y = Half.y - 80
+const sp = this.seeds[0].random(-45,45)
+const base = this.prop.a;
+const ly = canvas.h
+const lx = 0;
+const la = dtr(0)
+bullet({
+    angle:la,
+x:lx,
+y:ly,
+size:158,
+type:"laser",
+color:"blue",
+speed:30,
+rd:0.65,
+deleteFrame:30
+})
+const type = "kunai2"
+const color = "blue"
+const size = 32
+const speed = 0
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg+sp)+pf(x,y),
+x:ev.x,
+y:ev.y,
+size:size,
+type:type,
+color:color,
+speed:speed,
+custom:{a:dtr(ev.deg+sp)+pf(x,y),c:3},
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer < 60) this.speed += 3.5/60
+if (this.custom.c ===1) this.scolor("aqua")
+if (this.custom.c>0) {
+const a = reverse(this)
+if(a) {
+this.custom.c -= 1
+this.scolor("cobalt")
+this.angle=this.custom.a+=dtr(180)
+this.speed = 2.5
+}
+}}}],
+rd:0.65,
+})
+},{count:8,x,y,length:30,startDeg:base})
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell90)
+//自機狙い八方向でかいくない45どぶれ
+//動くレーザーをfnlist使って実装、それを使って動いたことで生まれてく隙間に入ってぬけてくすぺか
+const spell91 = {
+name: "針符｢舞い降りる針山｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"分かりやすく上安置。",
+nm:"やるやん！上安置は被弾確定なのでここを見れる人は安置使ってない人",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+if (time(60)) {
+this.prop.a += 72
+const sp2 = this.seeds[1].random(0,0)
+const x = Half.x
+const y = Half.y - 80
+const base = dtr(90);
+const ly = canvas.h
+const lx = 0;
+const la = dtr(0)
+const type = "kunai2"
+const color = "crim"
+const size = 32
+const speed = 3
+way((ev) => {
+const sp = this.seeds[0].random(-45,45)
+bullet({
+    angle:dtr(ev.deg+sp),
+x:ev.x,
+y:ev.y,
+w:32,
+h:64,
+type:type,
+color:color,
+speed:speed,
+setlist:[{f:12,e:0},{f:42,e:3.5}],
+rd:0.65,
+})
+},{count:72,x:0,y:0,length:30,angle:dtr(90),spreadDeg:0,sx:8})
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell91)
+//360Way全方位弾が発射。初期速度は0かつあたりはんたいがないのでその間に空白スペースに入り続けるスペカ
+const spell92 = {
+name: "記憶｢追憶のリング｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"気に入ってる。実は弾数節約のためにway数少ないので、本気出せば間に入らなくてもいい",
+nm:"意外とムズくない。気に入ってる",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+const frequency = 9;
+const xu = 60;
+const fr = frequency*xu;
+const tf = fr + xu
+const yoyuu = 30;
+if (time(tf)) {
+this.prop.a += 72
+const sp2 = this.seeds[1].random(0,0)
+const base = dtr(90);
+const ly = canvas.h
+const lx = 0;
+const la = dtr(0)
+const type = "normal"
+const color = "crim"
+const size = 16
+const speed = 3
+for (let i = 1;i <= frequency;i++) {
+const x = random(0,canvas.w)
+const y = random(0,canvas.h)
+const frame = i * xu
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size,
+type:type,
+color:color,
+speed:0,
+custom:frame,
+rd:0,
+fnlist:[{f:0,loop:true,fn:function(){
+if (this.custom -yoyuu<this.timer) {
+    this.scolor("green")
+}
+if (this.timer > this.custom) {
+this.rd=1.00
+this.speed = 7.5;
+}
+}}]
+})
+},{count:108,x:x,y:y,length:30})
+}}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell92)
+const spell93 = {
+name: "天符｢舞い降りる弾幕｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"今回のアプデ気合い避け多いw実は1100発超えないギリギリです。ピーク1040www",
+nm:"分かりやすく微妙い。速度早い？",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+const frequency = 16;
+const xu = 2;
+const t = 60;
+const fr = frequency*xu;
+const tf = fr + xu
+const yoyuu = 30;
+if (time(tf*3)) {
+this.prop.a += 72
+const sp2 = this.seeds[1].random(0,0)
+const base = dtr(90);
+const ly = canvas.h
+const lx = 0;
+const la = dtr(0)
+const type = "big"
+const color = "white"
+const size = 16
+const speed = 3
+for (let i = 1;i <= frequency;i++) {
+const x = random(0,canvas.w)
+const y = random(0,150)
+const frame = Math.floor((i * xu)+t)
+wait(() => {
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size,
+type:type,
+color:color,
+speed:0,
+custom:{m:frame,timer:0},
+rd:0,
+fnlist:[{f:0,loop:true,fn:function(){
+if (this.custom.m -yoyuu<this.timer) {
+    this.scolor("crim")
+}
+if (this.timer > this.custom.m) {
+this.rd=1.00
+if (this.timer === this.custom.m+1)this.speed = 3.5;
+this.custom.timer+=1
+}
+if (this.timer === this.custom.m + 30) this.speed = 0
+if (this.custom.timer > 60 && this.custom.timer < 120) this.speed += 1.5/60
+}}]
+})
+},{count:24,x:x,y:y,length:30})
+},frame)
+    
+}}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell93)
+const spell94 = {
+name: "式神｢藍｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"ムズいwでも藍っぽくない！？！？てか何よりボスが動いてます！！初の移動スペカ",
+nm:"3回くらい調整しました。",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false,c:0,a2:0},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.c = 0
+this.prop.a2 = 0;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+const type = "big"
+const color = "white"
+const size = 24
+const speed = 3
+if (time(20)) {
+this.prop.bool = !this.prop.bool
+this.prop.a2 += 36
+const y = entity.y
+let f = 1
+this.prop.a+=1
+this.prop.c++
+if (time(120)) {
+this.prop.s += 1;
+const ox = this.prop.s === 1 ? 0 : (this.prop.s === 2 ? 0 - 100 : 0 + 200);
+
+let nx = entity.x+ox
+let ny = entity.y+random(-15,15)
+if (this.prop.s === 4) {
+    nx = Half.x;
+ny = Half.y;
+this.prop.s = 1;
+entity.mov(nx,ny)
+}
+entity.mov(nx,ny,false)
+this.prop.c = 0
+}
+const x = entity.x;
+if (this.prop.a===4) {
+    f = 4
+this.prop.a = 0
+}
+const po = this.prop.bool
+const a2 = this.prop.a2
+for (let i = 0;i<f;i++) {
+wait(() => {
+arc((ev) => {
+const p = po ? 0 : pf(ev.x,ev.y)
+wait(() => {
+bullet({
+    angle:dtr(ev.deg+a2+p),
+x:ev.x,
+y:ev.y,
+size,
+type:"kunai",
+color:"purple",
+speed:3,
+rd:0.65,   
+})
+bullet({
+    angle:dtr(ev.deg+35+a2),
+x:ev.x,
+y:ev.y,
+size,
+type:"kunai",
+color:"aqua",
+speed:2.5,
+rd:0.65,   
+})
+bullet({
+    angle:dtr(ev.deg-35+a2),
+x:ev.x,
+y:ev.y,
+size,
+type:"kunai",
+color:"lime",
+speed:1.5,
+rd:0.65,   
+})
+},ev.i/2)
+},{x,y,length})
+},i*6)}
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell94)
+const spell95 = {
+name: "鏡視｢ルナティックミラージュ｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"見た目詐欺。当たり判定はめちゃくちゃちっちゃいです。1/8レベル！逆さにしてやるとやりやすいかも？",
+nm:"割とやるやん！気合い避けの中でも結構好き",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false,c:0,a2:0},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.c = 0
+this.prop.a2 = 0;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:25,
+run() {
+if (time()) this.prop.s = 20
+const basic = {
+tempo:60,
+    rd:0.65,
+s:3.5,
+type:"star",
+color:"red",
+size:16,
+}
+function end(b) {
+    b.custom.f = true
+for (let yc = 0;yc<300;yc+=10) {
+wait(() => {
+circle((ev)=> {
+bullet({
+    angle:dtr(ev.deg),
+x:Half.x,
+y:Half.y,
+size:64,
+type:"simple",
+color:"red",
+speed:7.5,
+rd:1,
+fnlist:[{f:0,loop:true,fn:function(){reverse(this)}}]
+    })
+},{count:36})
+    },yc)
+}}
+
+if(time()) {bullet({
+    angle:dtr(0),
+x:0,
+y:200,
+w:60,
+type:"laser",
+color:"red",
+speed:4.5,
+rd:0.65,
+custom:{d:200,o:players[0].y,f:false},
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer < this.speed*2) return;
+console.log("Y:",players[0].y - this.d,"N:",this.y,"O:",this.custom.o)
+/*
+if (players[0].y - this.custom.d > 60+15 && this.y <= this.custom.o && !this.custom.f) {
+        end(this)
+    }
+*/
+
+if (this.custom.d - players[0].y > 15 &&!this.custom.f) {
+        end(this)
+    }    
+}}]
+})
+}
+const length = 0
+const type = "big"
+const color = "white"
+const size = 12
+const speed = 3
+const y = entity.y
+const x = entity.x
+
+if(time(0)) {
+this.prop.a+=36
+bullet({
+    angle:dtr(-90),
+x:random(0,canvas.w),
+y:canvas.h,
+size,
+type:"polygon",
+color:"red",
+speed:4.5,
+setlist:[{f:0,e:0.5},{f:12,e:4.5},{f:60,e:13}],
+fnlist:[{f:61,fn:function(){
+this.size=512;
+this.vsize=128
+}}],
+rd:0.65,
+vsize:48
+})
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell95)
+const spell96 = {
+name: "手玉｢追従する御札｣",
+dif:"l",
+desc:"",
+hint:"",
+ct:"ネタ動画見て思いついた。",
+nm:"ネタ動画見て思いついた。割とムズいw",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,bool2:false,c:0,a2:0,obj:{}},
+init() {
+this.prop.bool2 = false
+this.prop.s =0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = Half.x;
+this.prop.c = 0
+this.prop.a2 = 0;
+this.prop.obj={}
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:20,
+run() {
+
+const amount = 5;
+const amount2 = amount
+const cooldown = 60
+
+function summon(c="purple",x,y,fn=[],custom={}) {
+arc((ev)=> {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"amulet",
+color:c,
+speed:3.5,
+rd:0.65,
+custom,
+fnlist:[{f:0,loop:true,fn:function() {
+    if(this.color === "purple") {
+    if (this.timer === 16) this.speed = 0.5;
+if(this.timer === 30) this.speed = 3.5;
+if (this.timer>30&&time(60,this.timer)) this.angle+=dtr(45)
+    }
+    if(this.color === "green") {
+    this.speed = 8
+if(this.timer>18)this.speed=2.5
+    }
+}
+}],
+})
+},{count:36,x,y,})
+}
+if(time()) {
+    this.prop.obj.a = 0;
+    this.prop.obj.b = 0;
+    this.prop.obj.c = 0;
+    this.prop.obj.d = 0;
+    this.prop.obj.e = 0;
+}
+this.prop.bool = !this.prop.bool
+this.prop.a2 += 36
+const y = entity.y
+let f = 1
+this.prop.c++
+if (time(30)&&this.prop.obj.a < amount) {
+this.prop.obj.a+=1
+this.prop.s += 1;
+const ox = random(-200,200)
+summon("purple",entity.x,entity.y)
+let nx = entity.x+ox
+let ny = entity.y+random(-15,15)
+if (this.prop.s === amount-1) {
+    nx = Half.x;
+ny = Half.y;
+this.prop.s = 1;
+entity.mov(nx,ny)
+}
+summon("green",nx+random(-150,150),ny+random(-15,15))
+entity.mov(nx,ny,false)
+this.prop.c = 0
+}
+if (this.prop.obj.a === amount2) {
+this.prop.obj.b +=1
+}
+if (this.prop.obj.a===amount2 && this.prop.obj.b>cooldown) {
+    this.prop.obj.a =0
+this.prop.obj.b = 0
+}
+const x = entity.x;
+if (this.prop.a===10) {
+    f = 4
+this.prop.a = 0
+}
+
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell96)
+const spell97 = {
+name: "邪道｢行進する闇｣",
+dif:"h",
+desc:"",
+hint:"",
+ct:"ボスが動きます。どんどん余裕が無くなる！",
+nm:"移動はAiに任せた。んな計算式かけねえわ。",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,step:0,shrink:0,speed:0},
+init() {
+this.prop.s = 0
+this.prop.a = 0
+this.prop.rng = {s:999}
+this.prop.bool = true
+this.prop.x = Half.x
+this.prop.y = Half.y
+this.prop.step = 0     // 今何辺目の移動中か(0~7、辺ごとにX移動/Y移動を分ける)
+this.prop.shrink = 0   // 何周縮んだか
+
+// ==== 初期四角の1周距離から速度を逆算 ====
+const margin = 40
+const w = canvas.w - margin*2
+const h = canvas.h - margin*2
+const perimeter = (w + h) * 2
+const targetFrames = 60 * 10 // 6秒
+this.prop.speed = perimeter / targetFrames
+
+gi(1)
+},
+time:30,
+run() {
+    const basic = {
+        tempo:60,
+        rd:0.65,
+        s:1.5,
+        type:"star",
+        color:"red",
+        size:16,
+    }
+
+    // ==== 渦巻き四角形の移動ロジック(斜めなし、辺ごとにX/Yを分けて移動) ====
+    const margin = 40
+    const shrinkStep = 30
+    const maxShrink = 4
+
+    // entityが目標に到達したら次の区間へ
+    if (entity.x === entity.nx && entity.y === entity.ny) {
+        const sh = this.prop.shrink * shrinkStep
+
+        const corners = [
+            { x: margin + sh,                y: margin + sh },               // 左上
+            { x: canvas.w - margin - sh,      y: margin + sh },               // 右上
+            { x: canvas.w - margin - sh,      y: canvas.h - margin - sh },    // 右下
+            { x: margin + sh,                 y: canvas.h - margin - sh },    // 左下
+        ]
+
+        // step%4で今向かう頂点を決め、X→Y(または既にX,Yどちらかは揃ってる)の順で移動させる
+        // 各頂点は前の頂点とX or Y が共通なので、直線移動しかしない
+        const target = corners[this.prop.step % 4]
+        entity.mov(target.x, target.y, true, this.prop.speed)
+
+        this.prop.step += 1
+        if (this.prop.step % 4 === 0) {
+            this.prop.shrink += 1
+            if (this.prop.shrink > maxShrink) this.prop.shrink = 0
+        }
+    }
+
+    // ==== ついでに弾も出しておく ====
+    if (pfr % 15 === 0) {
+this.prop.a+=72
+const p = this.prop.a
+arc((ev)=> {
+bullet({
+    angle:dtr(ev.deg+p)+pf(ev.x,ev.y),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"big",
+color:"crim",
+speed:2,
+rd:0.65,
+})
+},{count:27,x:entity.x,y:entity.y,})
+
+    }
+},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell97)
+const spell98 = {
+name: "虹符｢弾幕宴・賑｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"見た目の割には簡単。綺麗でしょ？上側とか綺麗。はて、降ってくる時は単色なのに何故下側は虹色なんだろう？",
+nm:"降ってくるときに色を変えてるから画面が賑やかでしょ？弾幕祭りの仲間(？)",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,step:0,shrink:0,speed:0},
+init() {
+this.prop.bool2 = false
+this.prop.s =-1
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = -1;
+this.prop.c = 0
+this.prop.a2 = 0;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:30,
+run() {
+    if (time(60)) {
+this.prop.s+=1
+const colors = ["crim","orange","yellow","green","aqua","cobalt","purple"]
+for (let i = 0;i<90;i+=30) {
+const color = colors[Math.floor(normal(this.prop.s,0,colors.length))]
+this.prop.x+=1
+const color2 = colors[Math.floor(normal(this.prop.x,0,colors.length))]
+const o = i
+
+this.prop.a+=36
+const p = this.prop.a
+const custom = {p,i:o,color2,a:0,s:1.75+this.seeds[6].random(-0.35,0.35)}
+const cache = []
+const count = 36
+for(let g=1;g<count+1;g++) {
+if (g===1) {
+cache.push({a:this.seeds[2].random(0,0),b:true})
+} else {cache.push({a:this.seeds[0].random(0,180),b:false})}
+}
+arc((ev)=> {
+const size = i === 0 ? 32 : 24
+const type = i === 0 ? "big" : "big"
+bullet({
+    angle:dtr(ev.deg+p),
+x:ev.x,
+y:ev.y,
+size,
+type,
+color:color,
+speed:3,
+rd:0.65,
+custom:custom,
+fnlist:[{f:Math.floor(custom.i/2),fn:function() {
+this.speed = 0.0
+const u = cache[ev.i] 
+const ang = u.b ? pf(this.x,this.y) + dtr(u.a) : dtr(u.a)+this.angle
+const t = u.b ? 1 : 60
+smoothSet(this,ang,t)
+}},{f:Math.floor(custom.i),fn:function() {
+this.speed = this.custom.s
+}},{f:Math.floor(custom.i+60),fn:function(){this.scolor(this.custom.color2)
+    const u = cache[ev.i] 
+if(u.b)this.speed = 3
+}}]
+})
+},{count,x:entity.x,y:entity.y,})
+
+    }
+}},
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell98)
+const spell99 = {
+name: "鬼符｢弾幕鬼ごっこ｣",
+dif:"n",
+desc:"",
+hint:"",
+ct:"パターン化すれば余裕。きゅうけつ鬼ごっこの姉妹的なあれですね。難易度はそこまで。ぐるぐるしたら終わるし。",
+nm:"よく出来たね！？後半はとんでもないくらいごちゃごちゃしてるんだけど...未知のパターンがあったか？",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,step:0,shrink:0,speed:0},
+init() {
+this.prop.bool2 = false
+this.prop.s =-1
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = -1;
+this.prop.c = 0
+this.prop.a2 = 0;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:35,
+run() {
+    if (time(2)) {
+bullet({
+    angle:dtr(0),
+x:players[0].x,
+y:players[0].y,
+size:16,
+type:"normal",
+color:"white",
+speed:0,
+rd:0,
+fnlist:[{f:60,fn:function() {
+this.rd = 1.00;
+this.speed = 3;
+this.scolor("red")
+this.angle = pf(this.x,this.y)+dtr(random(-45,45))
+bullet({
+    angle:dtr(0),
+x:this.x,
+y:this.y,
+size:16,
+type:"normal",
+color:"blue",
+speed:0,})
+}}]
+})
+}
+
+    },
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+functions.push(spell99)
+const spell100 = {
+name: "禁忌｢そして誰もいなくなるか？｣",
+dif:"p",
+desc:"",
+hint:"",
+ct:"1100発をギリ超える1152発がラストにはあります！いやまあ意識してないんすけどw弾幕はまだまだ作るんで！！伝説の100スペル目に相応しいと思う。なう(2026/09/06 20:53:38)ラストのスペル。前が08/19なのでかなり期間が空きましたが 76 > 100と大躍進！！",
+nm:"何気に100スペルも作ったんだな...50スペル目には確かあと30で100スペルとか、80にはとうとう100スペルとか書いてたけど正真正銘の100スペルはこいつ！！",
+seeds:[],
+prop:{s:0,a:1,rng:{s:999},bool:false,x:0,y:0,step:0,shrink:0,speed:0},
+init() {
+this.prop.bool2 = false
+this.prop.s = 0
+this.prop.a=0;
+this.prop.rng={s:999}
+this.prop.bool = true;
+this.prop.x = 0;
+this.prop.c = 0
+this.prop.a2 = 0;
+const count = 100;
+const arr = Array(100).fill(0).map((e,i)=>e=i*15)
+const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+const s = {spread:arr,name:alphabet.splice(0,arr.length)}
+this.seeds = Seed.multi(
+    arr,
+    true);
+this.prop.y = Half.y
+gi(1)
+},
+time:40,
+run() {
+if(time()){this.prop.a=-1}
+const as = [0,45,90,80,180,-45,-180,313767659201343462]
+const ss = [0,0,-0.5,0.2,-1,0,-0.5,-0.4,1,0,0,0,0,0,0,0]
+const x = Half.x,y=Half.y
+    if (time(300)) {
+this.prop.a+=1
+const p = as[this.prop.a]
+const s = ss[this.prop.a]
+bullets.forEach(e=>e.speed=0)
+arc((ev) => {
+bullet({
+    angle:pf(ev.x,ev.y)+dtr(p),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"normal",
+color:"crim",
+speed:1.5+s,
+rd:0.65,
+noAuto:true,
+custom:1,
+fnlist:[{f:0,loop:true,fn:function() {
+const a = reverse(this)
+if (a && this.custom>0) {
+this.custom-=1
+bullet({
+    angle:pf(ev.x,ev.y)+dtr(180),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"normal",
+color:"crim",
+speed:1.5+s,
+rd:0.65,
+noAuto:true,
+fnlist:[{f:0,loop:true,fn:function() {
+const a = reverse(this)
+}}]
+})
+}}}]
+})
+},{length:300,x,y,count:72})
+}
+
+    },
+    img:"./japan2.png",
+mask:"./pale.png",
+maskAlpha:0.35,
+maskSpeed:0.15,
+imgSpeed:1.75,
+imgAlpha:0.25,
+}
+//全方位lengthが300くらいで画面端くらいから内側に向かって出てくる
+functions.push(spell100)

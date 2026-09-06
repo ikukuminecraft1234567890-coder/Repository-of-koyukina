@@ -27,6 +27,11 @@ export const intern = (c) => {
 // タスクごとに一意のIDを割り振るためのカウンター
 export let nextTaskId = 0;
 
+/**
+ * @param {Function} callback - 実行したい関数
+ * @param {number} time - 待機する時間（フレーム数またはミリ秒）
+ * @param {boolean} [isFrame=true] - trueならフレーム換算、falseならミリ秒換算
+ */
 export function wait(callback, time, isFrame = true) {
     if (typeof callback !== 'function') return;
 
@@ -48,7 +53,7 @@ export function wait(callback, time, isFrame = true) {
                 return true; // 終了フラグ
             }
             return false;
-        }
+        },
     });
 }
 
@@ -85,7 +90,7 @@ const zanki = stat.isChallenge ? stat.nowzanki : zankia
     // ※内部で globalThis に自動登録されるか、players配列にプッシュされる想定
     const playerObj = new Player(canvas.w / 2, canvas.h - 50, 15, "magenta", playerSize, it, zanki);
     // 3. ボスエンティティの生成
-    entity = new Entity("ボス", Half.x, Half.y - 80, 20, "purple", 3, true,20,Infinity);
+    entity = new Entity("ボス", Half.x, Half.y - 80, 20, "purple", 6, true,20,Infinity);
 
     // 4. 弾種・カラーパレットの事前登録（引数があれば一括処理）
     for (const config of bulletTypes) {
@@ -375,13 +380,6 @@ export function ccolor(r, g, b) {
 
 
 
-export function ns(s = 1) {
-  let x = (s === 0 ? 1 : s) >>> 0;
-  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
-  x ^= x << 13; x ^= x >>> 17; x ^= x << 5; // 2周目
-  return x >>> 0;
-}
-
 export function seed(min, max, s = 1, { isFloat = true, ns: autoStep = false } = {}) {
   let currentSeed = (typeof s === 'object' && s !== null) ? s.s : s;
   const safeSeed = (currentSeed === 0 ? 1 : currentSeed) >>> 0;
@@ -406,15 +404,114 @@ export function seed(min, max, s = 1, { isFloat = true, ns: autoStep = false } =
 
   return val;
 }
+export function ns(s = 1) {
+  let x = (s === 0 ? 1 : s) >>> 0;
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5; // 2周目
+  return x >>> 0;
+}
+
+/* ============================================================
+   ① インスタンス版：new Seed() したものに直接 .random() が生える
+   this.seeds = Seed.multi([...], true) で複数まとめて作れる
+   ============================================================ */
+export class Seed {
+  constructor(v, add = true) {
+    if (v === undefined) {
+      this.s = stat.pfr >>> 0;
+    } else if (add) {
+      this.s = (stat.pfr + v) >>> 0;
+    } else {
+      this.s = (v === 0 ? 1 : v) >>> 0;
+    }
+  }
+
+  random(min, max, isFloat = true) {
+    const mixed = ns(this.s);
+    this.s = mixed;
+
+    const rand01 = mixed / 4294967296;
+    const lower = Math.min(min, max);
+    const upper = Math.max(min, max);
+
+    return isFloat
+      ? lower + rand01 * (upper - lower)
+      : Math.floor(lower + rand01 * (upper - lower + 1));
+  }
+
+  call(min, max, isFloat = true) {
+    return this.random(min, max, isFloat);
+  }
+
+  // 複数のSeedインスタンスを一括生成
+  static multi(spread = [], add = true) {
+    return spread.map(v => new Seed(v, add));
+  }
+}
+
+/* ============================================================
+   ② entity/キー版：好きなオブジェクト(entityやthisなど)を渡して
+   Seed.random(entity, min, max) で呼ぶ。WeakMapで状態を紐付け。
+   entity側にプロパティを生やさずに済むのが利点。
+   ============================================================ */
+class SeedInstance {
+  constructor(v, add = true) {
+    if (v === undefined) {
+      this.s = stat.pfr >>> 0;
+    } else if (add) {
+      this.s = (stat.pfr + v) >>> 0;
+    } else {
+      this.s = (v === 0 ? 1 : v) >>> 0;
+    }
+  }
+
+  next(min, max, isFloat) {
+    const mixed = ns(this.s);
+    this.s = mixed;
+
+    const rand01 = mixed / 4294967296;
+    const lower = Math.min(min, max);
+    const upper = Math.max(min, max);
+
+    return isFloat
+      ? lower + rand01 * (upper - lower)
+      : Math.floor(lower + rand01 * (upper - lower + 1));
+  }
+}
+
+export class SeedKey {
+  static #map = new WeakMap();
+
+  static #get(entity, v, add) {
+    let inst = SeedKey.#map.get(entity);
+    if (!inst) {
+      inst = new SeedInstance(v, add);
+      SeedKey.#map.set(entity, inst);
+    }
+    return inst;
+  }
+
+  static random(entity, min, max, isFloat = true, v, add = true) {
+    return SeedKey.#get(entity, v, add).next(min, max, isFloat);
+  }
+
+  static call(entity, min, max, isFloat = true, v, add = true) {
+    return SeedKey.#get(entity, v, add).next(min, max, isFloat);
+  }
+}
 export function smooth(bull,target,time) {
 const smoothTime = target / time
 const snapshot = bull.timer 
-for (let i = 0;i<time;i++) wait(()=>{bull.angle+=(smoothTime)},i)
+for (let i = 0;i<time;i++) wait(()=>{bull.angle+=(smoothTime)},i,true)
 }
-export function smoothSet(bull,target,time) {
-const smoothTime = target+bull.angle / time
-const snapshot = bull.timer 
-for (let i = 0;i<time;i++) wait(()=>{bull.angle=(smoothTime)},i)
+export function smoothSet(bull, target, time) {
+    const start = bull.angle
+    const diff = target - start
+    for (let i = 1; i <= time; i++) {
+        wait(() => {
+            bull.angle = start + diff * (i / time)
+        }, i, true)
+    }
 }
 
 /**
@@ -601,38 +698,6 @@ export function VSpawn(fn, { x = 0, y = 0, baseDeg = 90, spreadDeg = 30, count =
 
     return rl;
 }
-/**
- * Way弾（扇状に広がる弾幕）を生成し、コールバックを実行する
- * angleを中心として、countの数だけ扇状に等間隔（またはisEx時は不等間隔）に弾を配置する。
- *
- * @param {Function} fn - 各弾で呼ばれるコールバック。引数は配置情報オブジェクト(ev)
- * @param {Object} opts
- * @param {number} [opts.count=1] - Way数（弾の本数）
- * @param {number} [opts.x=0] - 発生源のX座標
- * @param {number} [opts.y=0] - 発生源のY座標
- * @param {number} [opts.length=0] - 発生源からのオフセット距離
- * @param {boolean} [opts.isEx=false] - trueの場合、way間の角度stepをi（何way目か）に応じて倍化し、中心から離れるほど広がりが加速する不等間隔配置にする
- * @param {string|false} [opts.oneside=false] - "left" または "right" を指定すると、中心角度から見てその片側のwayのみ生成する。falseなら両側
- * @param {number} [opts.angle=0] - 扇の中心となる基準角度（度）
- * @param {number} [opts.spreadDeg=90] - 扇の開き角度（度）。中心角度から左右にこの範囲でway弾が広がる
- * @param {number} [opts.lock=null] - 指定すると、他の角度計算を一切行わずこの角度（度）に全弾を固定する
- * @param {*} [opts.custom=null] - コールバックに渡す任意データ
- * @returns {Array} rl - 生成された配置情報の配列
- * @example
- * Way(ev => {
- *   bullet(ev.x, ev.y, ev.rad, 3, "cyan", "normal");
- * }, { count: 7, x: entity.x, y: entity.y, angle: 90, spreadDeg: 60, length: 20 });
- *
- * @example
- * // lock指定：全弾が90度固定（扇状にならず一点集中）
- * Way(ev => bullet(ev.x, ev.y, ev.rad, 3, "red", "normal"),
- *   { count: 5, x: entity.x, y: entity.y, lock: 90 });
- *
- * @example
- * // oneside指定：中心から右半分のwayのみ生成
- * Way(ev => bullet(ev.x, ev.y, ev.rad, 3, "lime", "normal"),
- *   { count: 5, angle: 90, spreadDeg: 60, oneside: "right" });
- */
 export function way(fn, {
     count = 1,
     x = 0,
@@ -644,6 +709,8 @@ export function way(fn, {
     spreadDeg = 90,
     lock = null,
     rad = true,
+    sx = 0,   // 追加: 1発ごとにxをずらす量
+    sy = 0,   // 追加: 1発ごとにyをずらす量
     custom = null
 } = {}, rl = []) {
     // radがtrueなら、angleとlockをラジアン→度数に変換して以降は度数で統一して扱う
@@ -654,26 +721,21 @@ export function way(fn, {
         let deg;
 
         if (lockDeg !== null) {
-            // lock指定時：他の角度計算を一切適用せず固定角度のみ使用
             deg = normal(lockDeg, -180, 180);
         } else {
-            // t: 0〜1 の正規化位置（countが1なら中央扱い）
             let localT = count > 1 ? i / (count - 1) : 0.5;
 
             if (oneside === "left") {
-                // 中心〜左端のみを 0〜1 に再マッピング
                 localT = count > 1 ? (i / (count - 1)) * 0.5 : 0;
             } else if (oneside === "right") {
-                // 中心〜右端のみを 0〜1 に再マッピング
                 localT = count > 1 ? 0.5 + (i / (count - 1)) * 0.5 : 1;
             }
 
-            let offsetT = localT - 0.5; // -0.5（左端）〜 0（中心）〜 +0.5（右端）
+            let offsetT = localT - 0.5;
 
             if (isEx) {
-                // way間のstep自体をiに応じて倍化 → 不等間隔（中心から離れるほど広がりが加速）
                 const sign = offsetT < 0 ? -1 : 1;
-                const progress = i / Math.max(1, count - 1); // 0〜1
+                const progress = i / Math.max(1, count - 1);
                 const exFactor = Math.pow(Math.abs(offsetT) * 2, 1 + progress);
                 offsetT = sign * exFactor * 0.5;
             }
@@ -682,6 +744,10 @@ export function way(fn, {
         }
 
         const radVal = dtr(deg);
+
+        // 発射元座標自体をi発目ごとにsx,syでずらす
+        const originX = x + sx * i;
+        const originY = y + sy * i;
 
         const ev = {
             i,
@@ -694,8 +760,10 @@ export function way(fn, {
             oneside,
             lock: lockDeg,
             length,
-            x: x + Math.cos(radVal) * length,
-            y: y + Math.sin(radVal) * length,
+            sx,
+            sy,
+            x: originX + Math.cos(radVal) * length,
+            y: originY + Math.sin(radVal) * length,
             dx: Math.cos(radVal) * length,
             dy: Math.sin(radVal) * length,
             custom,
@@ -710,4 +778,122 @@ export function way(fn, {
 }
 export function select(arr) {
     return arr[Math.floor(Math.random()*arr.length)]
+}
+export function corner(margin=50,offset=0) {
+  return {
+    topLeft:     { x: offset,     y: offset },
+    topRight:    { x: canvas.w - offset, y: offset },
+    bottomLeft:  { x: offset,     y: canvas.h - offset },
+    bottomRight: { x: canvas.w - offset, y: canvas.h - offset }
+  };
+}
+export function smoothFn(fn, {
+target = 0,
+f= 0,
+custom=0,
+} = {}, rl = []) {
+const rf = Math.floor(f)
+  const NowTarget = target / rf
+for (let i = 0;i<rf;i++) {
+    wait(() =>{
+        const ev = {
+            i,
+target,
+now:NowTarget*i,
+def:target/rf,
+custom,
+v:NowTarget,
+rf,
+        };
+        rl.push(ev);
+        fn(ev);
+    },i,true)
+}
+}
+/**
+ * スーパーフォーミュラ（Superformula）に基づいて配置し、コールバックを実行する
+ * ジェラルド・シュペルパー(Johan Gielis)の一般化極座標式:
+ * r(θ) = ( |cos(mθ/4)/a|^n2 + |sin(mθ/4)/b|^n3 )^(-1/n1)
+ * m, n1, n2, n3 の組み合わせで、花びら・星・多角形・雪の結晶など多様な形状を再現できる
+ *
+ * @param {Function} fn - 各点で呼ばれるコールバック
+ * @param {Object} opts
+ * @param {number} [opts.x=0] - 発生源のX座標（この座標を基準にオフセットが加算される）
+ * @param {number} [opts.y=0] - 発生源のY座標
+ * @param {number} [opts.angle=0] - 全体の初期回転角（度数法。rad=trueならラジアン入力もOK）
+ * @param {boolean} [opts.rad=false] - trueならangle/startDegをラジアンとして受け取る
+ * @param {number} [opts.count=60] - 生成する点の数（一周を何分割するか）
+ * @param {number} [opts.m=6] - 対称の数（花びら・凹凸の数を決める）
+ * @param {number} [opts.n1=1] - 全体の丸み・尖り具合
+ * @param {number} [opts.n2=1] - 片側の膨らみ具合
+ * @param {number} [opts.n3=1] - もう片側の膨らみ具合
+ * @param {number} [opts.a=1] - X方向のスケール係数
+ * @param {number} [opts.b=1] - Y方向のスケール係数
+ * @param {number} [opts.scale=100] - 半径全体にかける拡大率（見た目のサイズ調整用）
+ * @param {number} [opts.startDeg=0] - 模様自体の回転オフセット（度）。angleとは別軸で重ね掛け可能
+ * @param {number} [opts.turns=1] - 何周ぶん回すか（1なら360度、2なら720度など）
+ * @param {*} [opts.custom=null] - コールバックに渡す任意データ
+ * @returns {Array} rl - 生成された配置情報の配列
+ * @example
+ * formula(ev => {
+ *   bullet({ angle: ev.rad, x: ev.x, y: ev.y, size: 16, type: "normal", color: "red", speed: 0, rd: 0.65 });
+ * }, { count: 120, m: 6, n1: 0.3, n2: 1.7, n3: 1.7, scale: 50, x: Half.x, y: Half.y, angle: 90 });
+ */
+export function formula(fn, {
+    x = 0,
+    y = 0,
+    angle = 0,
+    rad = false,
+    count = 60,
+    m = 6,
+    n1 = 1,
+    n2 = 1,
+    n3 = 1,
+    a = 1,
+    b = 1,
+    scale = 100,
+    startDeg = 0,
+    turns = 1,
+    custom = null
+} = {}, rl = []) {
+    // rad指定時はangle/startDegをラジアン→度数に統一変換
+    const angleDeg = rad ? angle * 180 / Math.PI : angle;
+    const startDegNorm = rad ? startDeg * 180 / Math.PI : startDeg;
+
+    for (let i = 0; i < count; i++) {
+        // 0〜(360*turns)度の範囲を count 分割し、initial angle と startDeg を両方加算
+        const deg = normal((i / count) * 360 * turns + startDegNorm + angleDeg, -180, 180);
+        const degRad = dtr(deg);
+
+        // スーパーフォーミュラ本体：r(θ) の計算
+        const t1 = Math.abs(Math.cos(m * degRad / 4) / a) ** n2;
+        const t2 = Math.abs(Math.sin(m * degRad / 4) / b) ** n3;
+        const r = (t1 + t2) ** (-1 / n1) * scale;
+
+        const dx = Math.cos(degRad) * r;
+        const dy = Math.sin(degRad) * r;
+
+        const ev = {
+            x: x + dx,
+            y: y + dy,
+            dx, dy,
+            deg,
+            rad: degRad,
+            r,
+            angle: angleDeg,
+            startDeg: startDegNorm,
+            count, m, n1, n2, n3, a, b, scale, turns,
+            i,
+            custom,
+            rl
+        };
+
+        rl.push(ev);
+        fn(ev);
+    }
+
+    return rl;
+}
+export function time(n=Infinity,v=stat.pfr,init=1) {
+    return Math.floor(v) % Math.floor(n) === 0 || v === init || n === 0
 }

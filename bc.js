@@ -19,7 +19,7 @@ export const spaceb = [];
 async function setColor(img, color, glowAmount = 300) {
     const parseHexToRgb = (hexStr) => {
         const match = hexStr.trim().match(/^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/);
-        if (!match) return [58, 111, 255];
+        if (!match) return null;
         let hex = match[1];
         if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
         const num = parseInt(hex, 16);
@@ -237,9 +237,8 @@ export function initPool(size = 5000) {
     for (let i = 0; i < size; i++) {
         spaceb.push(new Bullet({
             x: 0, y: 0, angle: 0, speed: 0, color: "white", w: 0, h: 0,
-            type: "normal", deleteFrame: Infinity, rotateE: 0, rotateF: Infinity,
-            rotate: [], slowF: 0, slowE: 1, fastF: Infinity, fastE: 1,
-            highEx: false, slowEx: false, AcF: Infinity, AcA: 0,
+            type: "normal", deleteFrame: Infinity,
+            rotate: [], 
             setlist: [], fnlist: [], push: false, custom: [], seta: [],
             rd: 1, active: false
         }));
@@ -250,14 +249,16 @@ export function initPool(size = 5000) {
  * 弾を生成するファクトリ関数。
  * cfg=true: プールから取り出して再利用（spaceb.pop → reset → setter）
  * cfg=false: 都度 new Bullet で生成（bullets.push は Bullet 内部で実行）
+ *
+ * 💡 vsize: 見た目専用のサイズ上書き。当たり判定(radius)には一切影響せず、
+ *    描画時の幅・高さだけを vsize に置き換える。未指定なら従来通り w/h(またはsize)で描画。
  */
 export function bullet({
     x, y, angle = 0, speed = 3, color = "white", w = 10, h = 10,
-    type = "Circle", deleteFrame = Infinity, rotateE = 0, rotateF = Infinity,
-    rotate = [], slowF = 0, slowE = 1, fastF = Infinity, fastE = 1,
-    highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
+    type = "Circle", deleteFrame = Infinity,
+    rotate = [],
     setlist = [], fnlist = [], push = true, custom = [], seta = [],
-    active = true, rd = 1,noAuto=false,size=undefined,
+    active = true, rd = 1, noAuto = false, size = undefined, vsize = undefined,
 } = {}) {
     if (cfg) {
         // --- オブジェクトプール方式 ---
@@ -267,12 +268,11 @@ export function bullet({
             return null;
         }
         a.reset();
-a.setter({
-    x, y, angle, speed, color, w, h, type, deleteFrame,
-    rotateE, rotateF, rotate, slowF, slowE, fastF, fastE,
-    highEx, slowEx, AcF, AcA, setlist, fnlist, custom, seta,
-    active: true, noAuto, rd,size   // ← rd を追加
-});
+        a.setter({
+            x, y, angle, speed, color, w, h, type, deleteFrame,
+            rotate, setlist, fnlist, custom, seta,
+            active: true, noAuto, rd, size, vsize   // ← vsize を追加
+        });
         a.active = true;
         a.i = bullets.length;
         bullets.push(a);
@@ -281,9 +281,8 @@ a.setter({
         // --- 通常方式 ---
         return new Bullet({
             x, y, angle, speed, color, w, h, type, deleteFrame,
-            rotateE, rotateF, rotate, slowF, slowE, fastF, fastE,
-            highEx, slowEx, AcF, AcA, setlist, fnlist, push, custom, seta,
-            rd,noAuto,size
+            rotate, setlist, fnlist, push, custom, seta,
+            rd, noAuto, size, vsize
         });
     }
 }
@@ -293,13 +292,9 @@ export class Bullet {
         x, y, angle = 0, speed = 3, color = "white",
         w = 10, h = 10, type = "Circle",
         deleteFrame = Infinity,
-        rotateE = 0,
-        rotateF = Infinity,
         rotate = [],
-        slowF = 0, slowE = 1,
-        fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
         setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1,
-        active = cfg ? false : true,noAuto=false,size=undefined
+        active = cfg ? false : true, noAuto = false, size = undefined, vsize = undefined
     }) {
         this.custom = custom;
         this.x = x;
@@ -308,29 +303,21 @@ export class Bullet {
         this.speed = speed;
         this.w = size ? size : w;
         this.h = type !== "laser" ? size ? size : h : 999;
-        this.radius = rd <= 0 ? 0 : (w * rd) / 2;
+        // 💡 見た目専用サイズ（未指定なら null → 描画時は this.w/h をそのまま使用）
+        this.vsize = vsize;
+        // 💡 当たり判定は常に実サイズ(this.w)基準。vsizeの影響を受けない。
+        this.radius = rd <= 0 ? 0 : (this.w * rd) / 2;
         this.rd = rd
         this.color = color;
         this.type = type;
         this.timer = 0;
+    this.imgKey = `${this.type}-${this.color}`;
         this.deleteFrame = deleteFrame;
-       // this.setlist = setlist;
-       // this.fnlist = fnlist;
-        this.rotateE = rotateE;
-        this.rotateF = rotateF;
         this.rotate = rotate;
-
-        this.slowF = slowF;
-        this.slowE = slowE;
-        this.fastF = fastF;
-        this.fastE = fastE;
-        this.fastEx = highEx;
-        this.slowEx = slowEx;
-        this.AcF = AcF;
-        this.AcA = AcA;
         this.seta = seta
         this.active = active;
         this.noAuto=noAuto
+        // 💡 世代ID：このオブジェクトが何回目の「生」を生きているかを示す通し番号。
         if (push && !cfg) bullets.push(this); // プール方式のときは bullet() 側で push 済み
         CC(type, [color]);
     }
@@ -350,6 +337,7 @@ export class Bullet {
         this.type = "nomal";
         this.h = this.type !== "laser" ? 0 : 999;
         this.size = null
+        this.vsize = null   // 💡 見た目専用サイズもリセット
         this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2;
         this.timer = 0;
         this.deleteFrame = Infinity;
@@ -357,21 +345,14 @@ export class Bullet {
         //this.fnlist = [];
 this.map?.clear()
 this.smap?.clear()
-        this.rotateE = 0;
-        this.rotateF = Infinity;
         this.rotate = [];
         this.noAuto = false
-        this.slowF = Infinity;
-        this.slowE = 1;
-        this.fastF = Infinity;
-        this.fastE = 1;
-        this.fastEx = false;
-        this.slowEx = false;
-        this.AcF = Infinity;
-        this.AcA = 0;
         this.seta = []
         this.active = false
     this.cachedImg = null;   
+    this.activeLoop = null;
+    this.sactiveLoop = null;
+this.work = null;
     }
 
     /**
@@ -381,12 +362,8 @@ this.smap?.clear()
         x, y, angle = 0, speed = 3, color = "white",
         w = 10, h = 10, type = "Circle",
         deleteFrame = Infinity,
-        rotateE = 0,
-        rotateF = Infinity,
         rotate = [],
-        slowF = 0, slowE = 1,
-        fastF = Infinity, fastE = 1, highEx = false, slowEx = false, AcF = Infinity, AcA = angle,
-        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1, active = false,noAuto=false,size=undefined
+        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1, active = false, noAuto = false, size = undefined, vsize = undefined
     }) {
         this.custom = custom;
         this.x = x;
@@ -395,30 +372,26 @@ this.smap?.clear()
         this.speed = speed;
         this.w = size ? size : w;
         this.h = type !== "laser" ? size ? size : h : 999;
-        this.radius = rd <= 0 ? 0 : (w * rd) / 2;
+        // 💡 見た目専用サイズ（未指定なら null → 描画時は this.w/h をそのまま使用）
+        this.vsize = vsize;
+        // 💡 当たり判定は常に実サイズ(this.w)基準。vsizeの影響を受けない。
+        this.radius = rd <= 0 ? 0 : (this.w * rd) / 2;
         this.rd = rd
         this.color = color;
         this.type = type;
         this.timer = 0;
         this.deleteFrame = deleteFrame;
-       // this.setlist = setlist;
-       // this.fnlist = fnlist;
-        this.rotateE = rotateE;
-        this.rotateF = rotateF;
         this.rotate = rotate;
         this.noAuto=noAuto
-        this.slowF = slowF;
-        this.slowE = slowE;
-        this.fastF = fastF;
-        this.fastE = fastE;
-        this.fastEx = highEx;
-        this.slowEx = slowEx;
-        this.AcF = AcF;
-        this.AcA = AcA;
         this.seta = seta
 this.imgKey = `${type}-${color}`;
     resolveImg(type, color); // ロード開始 or 既存キャッシュ確認（発火だけ）
     this.cachedImg = null;   
+    // 💡 プール再利用時、前の弾のループ参照(activeLoop/sactiveLoop)が
+    // クリアされずに残り、fnlist/setlist未指定の弾でも誤発火してspeedが
+    // 突然壊れる原因になっていたため、setter()の度に明示的にリセットする
+    this.activeLoop = null;
+    this.sactiveLoop = null;
     if (fnlist) {
 
     if (!this.map) {
@@ -459,16 +432,6 @@ this.color = c
 if (!superOptimal) {
 if (this.type === "pre") this.rd = 0
 this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
-        if (this.timer > this.slowF) {
-            if (this.slowEx) this.speed *= this.slowE;
-            else if (this.timer === this.slowF + 1) this.speed *= this.slowE;
-            if (this.timer > this.AcF) this.angle = this.AcA;
-        }
-        if (this.timer > this.fastF) {
-            if (this.fastEx) this.speed *= this.fastE;
-            else if (this.timer === this.fastF + 1) this.speed *= this.fastE;
-        }
-
 const func = this.map?.get(this.timer);
 
 // 新しくループ処理が来たら保持する
@@ -533,9 +496,6 @@ if (this.sactiveLoop && this.timer >= this.sactiveLoop.f) {
         })
         this.angle = LastAngle
 }
-        if (this.timer >= this.rotateF) {
-            this.angle += this.rotateE;
-        }
         const is = this.type === "laser"
         if (!is) {
             this.x += Math.cos(this.angle) * this.speed;
@@ -545,104 +505,7 @@ if (this.sactiveLoop && this.timer >= this.sactiveLoop.f) {
         }
         this.timer++;
     } 
-//superOptimal = false
-if (superOptimal && stat.pfr % 2 === 0) {
-if (this.type === "pre") this.rd = 0
-this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
-        if (this.timer > this.slowF) {
-            if (this.slowEx) this.speed *= this.slowE;
-            else if (this.timer === this.slowF + 1) this.speed *= this.slowE;
-            if (this.timer > this.AcF) this.angle = this.AcA;
-        }
-        if (this.timer > this.fastF) {
-            if (this.fastEx) this.speed *= this.fastE;
-            else if (this.timer === this.fastF + 1) this.speed *= this.fastE;
-        }
-
-    if (this.setlist.length) {let newspeed = this.speed;
-        let speedMultiplier = 1;
-this.setlist.forEach((e, i) => {
-            const isLoop = e.loop ?? false;
-            const type = e.type ?? "set";
-            const isNext = e.next ?? true;
-
-            const next = this.setlist[i + 1];
-            const endFrame = (isNext && next) ? next.f : Infinity;
-
-            const isActive = (isLoop && this.timer >= e.f && this.timer < endFrame) ||
-                             (!isLoop && this.timer === e.f);
-
-            if (isActive) {
-                const val = (typeof e.e === "function") ? e.e.call(this) : e.e;
-                if (type === "x") {
-                    speedMultiplier = val;
-                } else {
-                    newspeed = val;
-                }
-            }
-        });
-
-        this.speed = newspeed * speedMultiplier;
 }
-      if (this.fnlist.length) this.fnlist.forEach((e) => {
-            const isLoop = e.loop ?? false;
-            const isActive = isLoop ? (this.timer >= e.f) : (this.timer === e.f);
-            if (isActive && typeof e.fn === "function") {
-                e.fn.call(this);
-            }
-        });
-
-    if (this.seta.length)this.seta.forEach((e, i) => {
-            const isLoop = e.loop ?? false;
-            const type = e.type ?? "set";
-            const isNext = e.next ?? true;
-
-         const next = this.seta[i + 1];
-            const endFrame = (isNext && next) ? next.f : Infinity;
-
-            const isActive = (isLoop && this.timer >= e.f && this.timer < endFrame) ||
-                             (!isLoop && this.timer === e.f);
-
-            if (isActive) {
-                const val = (typeof e.e === "function") ? e.e.call(this) : e.e;
-                this.angle = val;
-            }
-        });
-
-      if (this.rotate.length){
-          
-      const looplist = []
-        let LastAngle = this.angle
-        this.rotate.forEach((r) => {
-            if (r.loop && r.f <= this.timer && r.lf > this.timer) looplist.push(r)
-        });
-        const tr = this.rotate.find(r => r.f === this.timer);
-        if (tr) looplist.push(tr);
-
-        looplist.forEach((targetRotate) => {
-            if (targetRotate.a === "target") {
-                LastAngle = pf(this.x, this.y, 0, players[0]);
-            } else if (typeof targetRotate.a === "function") {
-                LastAngle = targetRotate.a.call(this);
-            } else {
-                LastAngle = targetRotate.a;
-            }
-        })
-        this.angle = LastAngle
-}
-        if (this.timer >= this.rotateF) {
-            this.angle += this.rotateE;
-        }
-        const is = this.type === "laser"
-        if (!is) {
-            this.x += (Math.cos(this.angle) * this.speed)*2;
-        }
-        if (!is) {
-            this.y += (Math.sin(this.angle) * this.speed)*2;
-        }
-        this.timer+=2;
-          
-    }}
 
     /**
      * 削除すべきかどうかの「判定のみ」を行う。配列からの実際の除去は呼び出し側(engine.js)が担当する。
@@ -678,12 +541,18 @@ draw(ctx, debug = false) {
 
     let isPathBullet = false;
 
+    // 💡 見た目専用の描画サイズ。vsize が指定されていればそちらを優先し、
+    //    未指定なら従来通り this.w / this.h をそのまま使う。当たり判定(radius)には無関係。
+    const drawW = this.vsize ?? this.w;
+    const drawH = this.vsize ?? this.h;
+
     if (this.type === "laser") {
         if (this.timer >= this.speed - 12) {
             const growElapsed = this.timer - (this.speed - 12);
             const growT = Math.min(Math.max(growElapsed / 12, 0), 1);
-            const drawW = 1 + (this.w - 1) * growT;
-            idraw("laser", this.x, this.y, drawW, this.h, this.angle, this.color, 1);
+            const baseW = this.vsize ?? this.w;
+            const drawWLaser = 1 + (baseW - 1) * growT;
+            idraw("laser", this.x, this.y, drawWLaser, drawH, this.angle, this.color, 1);
         } else {
             if (this.waitAlpha === undefined) this.waitAlpha = 0;
             if (this.waitAlpha < 1) this.waitAlpha += 0.05;
@@ -697,7 +566,7 @@ draw(ctx, debug = false) {
 
             const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
 
-            idraw("laserwait", this.x, this.y, this.w, this.h, this.angle, waitColor, Math.min(this.waitAlpha, 1));
+            idraw("laserwait", this.x, this.y, drawW, drawH, this.angle, waitColor, Math.min(this.waitAlpha, 1));
         }
         return;
     }
@@ -715,7 +584,7 @@ draw(ctx, debug = false) {
             idraw(
                 "pre",
                 this.x, this.y,
-                this.w * scale, this.h * scale,
+                drawW * scale, drawH * scale,
                 this.angle, this.color,
                 alpha
             );
@@ -727,7 +596,7 @@ draw(ctx, debug = false) {
                 ctx.fillStyle = "#ffffff";
                 ctx.shadowColor = "#fff6c8";
                 ctx.shadowBlur = 12;
-                const s = this.w * 0.25;
+                const s = drawW * 0.25;
                 ctx.beginPath();
                 ctx.moveTo(0, -s);
                 ctx.lineTo(s * 0.25, -s * 0.25);
@@ -772,6 +641,10 @@ draw(ctx, debug = false) {
         case "arrow":
         case "orb":
         case "gun":
+        case "note": 
+case"polygon":
+case"light": 
+case"drop":
             // 💡 ここをキャッシュ解決方式に変更
             if (!this.cachedImg) {
                 const c = imgList.get(this.imgKey);
@@ -781,13 +654,14 @@ draw(ctx, debug = false) {
                     break; // まだロード中なら今フレームは描画スキップ
                 }
             }
-            drawCached(this.cachedImg, this.x, this.y, this.w, this.h, this.angle);
+            // 💡 描画サイズは vsize 優先（当たり判定には影響しない）
+            drawCached(this.cachedImg, this.x, this.y, drawW, drawH, this.angle);
             break;
 
         case "四角":
             isPathBullet = true;
             ctx.beginPath();
-            ctx.rect(this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
+            ctx.rect(this.x - drawW / 2, this.y - drawH / 2, drawW, drawH);
             ctx.fill();
             ctx.closePath();
             break;
@@ -816,7 +690,7 @@ draw(ctx, debug = false) {
     hitTestLaser(px, py, hitboxRadius) {
         if (this.timer < this.speeed) return;
         // レーザーの根本(this.x, this.y)から angle 方向へ h の長さの線分として判定
-        const length = this.h; // レーザーの長さ
+        const length = this.h; // レーザーの長さ（当たり判定は常に this.h 基準。vsizeは無関係）
         const dirX = Math.cos(this.angle);
         const dirY = Math.sin(this.angle);
 
@@ -832,7 +706,7 @@ draw(ctx, debug = false) {
         const closestX = this.x + dirX * t;
         const closestY = this.y + dirY * t;
 
-        // 幅方向の判定(this.w がレーザーの太さ)
+        // 幅方向の判定(this.w がレーザーの太さ。vsizeは判定に使わない)
         const dx = px - closestX;
         const dy = py - closestY;
         const laserHalfWidth = ((this.w * 0.87)) / 2;
@@ -846,24 +720,4 @@ export function pf(x, y, Offset = 0, entity, yy, xx) {
     let targetX = (xx !== undefined) ? xx : (entity ? entity.x : (players[0]?.x || 0));
     let targetY = (yy !== undefined) ? yy : (entity ? entity.y : (players[0]?.y || 0));
     return Math.atan2(targetY - y, targetX - x) + Offset;
-}
-
-export function CircleSpawn(x, y, speed, size, count, df, rotationSpeed = 0.05, color = "white") {
-    const step = (Math.PI * 2) / count;
-    for (let i = 0; i < count; i++) {
-        const angle = (i * step); // frame依存部分は呼び出し側の frame を使いたい場合は sys.js 側で加算してください
-        bullet({ x, y, angle, speed, color, w: size, h: size, type: "Circle", deleteFrame: df });
-    }
-}
-
-export function spawnPlayerFocus(x, y, speed = 3.5, size = 8, df = 180, color = "white") {
-    bullet({ x, y, angle: pf(x, y, 0), speed, color, w: size, h: size, type: "Circle", deleteFrame: df });
-}
-
-export function spawnDownRect(x, y, speed = 4, w = 10, h = 20, df = 300) {
-    bullet({ x, y, angle: Math.PI / 2, speed, color: "orange", w, h, type: "Rect", deleteFrame: df });
-}
-
-export function b(config) {
-    return bullet(config);
 }
