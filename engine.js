@@ -142,25 +142,6 @@ my += mys
     ctx.fillStyle = 'rgba(10, 10, 20, 0.7)';
     ctx.fillRect(0, 0, canvas.w, canvas.h);
 }
-    const timeLeft = fs(stat.pfr) >= fn.time ? 0 : fn.time - fs(stat.pfr);
-    ctx.fillStyle = timeLeft <= 3 ? "red" : "white";   // 3秒以下で赤文字にする
-
-    // 💡 フォントを読み込んだドット絵フォントに変更！
-    ctx.font = "18px 'Press Start 2P'";   // 18px〜20pxくらいがちょうどいいサイズ感です
-
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-
-    const textX = canvas.w - 10;
-    const textY = 10;
-
-    ctx.fillText(timeLeft.toFixed(1), textX, textY); // 右上にドット絵で綺麗に描画
-    ctx.textAlign = "left"; // お作法：左寄せに戻しておく
-
-
-    // ⚠️ 【お作法】他の場所で描画するテキスト（左寄せなど）がバグらないように、
-    // textAlign をデフォルトの左寄せに戻しておくのが安全です。
-    ctx.textAlign = "left";
 
 
 
@@ -231,9 +212,6 @@ if (!stat.isChallenge) {
     for (let i = entitys.length - 1; i >= 0; i--) {
         const e = entitys[i];
         e.update();
-        // スムーズな移動
-        if (e.nx !== e.x) e.x += (e.nx - e.x) / e.speed;
-        if (e.ny !== e.y) e.y += (e.ny - e.y) / e.speed;
 
         e.draw(ctx, true);
 e.hitTests()
@@ -305,6 +283,25 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
                 continue;
             }}
     drawFps(ctx)
+    const timeLeft = fs(stat.pfr) >= fn.time ? 0 : fn.time - fs(stat.pfr);
+    ctx.fillStyle = timeLeft <= 3 ? "red" : "#E0F7FA";   // 3秒以下で赤文字にする
+
+    // 💡 フォントを読み込んだドット絵フォントに変更！
+    ctx.font = "18px 'Press Start 2P'";   // 18px〜20pxくらいがちょうどいいサイズ感です
+
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+
+    const textX = canvas.w - 10;
+    const textY = 10;
+
+    ctx.fillText(timeLeft.toFixed(1), textX, textY); // 右上にドット絵で綺麗に描画
+    ctx.textAlign = "left"; // お作法：左寄せに戻しておく
+
+
+    // ⚠️ 【お作法】他の場所で描画するテキスト（左寄せなど）がバグらないように、
+    // textAlign をデフォルトの左寄せに戻しておくのが安全です。
+    ctx.textAlign = "left";
     stat.gameId = requestAnimationFrame(gameLoop)
 }
 
