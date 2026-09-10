@@ -241,7 +241,7 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
                 continue;
             }
             b.update();
-            b.draw(ctx);
+            b.draw(ctx,ondebug);
             registerBulletToGrid(b, grid);
         }
     } else {

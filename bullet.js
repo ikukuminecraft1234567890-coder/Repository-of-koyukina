@@ -184,7 +184,7 @@ export function arc(
  * @param {Object} b - 弾オブジェクト（this）
  * @param {number} [padding=0] - 画面端からどれだけ内側で反射させるかの余白（弾の半径など）
  */
-export function reverse(b, padding = 0) {
+export function reverse(b, padding = 0,i=true) {
     const minX = padding;
     const maxX = canvas.w - padding;
     const minY = padding;
@@ -192,14 +192,14 @@ export function reverse(b, padding = 0) {
 
     // 💡 上下の壁での反射 (Y軸反転)
     if (b.y <= minY || b.y >= maxY) {
-        b.angle = -b.angle; // ラジアンの上下反転
+      if (i) b.angle = -b.angle; // ラジアンの上下反転
         b.y = Math.max(minY, Math.min(maxY, b.y)); // めり込み防止補正
         return true;
     }
 
     // 💡 左右の壁での反射 (X軸反転)
     if (b.x <= minX || b.x >= maxX) {
-        b.angle = Math.PI - b.angle; // ラジアンの左右鏡面反射
+        if (i)b.angle = Math.PI - b.angle; // ラジアンの左右鏡面反射
         b.x = Math.max(minX, Math.min(maxX, b.x)); // めり込み防止補正
         return true;
     }
@@ -897,3 +897,30 @@ export function formula(fn, {
 export function time(n=Infinity,v=stat.pfr,init=1) {
     return Math.floor(v) % Math.floor(n) === 0 || v === init || n === 0
 }
+export function setup(a) {
+  a.prop.bool2 = false;
+  a.prop.s = 0;
+  a.prop.a = 0;
+  a.prop.rng = { s: 999 };
+  a.prop.bool = true;
+a.bool = true;
+a.cs = {a:0,b:0,c:0,d:0,e:0,f:0}
+  a.prop.x = 0;
+  a.prop.c = 0;
+  a.prop.a2 = 0;
+  const count = 100;
+  const arr = Array(100).fill(0).map((e, i) => e = i * 15);
+  const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
+  const s = { spread: arr, name: alphabet.splice(0, arr.length) };
+  a.seeds = Seed.multi(
+      arr,
+      true);
+  a.prop.y = Half.y;
+  gi(1);
+}
+export function look(b, x, y) {
+    const dx = x - b.x;
+    const dy = y - b.y;
+    return Math.atan2(dy, dx);
+}
+
