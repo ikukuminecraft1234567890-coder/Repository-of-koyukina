@@ -403,7 +403,8 @@ this.imgKey = `${type}-${color}`;
     for (let i = 0; i < fnlist.length; i++) {
         const e = fnlist[i];
  const f = e.f | 0
-this.map.set(f,{f:f,l:e.loop,fn:e.fn})
+const time = e ? (e.time | 0) || 1 : 1  // 0除算・NaN化を防ぐ
+this.map.set(f,{f:f,l:e.loop,fn:e.fn,time:time})
 }}
     if (setlist) {
 
@@ -445,7 +446,7 @@ if (func && !func.l) {
 }
 
 // 登録済みのループ処理があれば毎フレーム実行
-if (this.activeLoop && this.timer >= this.activeLoop.f) {
+if (this.activeLoop && this.timer >= this.activeLoop.f && (this.timer - this.activeLoop.f) % this.activeLoop.time === 0) {
     this.activeLoop.fn.call(this);
 }
 const sfunc = this.smap?.get(this.timer);
