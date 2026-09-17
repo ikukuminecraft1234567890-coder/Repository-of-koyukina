@@ -3,6 +3,7 @@ import {
     canvas, ctx, players, bullets,
     updateFrame, frame, Half, entitys, spelln, start, internal, player
 } from './sys.js';
+export const ondebug = true;
 import { bullet, Bullet } from "./bc.js"
 import { stat, gameLoop } from "./engine.js"
 
@@ -65,7 +66,6 @@ export function random(min, max, f = false) {
 
 
 export const fr = (i) => pfr % i === 0
-export const ondebug = true;
 export const sp = (num) => num * 60;
 export const sd = (a, b = 1) => a % (60 * b) === 0;
 export const fs = (m) => m / 60;
@@ -112,66 +112,45 @@ export function normal(v, n1, n2) {
 }
 
 
-export function circle(fn, { count = 18, startDeg = 0, custom = null, step = "a" }, rl = []) {
+export function circle(fn, { count = 18, startDeg = 0, angle = 0, rad = false, custom = null, step = "a" }, rl = []) {
     const astep = step !== "a" ? step : 360 / count;
+    const angleDeg = rad ? angle * 180 / Math.PI : angle;
+
     for (let i = 0; i < count; i++) {
-        // 1. 順番通りにベースの角度を計算（0, 10, 20...）
         let baseDeg = i * astep;
+        let deg = (baseDeg + startDeg + angleDeg) % 360;
 
-        // 2. スタート位置（startDeg）を足して、360度以内に丸める（% 360）
-        let deg = (baseDeg + startDeg) % 360;
+        if (deg > 180) deg -= 360;
 
-        // 3. 180度を超えた後半の半分を、いつものマイナスの世界（-179 〜 -1）に変換する
-        if (deg > 180) {
-            deg -= 360;
-        }
-        const ev = { count, step: astep, startDeg, i, deg, custom, rl }
+        const ev = { count, step: astep, startDeg, angle: angleDeg, i, deg, custom, rl }
         rl.push(ev)
         fn(ev)
     }
 }
+
 export function arc(
     fn,
-    {
-        x = 0,
-        y = 0,
-        count = 18,
-        startDeg = 0,
-        length = 0,
-        custom = null,
-        step = "a"
-    },
+    { x = 0, y = 0, count = 18, startDeg = 0, angle = 0, rad = false, length = 0, custom = null, step = "a" },
     rl = []
 ) {
     const astep = step !== "a" ? step : 360 / count;
+    const angleDeg = rad ? angle * 180 / Math.PI : angle;
 
     for (let i = 0; i < count; i++) {
         let baseDeg = i * astep;
-        let deg = (baseDeg + startDeg) % 360;
+        let deg = (baseDeg + startDeg + angleDeg) % 360;
 
         if (deg > 180) deg -= 360;
 
-        const rad = deg * Math.PI / 180;
+        const radVal = deg * Math.PI / 180;
 
         const ev = {
-            count,
-            step: astep,
-            startDeg,
-            length,
-            i,
-            deg,
-            rad,
-
-            // オフセット
-            dx: Math.cos(rad) * length,
-            dy: Math.sin(rad) * length,
-
-            // 実際の座標
-            x: x + Math.cos(rad) * length,
-            y: y + Math.sin(rad) * length,
-
-            custom,
-            rl
+            count, step: astep, startDeg, angle: angleDeg, length, i, deg, rad: radVal,
+            dx: Math.cos(radVal) * length,
+            dy: Math.sin(radVal) * length,
+            x: x + Math.cos(radVal) * length,
+            y: y + Math.sin(radVal) * length,
+            custom, rl
         };
 
         rl.push(ev);
@@ -220,7 +199,7 @@ export function pf(x, y, Offset = 0, entity, yy, xx) {
  * @param {number} [opts.dist=100] - 中心から頂点までの距離
  * @param {*} [opts.custom=null] - コールバックに渡す任意データ
  */
-export function polygon(fn, { sides = 4, count = 1, startDeg = 0, dist = 100, custom = null } = {}, rl = []) {
+export function polygon(fn, { sides = 4, count = 1, startDeg = 0, dist = 100, x: cx = 0, y: cy = 0, custom = null } = {}, rl = []) {
     const total = sides * count;
     for (let i = 0; i < total; i++) {
         // 頂点そのものの角度（正多角形を等分割した基準角）
@@ -240,16 +219,17 @@ export function polygon(fn, { sides = 4, count = 1, startDeg = 0, dist = 100, cu
         const by = Math.sin(radB) * dist;
 
         // 辺上を線形補間（count=1のときは頂点そのもの）
-        const x = ax + (bx - ax) * t;
-        const y = ay + (by - ay) * t;
+        const dx = ax + (bx - ax) * t;
+        const dy = ay + (by - ay) * t;
 
         // 中心から見た角度（自機狙いや放射状の初期angleとして便利）
-        let deg = normal((Math.atan2(y, x) * 180 / Math.PI), -180, 180);
+        let deg = normal((Math.atan2(dy, dx) * 180 / Math.PI), -180, 180);
 
         const ev = {
             sides, count, startDeg, i,
             vertexIndex, t,
-            x, y, deg,
+            x: cx + dx, y: cy + dy,
+            dx, dy, deg,
             custom, rl
         };
         rl.push(ev);
@@ -282,7 +262,7 @@ export function square(fn, opts = {}, rl = []) {
  * @param {number} [opts.startIndex=0] - 螺旋のどの巻き目から開始するか（アニメーション用）
  * @param {*} [opts.custom=null] - コールバックに渡す任意データ
  */
-export function spiral(fn, { count = 100, c = 6, startDeg = 0, startIndex = 0, custom = null } = {}, rl = []) {
+export function spiral(fn, { count = 100, c = 6, startDeg = 0, startIndex = 0, x: cx = 0, y: cy = 0, custom = null } = {}, rl = []) {
     // 黄金角（度数）。フェルマー螺旋を美しく均等分布させる決定的な定数
     const GOLDEN_ANGLE = 137.50776405;
 
@@ -292,8 +272,8 @@ export function spiral(fn, { count = 100, c = 6, startDeg = 0, startIndex = 0, c
         const rad = dtr(deg);
         const radius = c * Math.sqrt(n);
 
-        const x = Math.cos(rad) * radius;
-        const y = Math.sin(rad) * radius;
+        const x = cx + Math.cos(rad) * radius;
+        const y = cy + Math.sin(rad) * radius;
 
         const ev = {
             count, c, startDeg, i, n,
@@ -316,9 +296,11 @@ export function spiral(fn, { count = 100, c = 6, startDeg = 0, startIndex = 0, c
  * @param {number} [opts.stepDeg=15] - 1点あたりの角度進行量（度）。小さいほど滑らかならせん
  * @param {number} [opts.startDeg=0] - 螺旋全体の回転オフセット（度）
  * @param {number} [opts.turns=2] - 何回転分でφ倍になるか制御する巻き密度（大きいほど緩やかな螺旋）
+ * @param {number} [opts.x=0] - 中心のXオフセット
+ * @param {number} [opts.y=0] - 中心のYオフセット
  * @param {*} [opts.custom=null] - コールバックに渡す任意データ
  */
-export function gspiral(fn, { count = 60, a = 4, stepDeg = 15, startDeg = 0, turns = 4, custom = null } = {}, rl = []) {
+export function gspiral(fn, { count = 60, a = 4, stepDeg = 15, startDeg = 0, turns = 4, x: cx = 0, y: cy = 0, custom = null } = {}, rl = []) {
     const PHI = 1.6180339887; // 黄金比
 
     for (let i = 0; i < count; i++) {
@@ -329,8 +311,8 @@ export function gspiral(fn, { count = 60, a = 4, stepDeg = 15, startDeg = 0, tur
         // turns回転（360*turns度）進むごとに半径がφ倍になるよう指数的に拡大
         const radius = a * Math.pow(PHI, thetaDeg / (360 * turns));
 
-        const x = Math.cos(rad) * radius;
-        const y = Math.sin(rad) * radius;
+        const x = cx + Math.cos(rad) * radius;
+        const y = cy + Math.sin(rad) * radius;
 
         const ev = {
             count, a, stepDeg, startDeg, turns, i,
@@ -776,6 +758,80 @@ export function way(fn, {
 
     return rl;
 }
+export function wayEx(fn, {
+    count = 9,
+    x = 0,
+    y = 0,
+    length = 0,
+    isEx = false,
+    angle = 0,
+    spreadDeg = 90,
+    rad = true,
+    sx = null,   // nullなら自動算出（angle方向に自然に広がる量）
+    sy = null,   // nullなら自動算出
+    sSpread = 0, // sx/syの自動算出時、左右の発ほど広がりを強める係数（0で全弾均一）
+    custom = null
+} = {}, rl = []) {
+    // radがtrueなら、angleを度数に変換して以降は度数で統一
+    const angleDeg = rad ? angle * 180 / Math.PI : angle;
+    const angleRad = dtr(angleDeg);
+
+    // sx, syの自動デフォルト: angle方向に垂直な向きへ少しずつ広がる自然な並び
+    // （指定が無ければ「扇状に並ぶ横方向オフセット」をangleから逆算する）
+    const autoSx = Math.cos(angleRad + Math.PI / 2);
+    const autoSy = Math.sin(angleRad + Math.PI / 2);
+
+    // 中央 index（奇数なら中心、偶数ならcenterはi=(count-1)/2の小数で左右均等）
+    const center = (count - 1) / 2;
+
+    for (let i = 0; i < count; i++) {
+        // 中心からの相対位置（-center 〜 +center）を -1〜1 に正規化
+        const offsetT = center === 0 ? 0 : (i - center) / center;
+
+        let t = offsetT;
+        if (isEx) {
+            const sign = t < 0 ? -1 : 1;
+            const progress = Math.abs(offsetT); // 中心からの距離が大きいほど強める
+            t = sign * Math.pow(Math.abs(offsetT), 1 + progress);
+        }
+
+        const deg = normal(angleDeg + t * (spreadDeg / 2), -180, 180);
+        const radVal = dtr(deg);
+
+        // sx, syが未指定なら自動値を使う。sSpreadで中心からの距離に応じて広げる
+        const useSx = sx !== null ? sx : autoSx * (1 + Math.abs(offsetT) * sSpread);
+        const useSy = sy !== null ? sy : autoSy * (1 + Math.abs(offsetT) * sSpread);
+
+        // 発射元座標を中心からoffsetTに応じてずらす
+        const originX = x + useSx * offsetT * (count - 1) / 2;
+        const originY = y + useSy * offsetT * (count - 1) / 2;
+
+        const ev = {
+            i,
+            count,
+            angle: angleDeg,
+            deg,
+            rad: radVal,
+            spreadDeg,
+            isEx,
+            length,
+            sx: useSx,
+            sy: useSy,
+            offsetT,
+            x: originX + Math.cos(radVal) * length,
+            y: originY + Math.sin(radVal) * length,
+            dx: Math.cos(radVal) * length,
+            dy: Math.sin(radVal) * length,
+            custom,
+            rl
+        };
+
+        rl.push(ev);
+        fn(ev);
+    }
+
+    return rl;
+}
 export function select(arr) {
     return arr[Math.floor(Math.random()*arr.length)]
 }
@@ -923,4 +979,14 @@ export function look(b, x, y) {
     const dy = y - b.y;
     return Math.atan2(dy, dx);
 }
+export function pc(b, m) {
+  return !(Math.hypot(b.x - players[0].x, b.y - players[0].y) > m);
+}
 
+
+export function wr(arr) {
+  let rand = Math.random() * arr.reduce((sum, item) => sum + item.v, 0);
+  for (const item of arr) {
+    if ((rand -= item.v) < 0) return item;
+  }
+}

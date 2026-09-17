@@ -13,6 +13,49 @@ const PALETTE_COLORS = new Set([
 // --- 💡 オブジェクトプール用の配列（cfg=true のときのみ実質使用） ---
 export const spaceb = [];
 
+// --- 💡 fire / curse 用: 固定色 + 4フレームアニメーション設定 ---
+const ANIM_TYPES = {
+    fire:  { color: "red",    prefix: "fire" },
+    curse: { color: "purple", prefix: "curse" }
+};
+const ANIM_FRAME_COUNT = 4;
+const ANIM_FRAME_INTERVAL = 18; // 18frame毎にフレーム切り替え
+
+/**
+ * fire / curse のアニメーションフレーム画像(4枚)を asset から読み込み、
+ * imgList にキャッシュする。ファイル名は `${prefix}_${1〜4}.png`。
+ */
+function loadAnimFrames(type) {
+    const conf = ANIM_TYPES[type];
+    if (!conf) return;
+
+    for (let i = 1; i <= ANIM_FRAME_COUNT; i++) {
+        const key = `${type}-${conf.color}-${i}`;
+        if (imgList.has(key)) continue;
+        imgList.set(key, "loading");
+
+        const img = new Image();
+        img.src = `${asset}${conf.prefix}_${i}.png`;
+        img.onload = () => {
+            const c = document.createElement("canvas");
+            c.width = img.width;
+            c.height = img.height;
+            c.getContext("2d").drawImage(img, 0, 0);
+            imgList.set(key, c);
+        };
+    }
+}
+
+/**
+ * 現在の timer から、表示すべきアニメーションフレームの imgList キーを算出する。
+ * 18frame毎に 1→2→3→4→1... とループする。
+ */
+function getAnimFrameKey(type, timer) {
+    const conf = ANIM_TYPES[type];
+    const frameIndex = Math.floor(timer / ANIM_FRAME_INTERVAL) % ANIM_FRAME_COUNT + 1;
+    return `${type}-${conf.color}-${frameIndex}`;
+}
+
 /**
  * 画像に幻想彩色（Glow Filter）処理を施し、DataURLを返却する関数
  */
@@ -108,6 +151,12 @@ export async function CC(type, colors) {
     else if (imgType === "米弾") imgType = "diamond";
     else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
     else if (imgType === "laser") imgType = "laser";
+
+    // --- 💡 fire / curse はアニメーションスプライト方式なので専用ロードへ分岐 ---
+    if (type === "fire" || type === "curse") {
+        loadAnimFrames(type);
+        return;
+    }
 
     const colorArray = Array.isArray(colors) ? colors : [colors];
 
@@ -309,6 +358,9 @@ export class Bullet {
         this.radius = rd <= 0 ? 0 : (this.w * rd) / 2;
         this.rd = rd
         this.color = color;
+        // --- 💡 fire / curse は色を固定（呼び出し側の color 指定を上書き） ---
+        if (type === "fire") this.color = "red";
+        else if (type === "curse") this.color = "purple";
         this.type = type;
         this.timer = 0;
     this.imgKey = `${this.type}-${this.color}`;
@@ -319,7 +371,7 @@ export class Bullet {
         this.noAuto=noAuto
         // 💡 世代ID：このオブジェクトが何回目の「生」を生きているかを示す通し番号。
         if (push && !cfg) bullets.push(this); // プール方式のときは bullet() 側で push 済み
-        CC(type, [color]);
+        CC(type, [this.color]);
     }
 
     /**
@@ -378,14 +430,23 @@ this.work = null;
         this.radius = rd <= 0 ? 0 : (this.w * rd) / 2;
         this.rd = rd
         this.color = color;
+        // --- 💡 fire / curse は色を固定（呼び出し側の color 指定を上書き） ---
+        if (type === "fire") this.color = "red";
+        else if (type === "curse") this.color = "purple";
         this.type = type;
         this.timer = 0;
         this.deleteFrame = deleteFrame;
         this.rotate = rotate;
         this.noAuto=noAuto
         this.seta = seta
-this.imgKey = `${type}-${color}`;
-    resolveImg(type, color); // ロード開始 or 既存キャッシュ確認（発火だけ）
+this.imgKey = `${type}-${this.color}`;
+    // --- 💡 fire / curse はアニメーションスプライトなので専用ロード関数を呼ぶ
+    //     （プール方式(cfg=true)だと CC() 経由のロードが走らないため、ここで確実に発火させる）
+    if (type === "fire" || type === "curse") {
+        loadAnimFrames(type);
+    } else {
+        resolveImg(type, this.color); // ロード開始 or 既存キャッシュ確認（発火だけ）
+    }
     this.cachedImg = null;   
     // 💡 プール再利用時、前の弾のループ参照(activeLoop/sactiveLoop)が
     // クリアされずに残り、fnlist/setlist未指定の弾でも誤発火してspeedが
@@ -424,7 +485,11 @@ for (let i = 0; i < setlist.length; i++) {
 scolor(c) {
 this.color = c
     this.imgKey = `${this.type}-${c}`;
-    resolveImg(this.type, c); // ロード開始 or 既存キャッシュ確認（発火だけ）
+    if (this.type === "fire" || this.type === "curse") {
+        loadAnimFrames(this.type);
+    } else {
+        resolveImg(this.type, c); // ロード開始 or 既存キャッシュ確認（発火だけ）
+    }
     this.cachedImg = null;   
 }
     update() {
@@ -568,6 +633,26 @@ draw(ctx, debug = false) {
             const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
 
             idraw("laserwait", this.x, this.y, drawW, drawH, this.angle, waitColor, Math.min(this.waitAlpha, 1));
+        }
+        return;
+    }
+
+    // --- 💡 fire / curse: 18frame毎に4フレームをループするアニメーション描画 ---
+    if (this.type === "fire" || this.type === "curse") {
+        const key = getAnimFrameKey(this.type, this.timer);
+        const cached = imgList.get(key);
+        if (cached && cached !== "loading") {
+            drawCached(cached, this.x, this.y, drawW, drawH, this.angle);
+        }
+        if (debug) {
+            ctx.save();
+            ctx.strokeStyle = "lime";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * this.rd, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.closePath();
+            ctx.restore();
         }
         return;
     }
