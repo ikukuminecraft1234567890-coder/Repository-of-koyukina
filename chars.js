@@ -5,6 +5,7 @@ import {
 import {Bullet} from "./bc.js"
 import {PlayerBullet} from "./pb.js"
 import {pf}from"./bullet.js"
+import {stat}from"./engine.js"
 export class Entity {
     constructor(name, x, y, radius, color, speed, ap = true, rd, hp = 100) {
         this.name = name;
@@ -17,7 +18,7 @@ export class Entity {
         this.color = color;
         this.currentBaseColor = color;
         this.speed = speed;
-        this.MySpeed = speed;
+        this.MySpeed = speed*2;
         this.hitboxRadius = rd;
         // mov用の慣性管理
         this.movInertia = true;
@@ -102,7 +103,7 @@ moveToTarget(speed = this.movSpeed ?? this.speed) {
     hitTests() {
         const OnHit = pbs.find((bullet) => {
             if (bullet.radius <= 0) return false; // ← 追加：判定無効化
-            if (bullet.type === "laser") {
+            if (bullet.type === "laser" || bullet.type === "laser2") {
                 if (bullet.timer < bullet.speed) return;
                 // まだ発射準備中(timer < speed)は当たらない、が必要なら調整
                 return bullet.hitTestLaser(this.x, this.y, this.hitboxRadius);
@@ -128,12 +129,15 @@ this.maxzanki = zanki ?? 3
 this.it = it ?? 120
         this.invincible = 0;
         this.death = false;
-
+this.deathF=0
         players.push(this);
     }
 
     update() {
-        if (this.zanki <= 0) this.death = true;
+        if (this.zanki <= 0 && this.deathF < pfr) {
+this.deathF = stat.pfr
+this.death = true;
+}
         this.color = this.invincible > 0 ? "White" : this.currentBaseColor;
         this.invincible -= 1;
         this.IsSlow();
@@ -170,7 +174,7 @@ hitTest(invincible = false, grid) {
     const data = gps(this.x, this.y)
     const OnHit = grid[data.w][data.h].some(bullet => {
    if (bullet.radius <= 0) return false; // ← 追加：判定無効化
-        if (bullet.type === "laser") {
+        if (bullet.type === "laser"||bullet.type==="laser2") {
 if(bullet.timer < bullet.speed) return;
             // まだ発射準備中(timer < speed)は当たらない、が必要なら調整
             return bullet.hitTestLaser(this.x, this.y, this.hitboxRadius);
@@ -188,7 +192,7 @@ if(bullet.timer < bullet.speed) return;
 }
     IsSlow() {
         if (window.Allkeys.Shift) {
-            this.speed = 0.8;
+            this.speed = 1.6*0.75;
             this.currentBaseColor = "green";
         } else {
             this.speed = this.MySpeed;

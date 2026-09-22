@@ -21,6 +21,36 @@ const ANIM_TYPES = {
 const ANIM_FRAME_COUNT = 4;
 const ANIM_FRAME_INTERVAL = 18; // 18frame毎にフレーム切り替え
 
+// --- 💡 OP(強調)演出フレーム用定数 ---
+// isOP=true の弾は、生成から TIMEisOP フレームの間だけ
+// 「不透明度0.4・サイズ1.25倍」で描画される（当たり判定には無関係）。
+// レーザー(laser/laserwait)には適用しない。
+const IsOp = true;
+const TIMEisOP = 6;
+const OP_ALPHA = 0.4;
+const OP_SCALE = 2;
+
+// --- 💡 レーザー9-slice用定数 ---
+// 元画像(laser.png)における「先端/根本の尖り部分」の範囲(px)。
+// 画像の上端からLASER_CAP_PX、下端からLASER_CAP_PXが尖り領域として扱われる。
+const LASER_CAP_PX = 32;
+
+// --- 💡 laser / laser2 判定ヘルパー ---
+// laser  = 旧方式（h=999で単純に引き伸ばすだけ。先端/根本の尖りは出ない）
+// laser2 = 新方式（9-slice。先端/根本の尖りをそのまま活かして本体だけ引き伸ばす）
+// 当たり判定・色固定・h=999扱いなど、描画方式以外は両者とも完全に同じ扱いにする。
+function isLaserType(type) {
+    return type === "laser" || type === "laser2";
+}
+
+// --- 💡 「弾の種類(type)」→「実際に読み込む画像ファイル名」への変換 ---
+// laser2 は laser と同じ laser.png を画像ソースとして使う（挙動だけが別）ため、
+// imgList のキャッシュキーは "laser2-色" のまま分離しつつ、ロードするファイル名だけ laser に寄せる。
+function resolveImgFileType(type) {
+    if (type === "laser2") return "laser";
+    return type;
+}
+
 /**
  * fire / curse のアニメーションフレーム画像(4枚)を asset から読み込み、
  * imgList にキャッシュする。ファイル名は `${prefix}_${1〜4}.png`。
@@ -151,6 +181,7 @@ export async function CC(type, colors) {
     else if (imgType === "米弾") imgType = "diamond";
     else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
     else if (imgType === "laser") imgType = "laser";
+    else if (imgType === "laser2") imgType = "laser"; // laser2 は laser.png を共用
 
     // --- 💡 fire / curse はアニメーションスプライト方式なので専用ロードへ分岐 ---
     if (type === "fire" || type === "curse") {
@@ -204,15 +235,16 @@ function idraw(type, x, y, w, h, angle, color, alpha = 1) {
     if (!cached || cached === "loading") {
         if (!cached) {
             imgList.set(key, "loading");
+            const fileType = resolveImgFileType(type);
 
             // --- 💡 パレット色ならグロー処理をスキップして直接読み込む ---
             if (PALETTE_COLORS.has(color)) {
-                loadPaletteImage(type, color, key);
+                loadPaletteImage(fileType, color, key);
                 return;
             }
 
             const baseImg = new Image();
-            baseImg.src = asset + type + ".png";
+            baseImg.src = asset + fileType + ".png";
             baseImg.onload = function() {
                 setColor(baseImg, color).then(dataUrl => {
                     const coloredImg = new Image();
@@ -244,11 +276,12 @@ function resolveImg(type, color) {
 
     if (!cached) {
         imgList.set(key, "loading");
+        const fileType = resolveImgFileType(type);
         if (PALETTE_COLORS.has(color)) {
-            loadPaletteImage(type, color, key);
+            loadPaletteImage(fileType, color, key);
         } else {
             const baseImg = new Image();
-            baseImg.src = asset + type + ".png";
+            baseImg.src = asset + fileType + ".png";
             baseImg.onload = function() {
                 setColor(baseImg, color).then(dataUrl => {
                     const coloredImg = new Image();
@@ -274,6 +307,67 @@ function drawCached(cachedCanvas, x, y, w, h, angle, alpha = 1) {
     ctx.translate(x, y);
     ctx.rotate(angle + Math.PI / 2);
     ctx.drawImage(cachedCanvas, -w / 2, -h / 2, w, h);
+    ctx.restore();
+}
+
+/**
+ * 💡 レーザーを9-slice方式で描画する。
+ * ・先端/根本キャップ：元画像(laser.png)の尖り部分(上端/下端 LASER_CAP_PX px)を
+ *   引き伸ばさず、太さ(bodyW)基準のスケールのみで原寸的に使用する。
+ * ・本体：元画像の中間(均一な太さ)部分だけを切り出して、必要な長さに引き伸ばす。
+ *
+ * これにより、h=999のような巨大な値で全体を引き伸ばしても、
+ * 先端・根本の「尖り」が不自然に潰れたり画面外に飛んだりしない。
+ *
+ * @param key       imgListのキャッシュキー（`${type}-${color}`）
+ * @param x, y      発射地点（根本）の座標
+ * @param bodyW     表示上のレーザーの太さ
+ * @param totalLen  表示上のレーザー全長（根本からの距離）
+ * @param angle     角度
+ * @param alpha     不透明度
+ */
+function drawLaserSliced(key, x, y, bodyW, totalLen, angle, alpha = 1) {
+    const cached = imgList.get(key);
+    if (!cached || cached === "loading") return;
+
+    const imgW = cached.width;
+    const imgH = cached.height;
+    const capPx = Math.min(LASER_CAP_PX, Math.floor(imgH / 2)); // 画像が短すぎる場合の保険
+
+    // 表示上のキャップの縦幅（アスペクト比維持でスケール）
+    const capScale = bodyW / imgW;
+    const capDisplayH = capPx * capScale;
+    const bodyDisplayH = Math.max(0, totalLen - capDisplayH * 2);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.rotate(angle + Math.PI / 2);
+    // 💡 idraw同様、根本(発射地点)を原点として、ここから-Y方向(上方向)へ伸びる想定で描画する
+
+    // --- 1. 本体（中間の均一な太さ部分だけを切り出して引き伸ばす）---
+    if (bodyDisplayH > 0) {
+        ctx.drawImage(
+            cached,
+            0, capPx, imgW, imgH - capPx * 2,                              // 元画像の切り出し範囲(中間)
+            -bodyW / 2, -(capDisplayH + bodyDisplayH), bodyW, bodyDisplayH  // 表示先(引き伸ばし)
+        );
+    }
+
+    // --- 2. 先端キャップ（画像上端=尖り部分。引き伸ばさずそのまま使用）---
+    ctx.drawImage(
+        cached,
+        0, 0, imgW, capPx,
+        -bodyW / 2, -(capDisplayH + bodyDisplayH) - capDisplayH, bodyW, capDisplayH
+    );
+
+    // --- 3. 根本キャップ（画像下端=尖り部分。引き伸ばさずそのまま使用）---
+    ctx.drawImage(
+        cached,
+        0, imgH - capPx, imgW, capPx,
+        -bodyW / 2, -capDisplayH, bodyW, capDisplayH
+    );
+
     ctx.restore();
 }
 
@@ -351,7 +445,7 @@ export class Bullet {
         this.angle = angle;
         this.speed = speed;
         this.w = size ? size : w;
-        this.h = type !== "laser" ? size ? size : h : 999;
+        this.h = !isLaserType(type) ? size ? size : h : 999;
         // 💡 見た目専用サイズ（未指定なら null → 描画時は this.w/h をそのまま使用）
         this.vsize = vsize;
         // 💡 当たり判定は常に実サイズ(this.w)基準。vsizeの影響を受けない。
@@ -372,6 +466,9 @@ export class Bullet {
         // 💡 世代ID：このオブジェクトが何回目の「生」を生きているかを示す通し番号。
         if (push && !cfg) bullets.push(this); // プール方式のときは bullet() 側で push 済み
         CC(type, [this.color]);
+        // 💡 レーザー発射地点にnormal弾テクスチャを合成表示するため、
+        //    同色のnormal弾画像もあらかじめロードしておく（未ロードだと最初の数フレーム表示されない）
+        if (isLaserType(type)) CC("normal", [this.color]);
     }
 
     /**
@@ -387,7 +484,7 @@ export class Bullet {
         this.rd = 1
         this.color = "FFFFFF";
         this.type = "nomal";
-        this.h = this.type !== "laser" ? 0 : 999;
+        this.h = !isLaserType(this.type) ? 0 : 999;
         this.size = null
         this.vsize = null   // 💡 見た目専用サイズもリセット
         this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2;
@@ -423,7 +520,7 @@ this.work = null;
         this.angle = angle;
         this.speed = speed;
         this.w = size ? size : w;
-        this.h = type !== "laser" ? size ? size : h : 999;
+        this.h = !isLaserType(type) ? size ? size : h : 999;
         // 💡 見た目専用サイズ（未指定なら null → 描画時は this.w/h をそのまま使用）
         this.vsize = vsize;
         // 💡 当たり判定は常に実サイズ(this.w)基準。vsizeの影響を受けない。
@@ -447,6 +544,9 @@ this.imgKey = `${type}-${this.color}`;
     } else {
         resolveImg(type, this.color); // ロード開始 or 既存キャッシュ確認（発火だけ）
     }
+    // 💡 レーザー発射地点にnormal弾テクスチャを合成表示するため、
+    //    同色のnormal弾画像もあらかじめロードしておく
+    if (isLaserType(type)) resolveImg("normal", this.color);
     this.cachedImg = null;   
     // 💡 プール再利用時、前の弾のループ参照(activeLoop/sactiveLoop)が
     // クリアされずに残り、fnlist/setlist未指定の弾でも誤発火してspeedが
@@ -490,6 +590,7 @@ this.color = c
     } else {
         resolveImg(this.type, c); // ロード開始 or 既存キャッシュ確認（発火だけ）
     }
+    if (isLaserType(this.type)) resolveImg("normal", c);
     this.cachedImg = null;   
 }
     update() {
@@ -562,7 +663,7 @@ if (this.sactiveLoop && this.timer >= this.sactiveLoop.f) {
         })
         this.angle = LastAngle
 }
-        const is = this.type === "laser"
+        const is = isLaserType(this.type)
         if (!is) {
             this.x += Math.cos(this.angle) * this.speed;
         }
@@ -607,42 +708,70 @@ draw(ctx, debug = false) {
 
     let isPathBullet = false;
 
+    // 💡 OP(強調)演出判定：生成から TIMEisOP フレームかけて
+    //    (OP_ALPHA, OP_SCALE) → (1, 1) へ徐々に戻る。
+    //    レーザー(laser/laserwait)には適用しない。
+    const isOpNow = IsOp && this.timer < TIMEisOP;
+    let opAlpha = 1;
+    let opScale = 1;
+    if (isOpNow) {
+        const t = this.timer / TIMEisOP; // 0 〜 1未満
+        opAlpha = OP_ALPHA + (1 - OP_ALPHA) * t;
+        opScale = OP_SCALE + (1 - OP_SCALE) * t;
+    }
+
     // 💡 見た目専用の描画サイズ。vsize が指定されていればそちらを優先し、
     //    未指定なら従来通り this.w / this.h をそのまま使う。当たり判定(radius)には無関係。
-    const drawW = this.vsize ?? this.w;
-    const drawH = this.vsize ?? this.h;
+    //    OP演出時はさらに opScale 倍される（当たり判定には無関係）。
+    const drawW = (this.vsize ?? this.w) * opScale;
+    const drawH = (this.vsize ?? this.h) * opScale;
 
-    if (this.type === "laser") {
-        if (this.timer >= this.speed - 12) {
-            const growElapsed = this.timer - (this.speed - 12);
-            const growT = Math.min(Math.max(growElapsed / 12, 0), 1);
-            const baseW = this.vsize ?? this.w;
-            const drawWLaser = 1 + (baseW - 1) * growT;
-            idraw("laser", this.x, this.y, drawWLaser, drawH, this.angle, this.color, 1);
+  if (isLaserType(this.type)) {
+    // --- 💡 レーザーはOP演出の対象外。常に従来通りのサイズ・alphaで描画する ---
+    const baseDrawW = this.vsize ?? this.w;
+    const baseDrawH = this.vsize ?? this.h;
+
+    if (this.timer >= this.speed - 12) {
+        const growElapsed = this.timer - (this.speed - 12);
+        const growT = Math.min(Math.max(growElapsed / 12, 0), 1);
+        const baseW = this.vsize ?? this.w;
+        const drawWLaser = 1 + (baseW - 1) * growT;
+
+        if (this.type === "laser2") {
+            // 💡 laser2: 9-slice方式で本体+先端/根本キャップを描画
+            //    （先端の尖り・根本の尖りは、元画像の対応部分をそのまま原寸で使用するため不自然に潰れない）
+            drawLaserSliced(this.imgKey, this.x, this.y, drawWLaser, baseDrawH, this.angle, 1);
+
+            // 💡 発射地点にnormal弾のテクスチャを合成して起点を飾る
+            idraw("normal", this.x, this.y, this.w, this.w, this.angle, this.color, 1);
         } else {
-            if (this.waitAlpha === undefined) this.waitAlpha = 0;
-            if (this.waitAlpha < 1) this.waitAlpha += 0.05;
-
-            if (this.colorFactor === undefined) this.colorFactor = 0;
-            if (this.colorFactor < 1) this.colorFactor += 0.05;
-
-            const r = 255 - (255 - 128) * this.colorFactor;
-            const g = 255 - (255 - 128) * this.colorFactor;
-            const b = 255 - (255 - 128) * this.colorFactor;
-
-            const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
-
-            idraw("laserwait", this.x, this.y, drawW, drawH, this.angle, waitColor, Math.min(this.waitAlpha, 1));
+            // 💡 laser: 旧方式。単純に画像をw×hへ引き伸ばして1枚貼るだけ。
+            idraw("laser", this.x, this.y, drawWLaser, baseDrawH, this.angle, this.color, 1);
         }
-        return;
+    } else {
+        if (this.waitAlpha === undefined) this.waitAlpha = 0;
+        if (this.waitAlpha < 1) this.waitAlpha += 0.05;
+
+        if (this.colorFactor === undefined) this.colorFactor = 0;
+        if (this.colorFactor < 1) this.colorFactor += 0.05;
+
+        const r = 255 - (255 - 128) * this.colorFactor;
+        const g = 255 - (255 - 128) * this.colorFactor;
+        const b = 255 - (255 - 128) * this.colorFactor;
+
+        const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
+
+        idraw("laserwait", this.x, this.y, baseDrawW, baseDrawH, this.angle, waitColor, Math.min(this.waitAlpha, 1));
     }
+    return;
+}
 
     // --- 💡 fire / curse: 18frame毎に4フレームをループするアニメーション描画 ---
     if (this.type === "fire" || this.type === "curse") {
         const key = getAnimFrameKey(this.type, this.timer);
         const cached = imgList.get(key);
         if (cached && cached !== "loading") {
-            drawCached(cached, this.x, this.y, drawW, drawH, this.angle);
+            drawCached(cached, this.x, this.y, drawW, drawH, this.angle, opAlpha);
         }
         if (debug) {
             ctx.save();
@@ -664,7 +793,7 @@ draw(ctx, debug = false) {
             const phase = (t % period) / period;
             const pulse = Math.sin(phase * Math.PI);
 
-            const alpha = 0.4 + pulse * 0.6;
+            const alpha = (0.4 + pulse * 0.6) * opAlpha;
             const scale = 0.85 + pulse * 0.3;
 
             idraw(
@@ -677,7 +806,7 @@ draw(ctx, debug = false) {
 
             if (pulse > 0.7) {
                 ctx.save();
-                ctx.globalAlpha = (pulse - 0.7) / 0.3;
+                ctx.globalAlpha = ((pulse - 0.7) / 0.3) * opAlpha;
                 ctx.translate(this.x, this.y);
                 ctx.fillStyle = "#ffffff";
                 ctx.shadowColor = "#fff6c8";
@@ -731,6 +860,7 @@ draw(ctx, debug = false) {
 case"polygon":
 case"light": 
 case"drop":
+case"eye":
             // 💡 ここをキャッシュ解決方式に変更
             if (!this.cachedImg) {
                 const c = imgList.get(this.imgKey);
@@ -740,23 +870,29 @@ case"drop":
                     break; // まだロード中なら今フレームは描画スキップ
                 }
             }
-            // 💡 描画サイズは vsize 優先（当たり判定には影響しない）
-            drawCached(this.cachedImg, this.x, this.y, drawW, drawH, this.angle);
+            // 💡 描画サイズは vsize 優先、OP演出時はさらに拡大＆半透明（当たり判定には影響しない）
+            drawCached(this.cachedImg, this.x, this.y, drawW, drawH, this.angle, opAlpha);
             break;
 
         case "四角":
             isPathBullet = true;
+            ctx.save();
+            ctx.globalAlpha = opAlpha;
             ctx.beginPath();
             ctx.rect(this.x - drawW / 2, this.y - drawH / 2, drawW, drawH);
             ctx.fill();
             ctx.closePath();
+            ctx.restore();
             break;
         default:
             isPathBullet = true;
+            ctx.save();
+            ctx.globalAlpha = opAlpha;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.arc(this.x, this.y, this.radius * opScale, 0, Math.PI * 2);
             ctx.fill();
             ctx.closePath();
+            ctx.restore();
             break;
     }
 

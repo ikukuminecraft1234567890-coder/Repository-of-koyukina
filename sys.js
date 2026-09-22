@@ -53,7 +53,7 @@ export function pbpush(b) {pbs.push(b)}
 let lastTouchX = 0
 let lastTouchY = 0
 import { functions } from "./boss.js"
-import { nsnew, rpfr, setent } from "./engine.js"
+import { nsnew, rpfr, setent, stat } from "./engine.js"
 
 export function start(index, bool,max,nowz) {
     players.forEach(e => e.remove());
@@ -66,9 +66,11 @@ if (globalThis._waitTasks) globalThis._waitTasks.clear();
     const fn = functions[index];
 
     const allData = JSON.parse(localStorage.getItem("sd")) || {};
+    if (!stat.isChallenge) {
     const now = allData[spelln] ?? { gets: 0, amount: 0 };
     allData[spelln] = { ...now, amount: now.amount + 1 };
     localStorage.setItem("sd", JSON.stringify(allData));
+    }
 
     const oldCanvas = document.getElementById("gameCanvas");
     if (oldCanvas) {

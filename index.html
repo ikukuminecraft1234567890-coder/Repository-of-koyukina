@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
+    
+
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
@@ -20,7 +22,10 @@
         #id {-moz-border-radius:;
             white-space: pre-wrap; 
             width: 350px;          
-            word-break: break-all; 
+
+            word-bre
+
+ak: break-all; 
         }
 
 
@@ -34,10 +39,14 @@
             overflow: hidden; 
             font-family: sans-serif; 
             margin: 0;
+
+
             display: flex;
             flex-direction: column;
             justify-content: center; 
             align-items: center;
+
+
 
 
 
@@ -299,6 +308,183 @@
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
+
+        /* 💡追加：弾幕ラッシュ一覧（左下固定） */
+        #rushListBtn {
+            position: fixed !important;
+            bottom: 8px !important;
+            left: 8px !important;
+            z-index: 999 !important;
+            background: #333;
+            color: #fff;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        #rushListBtn:hover { background: #444; }
+
+        #rushListOverlay, #rushEditorOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        #rushListOverlay.open, #rushEditorOverlay.open { display: flex; }
+
+        #rushListPanel, #rushEditorPanel {
+            background: #1a1a1a;
+            border: 2px solid #888;
+            border-radius: 8px;
+            width: min(560px, 94vw);
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            text-align: left;
+        }
+        #rushEditorPanel { width: min(680px, 96vw); }
+
+        .rushPanelHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid #555;
+            background: #222;
+        }
+        .rushPanelHeader span { font-weight: bold; font-size: 15px; }
+        .rushPanelHeader .rhBtns { display: flex; gap: 6px; }
+        .rushHeaderBtn {
+            background: #444;
+            color: #fff;
+            border: 1px solid #888;
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .rushHeaderBtn:hover { background: #555; }
+
+        #rushListBody, #rushEditorBody {
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .rushRow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+        }
+        .rushRow:hover { background: #2a2a2a; }
+        .rushRow .rushDifIcon {
+            width: 20px; height: 20px; flex-shrink: 0;
+            image-rendering: pixelated; image-rendering: crisp-edges;
+        }
+        .rushRow .rushName { flex: 1; font-size: 14px; }
+        .rushRow .rushMarkIcon {
+            width: 20px; height: 20px; flex-shrink: 0;
+            image-rendering: pixelated; image-rendering: crisp-edges;
+        }
+        .rushRow .rushDeleteBtn, .rushRow .rushExportBtn {
+            background: #442222;
+            color: #fff;
+            border: 1px solid #884444;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .rushRow .rushExportBtn { background: #223344; border-color: #446688; }
+
+        #rushListEmpty { color: #888; font-size: 13px; padding: 20px; text-align: center; }
+
+        .rushFormRow {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        .rushFormRow label { font-size: 12px; color: #bbb; }
+        .rushFormRow input[type="text"],
+        .rushFormRow input[type="number"],
+        .rushFormRow textarea,
+        .rushFormRow select {
+            background: #111;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 6px 8px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .rushFormRow textarea { resize: vertical; min-height: 44px; }
+        .rushFormRowInline { display: flex; gap: 10px; }
+        .rushFormRowInline > .rushFormRow { flex: 1; }
+
+        #rushEntryList {
+            border: 1px solid #444;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .rushEntryRow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+        }
+        .rushEntryRow:last-child { border-bottom: none; }
+        .rushEntryRow .reIndex { width: 20px; color: #888; text-align: right; }
+        .rushEntryRow select {
+            flex: 1;
+            background: #111; color: #fff; border: 1px solid #555; border-radius: 4px;
+            padding: 4px 6px; font-size: 12px;
+        }
+        .rushEntryRow input[type="number"] {
+            width: 70px;
+            background: #111; color: #fff; border: 1px solid #555; border-radius: 4px;
+            padding: 4px 6px; font-size: 12px;
+        }
+        .rushEntryRow .reRemove {
+            background: #442222; color: #fff; border: 1px solid #884444;
+            border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer;
+        }
+        .rushEntryRow .reMove {
+            background: #333; color: #fff; border: 1px solid #666;
+            border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer;
+        }
+
+        #rushAddEntryRow { display: flex; gap: 6px; padding: 8px; }
+        #rushAddEntryRow select { flex: 1; }
+
+        #rushEditorFooter {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 14px;
+            border-top: 1px solid #555;
+            background: #222;
+        }
+        #rushEditorFooter .footerLeft, #rushEditorFooter .footerRight { display: flex; gap: 8px; }
+        #rushSaveBtn {
+            background: #224422; border-color: #448844;
+        }
+        #rushMsg {
+            font-size: 12px;
+            padding: 4px 14px;
+            min-height: 16px;
+            color: #ffb347;
+        }
     </style>
 </head>
 <body>
@@ -306,6 +492,13 @@
         import { start } from './sys.js';
         import { functions } from "./boss.js";
         import { stat,cf } from "./engine.js";
+        import {
+            loadRushes, addRush, deleteRush,
+            getRushClearInfo,
+            exportRushToText, downloadRushAsTxt,
+            importRushFromFile, parseRushFromText,
+            startRush
+        } from "./rush.js";
 
         // 💡追加：16x16画像のdif値ごとのパス対応表（あとで自由に書き換えてください）
         const difImageMap = {
@@ -357,7 +550,7 @@
         randomBtn.type = "button";
         randomBtn.textContent = "ランダム";
 
-        // 💡追加：左上の「カスタム実行」ボタン（指定した関数を実行するだけ・中身は自由に書き換えてOK）
+        // 💡変更：左上の「実行」ボタン → 弾幕ラッシュエディターを開くボタンとして再利用
         const customBtn = document.createElement('button');
         customBtn.id = "customBtn";
         customBtn.type = "button";
@@ -395,6 +588,191 @@
         spellListPanel.append(spellListHeader, spellListBody);
         spellListOverlay.append(spellListPanel);
 
+        // 💡追加：左下「弾幕ラッシュ」一覧ボタン
+        const rushListBtn = document.createElement('button');
+        rushListBtn.id = "rushListBtn";
+        rushListBtn.type = "button";
+        rushListBtn.textContent = "弾幕ラッシュ";
+
+        // 💡追加：弾幕ラッシュ一覧モーダル
+        const rushListOverlay = document.createElement('div');
+        rushListOverlay.id = "rushListOverlay";
+
+        const rushListPanel = document.createElement('div');
+        rushListPanel.id = "rushListPanel";
+
+        const rushListHeader = document.createElement('div');
+        rushListHeader.className = "rushPanelHeader";
+
+        const rushListTitle = document.createElement('span');
+        rushListTitle.textContent = "弾幕ラッシュ一覧";
+
+        const rushListHeaderBtns = document.createElement('div');
+        rushListHeaderBtns.className = "rhBtns";
+
+        const rushImportBtn = document.createElement('button');
+        rushImportBtn.className = "rushHeaderBtn";
+        rushImportBtn.type = "button";
+        rushImportBtn.textContent = "インポート";
+
+        const rushImportFileInput = document.createElement('input');
+        rushImportFileInput.type = "file";
+        rushImportFileInput.accept = ".txt";
+        rushImportFileInput.style.display = "none";
+
+        const rushNewBtn = document.createElement('button');
+        rushNewBtn.className = "rushHeaderBtn";
+        rushNewBtn.type = "button";
+        rushNewBtn.textContent = "新規作成";
+
+        const rushListCloseBtn = document.createElement('button');
+        rushListCloseBtn.className = "rushHeaderBtn";
+        rushListCloseBtn.type = "button";
+        rushListCloseBtn.textContent = "閉じる";
+
+        rushListHeaderBtns.append(rushImportBtn, rushNewBtn, rushListCloseBtn);
+        rushListHeader.append(rushListTitle, rushListHeaderBtns);
+
+        const rushListBody = document.createElement('div');
+        rushListBody.id = "rushListBody";
+
+        rushListPanel.append(rushListHeader, rushListBody, rushImportFileInput);
+        rushListOverlay.append(rushListPanel);
+
+        // 💡追加：弾幕ラッシュエディターモーダル
+        const rushEditorOverlay = document.createElement('div');
+        rushEditorOverlay.id = "rushEditorOverlay";
+
+        const rushEditorPanel = document.createElement('div');
+        rushEditorPanel.id = "rushEditorPanel";
+
+        const rushEditorHeader = document.createElement('div');
+        rushEditorHeader.className = "rushPanelHeader";
+
+        const rushEditorTitle = document.createElement('span');
+        rushEditorTitle.textContent = "弾幕ラッシュエディター";
+
+        const rushEditorCloseBtn = document.createElement('button');
+        rushEditorCloseBtn.className = "rushHeaderBtn";
+        rushEditorCloseBtn.type = "button";
+        rushEditorCloseBtn.textContent = "閉じる";
+
+        rushEditorHeader.append(rushEditorTitle, rushEditorCloseBtn);
+
+        const rushEditorBody = document.createElement('div');
+        rushEditorBody.id = "rushEditorBody";
+
+        // --- 基本情報フォーム ---
+        function makeFormRow(labelText, inputEl) {
+            const row = document.createElement('div');
+            row.className = "rushFormRow";
+            const label = document.createElement('label');
+            label.textContent = labelText;
+            row.append(label, inputEl);
+            return row;
+        }
+
+        const reNameInput = document.createElement('input');
+        reNameInput.type = "text";
+        reNameInput.placeholder = "ラッシュの名前";
+
+        const reDescInput = document.createElement('textarea');
+        reDescInput.placeholder = "説明文";
+
+        const reDifSelect = document.createElement('select');
+        [["e","Easy"],["n","Normal"],["h","Hard"],["l","Lunatic"],["p","Phantasm"]].forEach(([v,l]) => {
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = `${v.toUpperCase()} (${l})`;
+            reDifSelect.append(opt);
+        });
+
+        const reMissInput = document.createElement('input');
+        reMissInput.type = "number";
+        reMissInput.min = "0";
+        reMissInput.value = "5";
+
+        const reCtInput = document.createElement('textarea');
+        reCtInput.placeholder = "クリアテキスト";
+
+        const reNmInput = document.createElement('textarea');
+        reNmInput.placeholder = "ノーミスクリアテキスト";
+
+        const topFormWrap = document.createElement('div');
+        const inlineRow1 = document.createElement('div');
+        inlineRow1.className = "rushFormRowInline";
+        inlineRow1.append(
+            makeFormRow("名前", reNameInput),
+            makeFormRow("難易度アイコン", reDifSelect),
+            makeFormRow("許容ミス数（合計）", reMissInput)
+        );
+        topFormWrap.append(
+            inlineRow1,
+            makeFormRow("説明文", reDescInput),
+            makeFormRow("クリアテキスト", reCtInput),
+            makeFormRow("ノーミスクリアテキスト", reNmInput)
+        );
+
+        // --- 弾幕（スペル）リスト ---
+        const entryListLabel = document.createElement('div');
+        entryListLabel.className = "rushFormRow";
+        const entryListLabelText = document.createElement('label');
+        entryListLabelText.textContent = "弾幕リスト（上から順に実行されます）";
+        entryListLabel.append(entryListLabelText);
+
+        const rushEntryList = document.createElement('div');
+        rushEntryList.id = "rushEntryList";
+
+        const rushAddEntryRow = document.createElement('div');
+        rushAddEntryRow.id = "rushAddEntryRow";
+
+        const addEntrySelect = document.createElement('select');
+        function refreshAddEntrySelect() {
+            addEntrySelect.textContent = "";
+            functions.forEach((fn, i) => {
+                if (!fn) return;
+                const opt = document.createElement('option');
+                opt.value = String(i + 1);
+                opt.textContent = `${i + 1}. ${fn.name ?? "無名"}`;
+                addEntrySelect.append(opt);
+            });
+        }
+
+        const addEntryBtn = document.createElement('button');
+        addEntryBtn.className = "rushHeaderBtn";
+        addEntryBtn.type = "button";
+        addEntryBtn.textContent = "追加";
+
+        rushAddEntryRow.append(addEntrySelect, addEntryBtn);
+
+        const rushMsg = document.createElement('div');
+        rushMsg.id = "rushMsg";
+
+        const rushEditorFooter = document.createElement('div');
+        rushEditorFooter.id = "rushEditorFooter";
+
+        const footerLeft = document.createElement('div');
+        footerLeft.className = "footerLeft";
+        const rushExportCurrentBtn = document.createElement('button');
+        rushExportCurrentBtn.className = "rushHeaderBtn";
+        rushExportCurrentBtn.type = "button";
+        rushExportCurrentBtn.textContent = ".txtに書き出し";
+        footerLeft.append(rushExportCurrentBtn);
+
+        const footerRight = document.createElement('div');
+        footerRight.className = "footerRight";
+        const rushSaveBtn = document.createElement('button');
+        rushSaveBtn.id = "rushSaveBtn";
+        rushSaveBtn.className = "rushHeaderBtn";
+        rushSaveBtn.type = "button";
+        rushSaveBtn.textContent = "保存する";
+        footerRight.append(rushSaveBtn);
+
+        rushEditorFooter.append(footerLeft, footerRight);
+
+        rushEditorBody.append(topFormWrap, entryListLabel, rushEntryList, rushAddEntryRow);
+        rushEditorPanel.append(rushEditorHeader, rushEditorBody, rushMsg, rushEditorFooter);
+        rushEditorOverlay.append(rushEditorPanel);
+
         // 💡追加：画面上部の可変画像コンテナと画像要素
         const topImages = document.createElement('div');
         topImages.id = "topImages";
@@ -412,17 +790,321 @@
         topImages.append(img64, img16);
 
         mainUiWrap.append(input, listOpenBtn);
-        document.body.append(topImages, latestBtn, randomBtn, customBtn, logoImg, mainUiWrap, button, div, sp, spellListOverlay);
+        document.body.append(topImages, latestBtn, randomBtn, customBtn, logoImg, mainUiWrap, button, div, sp, spellListOverlay, rushListBtn, rushListOverlay, rushEditorOverlay);
 
         // 初期化処
 
-        // 💡追加：カスタム関数実行用ボタンの処理。中身はテストのたびに自由に書き換えてOK。
+        // 💡変更：「実行」ボタン → 弾幕ラッシュエディターを新規作成モードで開く
         function customFunction() {
-cf()
-
+            openRushEditor(null);
         }
 
         customBtn.addEventListener("click", customFunction);
+
+        // ==========================================================
+        // 💡追加：弾幕ラッシュ機能
+        // ==========================================================
+
+        let editingRushId = null;   // 編集中のラッシュid（nullなら新規作成）
+        let entries = [];           // [{spell:1始まり, time:number|null}]
+
+        function genRushId() {
+            return "rush_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+        }
+
+        // --- ラッシュ一覧モーダル ---
+        function renderRushList() {
+            rushListBody.textContent = "";
+            const rushes = loadRushes();
+
+            if (rushes.length === 0) {
+                const empty = document.createElement('div');
+                empty.id = "rushListEmpty";
+                empty.textContent = "まだ弾幕ラッシュがありません。「新規作成」または「インポート」で追加してください。";
+                rushListBody.append(empty);
+                return;
+            }
+
+            rushes.forEach((rush) => {
+                const row = document.createElement('div');
+                row.className = "rushRow";
+
+                const difIcon = document.createElement('img');
+                difIcon.className = "rushDifIcon";
+                const difKey = (rush.dif ?? "n").toLowerCase();
+                difIcon.alt = difKey;
+                difIcon.src = "assets/" + difKey + ".png";
+
+                const name = document.createElement('span');
+                name.className = "rushName";
+                name.textContent = rush.name ?? "無名のラッシュ";
+
+                const markIcon = document.createElement('img');
+                markIcon.className = "rushMarkIcon";
+                const { clear, noMiss } = getRushClearInfo(rush.id);
+                if (noMiss) {
+                    markIcon.src = "assets/nc.png";
+                    markIcon.alt = "ノーミスクリア";
+                    markIcon.title = "ノーミスクリア";
+                } else if (clear) {
+                    markIcon.src = "assets/c.png";
+                    markIcon.alt = "クリア済み";
+                    markIcon.title = "クリア済み";
+                } else {
+                    markIcon.style.visibility = "hidden";
+                }
+
+                const editBtn = document.createElement('button');
+                editBtn.className = "rushExportBtn";
+                editBtn.textContent = "編集";
+                editBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    closeRushList();
+                    openRushEditor(rush);
+                });
+
+                const exportBtn = document.createElement('button');
+                exportBtn.className = "rushExportBtn";
+                exportBtn.textContent = "書出";
+                exportBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    downloadRushAsTxt(rush);
+                });
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = "rushDeleteBtn";
+                deleteBtn.textContent = "削除";
+                deleteBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (confirm(`「${rush.name}」を削除しますか？`)) {
+                        deleteRush(rush.id);
+                        renderRushList();
+                    }
+                });
+
+                row.append(difIcon, name, markIcon, editBtn, exportBtn, deleteBtn);
+
+                // 行クリックで即プレイ
+                row.addEventListener("click", () => {
+                    closeRushList();
+                    div.remove();
+                    mainUiWrap.remove();
+                    button.remove();
+                    sp.remove();
+                    topImages.remove();
+                    spellListOverlay.remove();
+                    rushListOverlay.remove();
+                    rushEditorOverlay.remove();
+                    latestBtn.remove();
+                    randomBtn.remove();
+                    customBtn.remove();
+                    logoImg.remove();
+                    rushListBtn.remove();
+                    cancelAnimationFrame(stat.gameId);
+                    startRush(rush);
+                });
+
+                rushListBody.append(row);
+            });
+        }
+
+        function openRushList() {
+            renderRushList();
+            rushListOverlay.classList.add("open");
+            logoImg.classList.add("hidden");
+        }
+        function closeRushList() {
+            rushListOverlay.classList.remove("open");
+            logoImg.classList.remove("hidden");
+        }
+
+        rushListBtn.addEventListener("click", openRushList);
+        rushListCloseBtn.addEventListener("click", closeRushList);
+        rushListOverlay.addEventListener("click", (e) => {
+            if (e.target === rushListOverlay) closeRushList();
+        });
+
+        rushNewBtn.addEventListener("click", () => {
+            closeRushList();
+            openRushEditor(null);
+        });
+
+        rushImportBtn.addEventListener("click", () => rushImportFileInput.click());
+        rushImportFileInput.addEventListener("change", async () => {
+            const file = rushImportFileInput.files[0];
+            rushImportFileInput.value = "";
+            if (!file) return;
+            try {
+                const rush = await importRushFromFile(file);
+                addRush(rush);
+                renderRushList();
+            } catch (e) {
+                alert("インポートに失敗しました：" + e.message);
+            }
+        });
+
+        // --- ラッシュエディター ---
+        function renderEntryList() {
+            rushEntryList.textContent = "";
+            entries.forEach((entry, i) => {
+                const row = document.createElement('div');
+                row.className = "rushEntryRow";
+
+                const idx = document.createElement('span');
+                idx.className = "reIndex";
+                idx.textContent = String(i + 1);
+
+                const select = document.createElement('select');
+                functions.forEach((fn, fi) => {
+                    if (!fn) return;
+                    const opt = document.createElement('option');
+                    opt.value = String(fi + 1);
+                    opt.textContent = `${fi + 1}. ${fn.name ?? "無名"}`;
+                    if (fi + 1 === entry.spell) opt.selected = true;
+                    select.append(opt);
+                });
+                select.addEventListener("change", () => {
+                    entry.spell = Number(select.value);
+                });
+
+                const timeInput = document.createElement('input');
+                timeInput.type = "number";
+                timeInput.min = "0";
+                timeInput.step = "0.1";
+                const defaultTime = functions[entry.spell - 1]?.time ?? "";
+                timeInput.placeholder = "既定:" + defaultTime + "s";
+                timeInput.value = entry.time !== null && entry.time !== undefined ? entry.time : "";
+                timeInput.addEventListener("input", () => {
+                    entry.time = timeInput.value === "" ? null : Number(timeInput.value);
+                });
+
+                const upBtn = document.createElement('button');
+                upBtn.className = "reMove";
+                upBtn.textContent = "↑";
+                upBtn.disabled = i === 0;
+                upBtn.addEventListener("click", () => {
+                    if (i === 0) return;
+                    [entries[i - 1], entries[i]] = [entries[i], entries[i - 1]];
+                    renderEntryList();
+                });
+
+                const downBtn = document.createElement('button');
+                downBtn.className = "reMove";
+                downBtn.textContent = "↓";
+                downBtn.disabled = i === entries.length - 1;
+                downBtn.addEventListener("click", () => {
+                    if (i === entries.length - 1) return;
+                    [entries[i + 1], entries[i]] = [entries[i], entries[i + 1]];
+                    renderEntryList();
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = "reRemove";
+                removeBtn.textContent = "削除";
+                removeBtn.addEventListener("click", () => {
+                    entries.splice(i, 1);
+                    renderEntryList();
+                });
+
+                row.append(idx, select, timeInput, upBtn, downBtn, removeBtn);
+                rushEntryList.append(row);
+            });
+
+            if (entries.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.padding = "10px";
+                empty.style.color = "#888";
+                empty.style.fontSize = "12px";
+                empty.textContent = "弾幕がまだ追加されていません。下のプルダウンから追加してください。";
+                rushEntryList.append(empty);
+            }
+        }
+
+        addEntryBtn.addEventListener("click", () => {
+            const v = Number(addEntrySelect.value);
+            if (!v) return;
+            entries.push({ spell: v, time: null });
+            renderEntryList();
+        });
+
+        function buildRushFromForm() {
+            const name = reNameInput.value.trim();
+            if (!name) throw new Error("名前を入力してください。");
+            if (entries.length === 0) throw new Error("弾幕を1つ以上追加してください。");
+            const misses = Number(reMissInput.value);
+            return {
+                id: editingRushId || genRushId(),
+                name,
+                desc: reDescInput.value,
+                dif: reDifSelect.value,
+                misses: Number.isFinite(misses) && misses >= 0 ? misses : 5,
+                ct: reCtInput.value,
+                nm: reNmInput.value,
+                entries: entries.map(e => ({ spell: e.spell, time: e.time }))
+            };
+        }
+
+        function openRushEditor(rush) {
+            rushMsg.textContent = "";
+            refreshAddEntrySelect();
+
+            if (rush) {
+                editingRushId = rush.id;
+                reNameInput.value = rush.name ?? "";
+                reDescInput.value = rush.desc ?? "";
+                reDifSelect.value = rush.dif ?? "n";
+                reMissInput.value = rush.misses ?? 5;
+                reCtInput.value = rush.ct ?? "";
+                reNmInput.value = rush.nm ?? "";
+                entries = (rush.entries ?? []).map(e => ({ spell: e.spell, time: e.time ?? null }));
+            } else {
+                editingRushId = null;
+                reNameInput.value = "";
+                reDescInput.value = "";
+                reDifSelect.value = "n";
+                reMissInput.value = "5";
+                reCtInput.value = "";
+                reNmInput.value = "";
+                entries = [];
+            }
+
+            renderEntryList();
+            rushEditorOverlay.classList.add("open");
+            logoImg.classList.add("hidden");
+        }
+
+        function closeRushEditor() {
+            rushEditorOverlay.classList.remove("open");
+            logoImg.classList.remove("hidden");
+        }
+
+        rushEditorCloseBtn.addEventListener("click", closeRushEditor);
+        rushEditorOverlay.addEventListener("click", (e) => {
+            if (e.target === rushEditorOverlay) closeRushEditor();
+        });
+
+        rushSaveBtn.addEventListener("click", () => {
+            try {
+                const rush = buildRushFromForm();
+                editingRushId = rush.id;
+                addRush(rush);
+                rushMsg.style.color = "#8f8";
+                rushMsg.textContent = "保存しました。";
+            } catch (e) {
+                rushMsg.style.color = "#ffb347";
+                rushMsg.textContent = e.message;
+            }
+        });
+
+        rushExportCurrentBtn.addEventListener("click", () => {
+            try {
+                const rush = buildRushFromForm();
+                downloadRushAsTxt(rush);
+            } catch (e) {
+                rushMsg.style.color = "#ffb347";
+                rushMsg.textContent = e.message;
+            }
+        });
 
         // 💡追加：指定スペル番号(1始まり)でクリア状況を取得するヘルパー
         function getClearInfo(index0) {
@@ -496,10 +1178,12 @@ cf()
         function openSpellList() {
             renderSpellList();
             spellListOverlay.classList.add("open");
+            logoImg.classList.add("hidden");
         }
 
         function closeSpellList() {
             spellListOverlay.classList.remove("open");
+            logoImg.classList.remove("hidden");
         }
 
         listOpenBtn.addEventListener("click", openSpellList);
@@ -520,12 +1204,21 @@ cf()
             sp.remove();
             topImages.remove();
             spellListOverlay.remove();
+            rushListOverlay.remove();
+            rushEditorOverlay.remove();
+            rushListBtn.remove();
             latestBtn.remove();
             randomBtn.remove();
             customBtn.remove();
             logoImg.remove();
 
             cancelAnimationFrame(stat.gameId);
+            // 💡通常プレイなので弾幕ラッシュ関連の状態をリセット
+            stat.isChallenge = false;
+            stat.timeOverride = null;
+            stat.timeQueue = [];
+            stat.ntxt = "";
+            stat.rushId = null;
             start(sn);
         }
 

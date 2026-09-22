@@ -990,3 +990,44 @@ export function wr(arr) {
     if ((rand -= item.v) < 0) return item;
   }
 }
+
+export function snake(b,speed=0.05,range=45,base=0) {
+return (Math.sin(b.timer * speed) * range) + base
+}
+export function endd(b) {
+    b.custom.f = true
+for (let yc = 0;yc<300;yc+=10) {
+wait(() => {
+circle((ev)=> {
+bullet({
+    angle:dtr(ev.deg),
+x:Half.x,
+y:Half.y,
+size:64,
+type:"simple",
+color:"red",
+speed:7.5,
+rd:1,
+fnlist:[{f:0,loop:true,fn:function(){reverse(this)}}]
+    })
+},{count:36})
+    },yc)
+}}
+export function end() {
+for (let yc = 0;yc<300;yc+=10) {
+wait(() => {
+circle((ev)=> {
+bullet({
+    angle:dtr(ev.deg),
+x:Half.x,
+y:Half.y,
+size:64,
+type:"simple",
+color:"red",
+speed:7.5,
+rd:1,
+fnlist:[{f:0,loop:true,fn:function(){reverse(this)}}]
+    })
+},{count:36})
+    },yc)
+}}
