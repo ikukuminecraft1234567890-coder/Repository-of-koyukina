@@ -502,6 +502,11 @@ const pause = players[0].death || esc;
 
 
     if (!pause)stat.pfr += 1
+if (stat.pfr === 2&&!stat.isChallenge) {
+document.body.append(cb, rb)
+if (window.Allkeys.r || window.Allkeys.Enter) rbpush()
+if (window.Allkeys.Escape || window.Allkeys.c) cbpush()
+        }
     ctx.clearRect(0, 0, canvas.w, canvas.h);
     const fn = functions[spelln]
     functions[spelln].run()
@@ -615,12 +620,7 @@ pause=false
             cb.addEventListener("click", cbpush);
             rb.addEventListener("click", rbpush);
         if (stat.isChallenge) document.body.appendChild(cb)
-        if (!stat.isChallenge) {
-document.body.append(cb, rb)
-if (window.Allkeys.r || window.Allkeys.Enter) rbpush()
-if (window.Allkeys.Escape || window.Allkeys.c) cbpush()
-            return;
-        }}
+        }
       if(!pause)  p.update();
       //  if (frame % 5 === 0) p.OnShot(false); // 通常
      //   if (frame % 15 === 0) p.OnShot(true);  // ホーミング
