@@ -965,7 +965,7 @@ a.cs = {a:0,b:0,c:0,d:0,e:0,f:0}
   a.prop.c = 0;
   a.prop.a2 = 0;
   const count = 100;
-  const arr = Array(100).fill(0).map((e, i) => e = i * 15);
+  const arr = Array(1000).fill(0).map((e, i) => e = i * 15);
   const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
   const s = { spread: arr, name: alphabet.splice(0, arr.length) };
   a.seeds = Seed.multi(

@@ -1944,5 +1944,234 @@ img: "./noise.png",
   imgSpeed: 1,
   imgAlpha: 1,
 }
-
 functions.push(spell23)
+const spell24 = {
+  name: "星符｢プラネットフォール｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "大星弾実装〜！割と自信ある。シンプルすぎるけどw高速青 + 普通黄色 + 低速緑の組み合わせ",
+  nm: "普通にもうちょい難易度上げなくて良かったわwバランス調整はむずかしいw",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 45,
+  run() {
+    if (time(6)) {
+const X = this.seeds[63].random(0,canvas.w)
+const Angle = this.seeds[43].random(-45,45)
+        bullet({
+          angle: dtr(90+Angle),
+          x: X,
+          y: 0,
+          size: 64,
+          type: "star2",
+          color: "yellow",
+          speed:3.5,
+          rd: 0.65,
+})
+     }
+    if (time(12)) {
+const X = this.seeds[34].random(0,canvas.w)
+const Angle = this.seeds[240].random(-45,45)
+        bullet({
+          angle: dtr(90+Angle),
+          x: X,
+          y: 0,
+          size: 64,
+          type: "star2",
+          color: "green",
+          speed:1.5,
+          rd: 0.65,
+})
+    if (time(24)) {
+const X = this.seeds[304].random(0,canvas.w)
+const Angle = this.seeds[134].random(-45,45)
+        bullet({
+          angle: dtr(90+Angle),
+          x: X,
+          y: 0,
+          size: 64,
+          type: "star2",
+          color: "blue",
+          speed:5,
+          rd: 0.65,
+})}
+     }
+  },
+img: "./cloud.png",
+  mask: "./nature.png",
+  maskAlpha: 0.15,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 0.75,
+}
+functions.push(spell24)
+const spell25 = {
+  name: "鱗符｢ユートピアフィッシャー｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "自機狙い黄色+緑鱗。上のは安置潰しw割とおもろくない？！",
+  nm: "いい構成だと思う。しっかり避ける必要性ある。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+    if (time(30)) {
+for (const d of [{x:0,angle:0},{x:canvas.w,angle:-180}]) bullet({
+          angle: dtr(d.angle),
+          x: d.x,
+          y: 50,
+          size:128,
+          type: "simple",
+          color: "red",
+          speed:5,
+          rd: 1.5,
+})
+//wayしきねらい
+const wx = 0;
+const wy = 80;
+const seeds = this.seeds
+way((ev) => {
+const x = seeds[436].random(-15,15)+ev.x
+        bullet({
+          angle: dtr(90),
+          x: x,
+          y: ev.y,
+          size: 32,
+          type: "scale",
+          color: "green",
+          speed:1.5,
+          rd: 0.65,
+setlist:[{f:30,e:2.5}],
+fnlist:[{f:60,fn:function(){
+const vx = seeds[36].random(0,1) >0.5 ? 0 : canvas.w;
+const vy = seeds[231].random(0,canvas.h-100)
+        bullet({
+          angle: pf(this.x,this.y),
+          x: vx,
+          y: vy,
+          size: 24,
+          type: "eye",
+          color: "yellow",
+          speed:0.5,
+          rd: 0.65,
+})}
+    
+}]
+})
+     },{x:wx,y:wy,angle:dtr(90),lock:dtr(90),count:18,sx:30,sy:0})
+  }},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell25)
+const spell26 = {
+  name: "反符｢ナイフウォール｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "下から迫り上がるナイフの滝。めちゃくちゃムズく見えるけど自機狙いなので誘導して隙間抜けるだけ。まあ緑ナイフがあるのでそんなに簡単には行かない。",
+  nm: "一条戻り橋見て思いついた。屈指の神スペルですよあれは",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+    if (time(15)) {
+//wayしきねらい
+const wx = 0;
+const wy = canvas.h;
+const seeds = this.seeds
+way((ev) => {
+const x = ev.x
+        bullet({
+          angle: pf(ev.x,ev.y),
+          x: x,
+          y: canvas.h,
+          size: 32,
+          type: "knife",
+          color: "blue",
+          speed:1.5,
+          rd: 0.65,
+})
+    for (let i = 0;i<2;i++)bullet({
+          angle: pf(ev.x,ev.y)+seeds[999].random(-45,45),
+          x: x+seeds[434].random(-15,15),
+          y: canvas.h,
+          size: 32,
+          type: "knife",
+          color: "green",
+          speed:1.5,
+          rd: 0.65,
+})
+     },{x:wx,y:wy,angle:dtr(90),lock:dtr(90),count:24,sx:30,sy:0})
+  }},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell26)
+const spell27 = {
+  name: "転符｢ポップンアーク｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "反射の弾源移動全方位。ムズくない？？ああそうですか ..なう(2026/09/26 03:59:21)最後のスペル。今回は25,26,27が神スペルだと思う。",
+  nm: "個人的にはムズい。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+if(time())this.prop.a=3
+    if (time(30)) {
+this.prop.c += 72
+if (this.prop.a === canvas.h+5) this.prop.s = -30;
+if (this.prop.a === 3) this.prop.s = 30;
+console.log(this.prop.s)
+this.prop.a +=this.prop.s
+//wayしきねらい
+const x = Half.x;
+const y = this.prop.a
+const ang = this.prop.c
+arc((ev) => {
+const x = ev.x
+        bullet({
+          angle: dtr(ev.deg+ang),
+          x: ev.x,
+          y: ev.y,
+          size: 16,
+          type: "small",
+          color: "red",
+          speed:1.5,
+          rd: 0.65,
+custom:false,
+fnlist:[{f:0,loop:true,fn:function() {
+if(this.custom)return;const a = reverse(this)
+if(a)this.custom=true;
+}}]
+})
+     },{x,y,count:16,length:30})
+  }},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell27)
