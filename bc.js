@@ -1,695 +1,357 @@
-const imgList = new Map();
 import { bullets, canvas, ctx, players } from "./sys.js"
-import { cfg , superOptimal} from "./logs/cfg.js"
-import {stat} from "./engine.js"
-const asset = "./assets/";
+import { cfg, superOptimal } from "./logs/cfg.js"
 
-// --- 💡 パレット直塗り画像で該当する色名一覧 ---
+const asset = "./assets/";
+const imgList = new Map();
+export const spaceb = [];
+
+// ============================================================
+// 定数
+// ============================================================
 const PALETTE_COLORS = new Set([
     "crim", "red", "purple", "pink", "cobalt", "blue", "cyan",
     "aqua", "lime", "green", "olive", "gold", "yellow", "orange", "white"
 ]);
 
-// --- 💡 オブジェクトプール用の配列（cfg=true のときのみ実質使用） ---
-export const spaceb = [];
-
-// --- 💡 fire / curse 用: 固定色 + 4フレームアニメーション設定 ---
 const ANIM_TYPES = {
     fire:  { color: "red",    prefix: "fire" },
     curse: { color: "purple", prefix: "curse" }
 };
 const ANIM_FRAME_COUNT = 4;
-const ANIM_FRAME_INTERVAL = 18; // 18frame毎にフレーム切り替え
+const ANIM_FRAME_INTERVAL = 18;
 
-// --- 💡 OP(強調)演出フレーム用定数 ---
-// isOP=true の弾は、生成から TIMEisOP フレームの間だけ
-// 「不透明度0.4・サイズ1.25倍」で描画される（当たり判定には無関係）。
-// レーザー(laser/laserwait)には適用しない。
+// OP(強調)演出: 生成から TIMEisOP フレームかけて (OP_ALPHA, OP_SCALE) → (1, 1)
 const IsOp = true;
 const TIMEisOP = 6;
 const OP_ALPHA = 0.4;
 const OP_SCALE = 2;
 
-// --- 💡 レーザー9-slice用定数 ---
-// 元画像(laser.png)における「先端/根本の尖り部分」の範囲(px)。
-// 画像の上端からLASER_CAP_PX、下端からLASER_CAP_PXが尖り領域として扱われる。
-const LASER_CAP_PX = 32;
+const TYPE_ALIAS = {
+    "クナイ": "kunai", "御札": "amulet", "グミ": "gummy", "ナイフ弾": "knife",
+    "大弾": "big", "鱗弾": "scale", "米弾": "diamond",
+    "陰陽玉": "onmyoutama", "陰陽弾": "onmyoutama", "onmyoudama": "onmyoutama",
+    "laser2": "laser",
+};
 
-// --- 💡 laser / laser2 判定ヘルパー ---
-// laser  = 旧方式（h=999で単純に引き伸ばすだけ。先端/根本の尖りは出ない）
-// laser2 = 新方式（9-slice。先端/根本の尖りをそのまま活かして本体だけ引き伸ばす）
-// 当たり判定・色固定・h=999扱いなど、描画方式以外は両者とも完全に同じ扱いにする。
-function isLaserType(type) {
-    return type === "laser" || type === "laser2";
-}
-
-// --- 💡 「弾の種類(type)」→「実際に読み込む画像ファイル名」への変換 ---
-// laser2 は laser と同じ laser.png を画像ソースとして使う（挙動だけが別）ため、
-// imgList のキャッシュキーは "laser2-色" のまま分離しつつ、ロードするファイル名だけ laser に寄せる。
-function resolveImgFileType(type) {
-    if (type === "laser2") return "laser";
-    return type;
-}
+// ============================================================
+// 画像ロード(1本化)
+// ============================================================
+const toCanvas = (img) => {
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    c.getContext("2d").drawImage(img, 0, 0);
+    return c;
+};
 
 /**
- * fire / curse のアニメーションフレーム画像(4枚)を asset から読み込み、
- * imgList にキャッシュする。ファイル名は `${prefix}_${1〜4}.png`。
+ * key = `${type}-${color}` のキャッシュを(未ロードなら)ロード開始する。
+ * パレット色 → pallets/ から直読み / それ以外 → グロー着色
  */
+function loadImg(type, color) {
+    const key = `${type}-${color}`;
+    if (imgList.has(key)) return key;
+    imgList.set(key, "loading");
+
+    const file = TYPE_ALIAS[type] ?? type;
+    if (PALETTE_COLORS.has(color)) {
+        const img = new Image();
+        img.onload = () => imgList.set(key, toCanvas(img));
+        img.src = `${asset}pallets/${color}${file}.png`;
+    } else {
+        const img = new Image();
+        img.onload = async () => {
+            const colored = new Image();
+            colored.onload = () => imgList.set(key, toCanvas(colored));
+            colored.src = await setColor(img, color);
+        };
+        img.src = `${asset}${file}.png`;
+    }
+    return key;
+}
+
 function loadAnimFrames(type) {
     const conf = ANIM_TYPES[type];
-    if (!conf) return;
-
     for (let i = 1; i <= ANIM_FRAME_COUNT; i++) {
         const key = `${type}-${conf.color}-${i}`;
         if (imgList.has(key)) continue;
         imgList.set(key, "loading");
-
         const img = new Image();
+        img.onload = () => imgList.set(key, toCanvas(img));
         img.src = `${asset}${conf.prefix}_${i}.png`;
-        img.onload = () => {
-            const c = document.createElement("canvas");
-            c.width = img.width;
-            c.height = img.height;
-            c.getContext("2d").drawImage(img, 0, 0);
-            imgList.set(key, c);
-        };
     }
 }
 
-/**
- * 現在の timer から、表示すべきアニメーションフレームの imgList キーを算出する。
- * 18frame毎に 1→2→3→4→1... とループする。
- */
-function getAnimFrameKey(type, timer) {
-    const conf = ANIM_TYPES[type];
-    const frameIndex = Math.floor(timer / ANIM_FRAME_INTERVAL) % ANIM_FRAME_COUNT + 1;
-    return `${type}-${conf.color}-${frameIndex}`;
+/** 弾typeに必要な画像を全部ロード開始(constructor / setter / scolor / CC 共通) */
+function preload(type, color) {
+    if (ANIM_TYPES[type]) return loadAnimFrames(type);
+    loadImg(type, color);
+    if (isLaserType(type)) loadImg("normal", color); // 発射地点の飾り用
 }
 
-/**
- * 画像に幻想彩色（Glow Filter）処理を施し、DataURLを返却する関数
- */
-async function setColor(img, color, glowAmount = 300) {
-    const parseHexToRgb = (hexStr) => {
-        const match = hexStr.trim().match(/^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/);
-        if (!match) return null;
-        let hex = match[1];
-        if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-        const num = parseInt(hex, 16);
-        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
-    };
+export function CC(type, colors) {
+    (Array.isArray(colors) ? colors : [colors]).forEach(c => preload(type, c));
+}
 
+async function setColor(img, color, glowAmount = 300) {
+    const hex = color.trim().replace("#", "");
+    const full = hex.length === 3 ? hex.split("").map(c => c + c).join("") : hex;
+    const num = parseInt(full, 16);
+    const [r, g, b] = [(num >> 16) & 255, (num >> 8) & 255, num & 255];
     const lerp = (a, b, t) => a + (b - a) * t;
 
-    const baseRgb = parseHexToRgb(color);
-    const [r, g, b] = baseRgb;
     const steps = [
         [r * 0.20, g * 0.20, b * 0.20],
         [r * 0.65, g * 0.65, b * 0.65],
         [lerp(r, 255, 0.45), lerp(g, 255, 0.45), lerp(b, 255, 0.45)],
         [255, 255, 255]
     ];
-
-    const sampleGradient = (gray) => {
-        let t = gray / 255;
-        let a, b, k;
-        if (t < 0.33) {      a = steps[0]; b = steps[1]; k = t / 0.33; }
-        else if (t < 0.66) { a = steps[1]; b = steps[2]; k = (t - 0.33) / 0.33; }
-        else {               a = steps[2]; b = steps[3]; k = (t - 0.66) / 0.34; }
-        return [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
+    const sample = (gray) => {
+        const t = gray / 255;
+        let a, bb, k;
+        if (t < 0.33)      { a = steps[0]; bb = steps[1]; k = t / 0.33; }
+        else if (t < 0.66) { a = steps[1]; bb = steps[2]; k = (t - 0.33) / 0.33; }
+        else               { a = steps[2]; bb = steps[3]; k = (t - 0.66) / 0.34; }
+        return [lerp(a[0], bb[0], k), lerp(a[1], bb[1], k), lerp(a[2], bb[2], k)];
     };
 
-    const tempCanvas = document.createElement("canvas");
-    const tempCtx = tempCanvas.getContext("2d");
-    tempCanvas.width = img.width;
-    tempCanvas.height = img.height;
-
-    tempCtx.drawImage(img, 0, 0);
-    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+    const temp = document.createElement("canvas");
+    temp.width = img.width;
+    temp.height = img.height;
+    const tctx = temp.getContext("2d");
+    tctx.drawImage(img, 0, 0);
+    const imageData = tctx.getImageData(0, 0, temp.width, temp.height);
     const d = imageData.data;
-
     for (let i = 0; i < d.length; i += 4) {
-        let gray = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
-        let [gR, gG, gB] = sampleGradient(gray);
-        d[i] = gR; d[i + 1] = gG; d[i + 2] = gB;
+        const gray = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+        [d[i], d[i + 1], d[i + 2]] = sample(gray);
     }
-    tempCtx.putImageData(imageData, 0, 0);
+    tctx.putImageData(imageData, 0, 0);
 
-    const finalCanvas = document.createElement("canvas");
-    const finalCtx = finalCanvas.getContext("2d");
-    finalCtx.imageSmoothingEnabled = false;
-    finalCtx.webkitImageSmoothingEnabled = false;
-
-    finalCanvas.width = img.width;
-    finalCanvas.height = img.height;
-
-    finalCtx.drawImage(tempCanvas, 0, 0);
-
-    finalCtx.globalCompositeOperation = "screen";
-    finalCtx.filter = `blur(${glowAmount}px)`;
-    finalCtx.drawImage(tempCanvas, 0, 0);
-    finalCtx.filter = "none";
-    finalCtx.globalCompositeOperation = "source-over";
-
-    return finalCanvas.toDataURL("image/png");
+    const fin = document.createElement("canvas");
+    fin.width = img.width;
+    fin.height = img.height;
+    const fctx = fin.getContext("2d");
+    fctx.imageSmoothingEnabled = false;
+    fctx.drawImage(temp, 0, 0);
+    fctx.globalCompositeOperation = "screen";
+    fctx.filter = `blur(${glowAmount}px)`;
+    fctx.drawImage(temp, 0, 0);
+    return fin.toDataURL("image/png");
 }
 
+// ============================================================
+// 描画(1本化)
+// ============================================================
 /**
- * パレット直塗り画像（assets/pallets/${color}${type}.png）を
- * そのまま Canvas にロードして imgList にキャッシュする
+ * すべての描画はここを通す。
+ * @param key    imgListのキー
+ * @param opt.vangle  見た目専用の角度オフセット
+ * @param opt.spin    star2用の揺れ角
+ * @param opt.slice   true なら9-sliceで描画(レーザー本体用)
  */
-function loadPaletteImage(type, color, key) {
-    const palImg = new Image();
-    palImg.src = `${asset}pallets/${color}${type}.png`;
-    palImg.onload = () => {
-        const c = document.createElement("canvas");
-        c.width = palImg.width;
-        c.height = palImg.height;
-        c.getContext("2d").drawImage(palImg, 0, 0);
-        imgList.set(key, c);
-    };
-}
-
-export async function CC(type, colors) {
-    let imgType = type;
-    if (imgType === "クナイ") imgType = "kunai";
-    else if (imgType === "御札") imgType = "amulet";
-    else if (imgType === "グミ") imgType = "gummy";
-    else if (imgType === "ナイフ弾") imgType = "knife";
-    else if (imgType === "大弾") imgType = "big";
-    else if (imgType === "鱗弾") imgType = "scale";
-    else if (imgType === "米弾") imgType = "diamond";
-    else if (imgType === "陰陽玉" || imgType === "陰陽弾" || imgType === "onmyoutama" || imgType === "onmyoudama") imgType = "onmyoutama";
-    else if (imgType === "laser") imgType = "laser";
-    else if (imgType === "laser2") imgType = "laser"; // laser2 は laser.png を共用
-
-    // --- 💡 fire / curse はアニメーションスプライト方式なので専用ロードへ分岐 ---
-    if (type === "fire" || type === "curse") {
-        loadAnimFrames(type);
-        return;
-    }
-
-    const colorArray = Array.isArray(colors) ? colors : [colors];
-
-    // --- 💡 パレット色のみのリクエストは baseImg のロードすら不要 ---
-    const paletteRequests = colorArray.filter(c => PALETTE_COLORS.has(c));
-    const glowRequests = colorArray.filter(c => !PALETTE_COLORS.has(c));
-
-    paletteRequests.forEach(color => {
-        const key = `${type}-${color}`;
-        if (imgList.has(key)) return;
-        imgList.set(key, "loading");
-        loadPaletteImage(imgType, color, key);
-    });
-
-    if (!glowRequests.length) return;
-
-    const baseImg = new Image();
-    baseImg.src = asset + imgType + ".png";
-
-    await new Promise(resolve => baseImg.onload = resolve);
-
-    glowRequests.forEach(color => {
-        const key = `${type}-${color}`;
-        if (imgList.has(key)) return;
-
-        imgList.set(key, "loading");
-        setColor(baseImg, color).then(dataUrl => {
-            const coloredImg = new Image();
-            coloredImg.src = dataUrl;
-            coloredImg.onload = () => {
-                const c = document.createElement("canvas");
-                c.width = baseImg.width;
-                c.height = baseImg.height;
-                c.getContext("2d").drawImage(coloredImg, 0, 0);
-                imgList.set(key, c);
-            };
-        });
-    });
-}
-
-function idraw(type, x, y, w, h, angle, color, alpha = 1) {
-    const key = `${type}-${color}`;
-    const cached = imgList.get(key);
-
-    if (!cached || cached === "loading") {
-        if (!cached) {
-            imgList.set(key, "loading");
-            const fileType = resolveImgFileType(type);
-
-            // --- 💡 パレット色ならグロー処理をスキップして直接読み込む ---
-            if (PALETTE_COLORS.has(color)) {
-                loadPaletteImage(fileType, color, key);
-                return;
-            }
-
-            const baseImg = new Image();
-            baseImg.src = asset + fileType + ".png";
-            baseImg.onload = function() {
-                setColor(baseImg, color).then(dataUrl => {
-                    const coloredImg = new Image();
-                    coloredImg.src = dataUrl;
-                    coloredImg.onload = function() {
-                        const resCanvas = document.createElement("canvas");
-                        resCanvas.width = baseImg.width;
-                        resCanvas.height = baseImg.height;
-                        resCanvas.getContext("2d").drawImage(coloredImg, 0, 0);
-                        imgList.set(key, resCanvas);
-                    };
-                });
-            };
-        }
-        return;
-    }
-
-    ctx.save();
-    ctx.globalAlpha = alpha; // 💡 透明度を反映
-    ctx.translate(x, y);
-    ctx.rotate(angle + Math.PI / 2);
-    ctx.drawImage(cached, -w / 2, -h / 2, w, h);
-    ctx.restore();
-}
-// idraw を2つに分離: キャッシュ解決用と描画用
-function resolveImg(type, color) {
-    const key = `${type}-${color}`;
-    let cached = imgList.get(key);
-
-    if (!cached) {
-        imgList.set(key, "loading");
-        const fileType = resolveImgFileType(type);
-        if (PALETTE_COLORS.has(color)) {
-            loadPaletteImage(fileType, color, key);
-        } else {
-            const baseImg = new Image();
-            baseImg.src = asset + fileType + ".png";
-            baseImg.onload = function() {
-                setColor(baseImg, color).then(dataUrl => {
-                    const coloredImg = new Image();
-                    coloredImg.src = dataUrl;
-                    coloredImg.onload = function() {
-                        const resCanvas = document.createElement("canvas");
-                        resCanvas.width = baseImg.width;
-                        resCanvas.height = baseImg.height;
-                        resCanvas.getContext("2d").drawImage(coloredImg, 0, 0);
-                        imgList.set(key, resCanvas);
-                    };
-                });
-            };
-        }
-    }
-    return key; // "loading" でも key だけ返し、後で再解決できるようにする
-}
-
-// 描画専用：既にキャッシュ済みの canvas を直接受け取る
-function drawCached(cachedCanvas, x, y, w, h, angle, alpha = 1) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(x, y);
-    ctx.rotate(angle + Math.PI / 2);
-    ctx.drawImage(cachedCanvas, -w / 2, -h / 2, w, h);
-    ctx.restore();
-}
-
-/**
- * 💡 レーザーを9-slice方式で描画する。
- * ・先端/根本キャップ：元画像(laser.png)の尖り部分(上端/下端 LASER_CAP_PX px)を
- *   引き伸ばさず、太さ(bodyW)基準のスケールのみで原寸的に使用する。
- * ・本体：元画像の中間(均一な太さ)部分だけを切り出して、必要な長さに引き伸ばす。
- *
- * これにより、h=999のような巨大な値で全体を引き伸ばしても、
- * 先端・根本の「尖り」が不自然に潰れたり画面外に飛んだりしない。
- *
- * @param key       imgListのキャッシュキー（`${type}-${color}`）
- * @param x, y      発射地点（根本）の座標
- * @param bodyW     表示上のレーザーの太さ
- * @param totalLen  表示上のレーザー全長（根本からの距離）
- * @param angle     角度
- * @param alpha     不透明度
- */
-function drawLaserSliced(key, x, y, bodyW, totalLen, angle, alpha = 1) {
-    const cached = imgList.get(key);
-    if (!cached || cached === "loading") return;
-
-    const imgW = cached.width;
-    const imgH = cached.height;
-    const capPx = Math.min(LASER_CAP_PX, Math.floor(imgH / 2)); // 画像が短すぎる場合の保険
-
-    // 表示上のキャップの縦幅（アスペクト比維持でスケール）
-    const capScale = bodyW / imgW;
-    const capDisplayH = capPx * capScale;
-    const bodyDisplayH = Math.max(0, totalLen - capDisplayH * 2);
+function drawSprite(key, x, y, w, h, angle, alpha = 1, opt = {}) {
+    const img = imgList.get(key);
+    if (!img || img === "loading") return false;
 
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
-    ctx.rotate(angle + Math.PI / 2);
-    // 💡 idraw同様、根本(発射地点)を原点として、ここから-Y方向(上方向)へ伸びる想定で描画する
+    ctx.rotate(angle + Math.PI / 2 + (opt.vangle ?? 0) + (opt.spin ?? 0));
 
-    // --- 1. 本体（中間の均一な太さ部分だけを切り出して引き伸ばす）---
-    if (bodyDisplayH > 0) {
-        ctx.drawImage(
-            cached,
-            0, capPx, imgW, imgH - capPx * 2,                              // 元画像の切り出し範囲(中間)
-            -bodyW / 2, -(capDisplayH + bodyDisplayH), bodyW, bodyDisplayH  // 表示先(引き伸ばし)
-        );
+    if (opt.slice) {
+        // 9-slice: 先端/根本の尖りは原寸、中間だけ引き伸ばす
+        const capPx = Math.min(LASER_CAP_PX, Math.floor(img.height / 2));
+        const capH = capPx * (w / img.width);
+        const bodyH = Math.max(0, h - capH * 2);
+        if (bodyH > 0) {
+            ctx.drawImage(img, 0, capPx, img.width, img.height - capPx * 2,
+                -w / 2, -(capH + bodyH), w, bodyH);
+        }
+        ctx.drawImage(img, 0, 0, img.width, capPx,
+            -w / 2, -(capH + bodyH) - capH, w, capH);
+        ctx.drawImage(img, 0, img.height - capPx, img.width, capPx,
+            -w / 2, -capH, w, capH);
+    } else {
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
     }
-
-    // --- 2. 先端キャップ（画像上端=尖り部分。引き伸ばさずそのまま使用）---
-    ctx.drawImage(
-        cached,
-        0, 0, imgW, capPx,
-        -bodyW / 2, -(capDisplayH + bodyDisplayH) - capDisplayH, bodyW, capDisplayH
-    );
-
-    // --- 3. 根本キャップ（画像下端=尖り部分。引き伸ばさずそのまま使用）---
-    ctx.drawImage(
-        cached,
-        0, imgH - capPx, imgW, capPx,
-        -bodyW / 2, -capDisplayH, bodyW, capDisplayH
-    );
-
     ctx.restore();
+    return true;
 }
 
-/**
- * プール初期化（cfg=true のときだけ呼ぶ。5000個プリアロケート）
- */
+// ============================================================
+// 弾ファクトリ
+// ============================================================
 export function initPool(size = 5000) {
     if (!cfg) return;
     spaceb.length = 0;
     for (let i = 0; i < size; i++) {
         spaceb.push(new Bullet({
-            x: 0, y: 0, angle: 0, speed: 0, color: "white", w: 0, h: 0,
-            type: "normal", deleteFrame: Infinity,
-            rotate: [], 
-            setlist: [], fnlist: [], push: false, custom: [], seta: [],
-            rd: 1, active: false
+            x: 0, y: 0, type: "normal", push: false, active: false, w: 0, h: 0
         }));
     }
 }
 
 /**
- * 弾を生成するファクトリ関数。
- * cfg=true: プールから取り出して再利用（spaceb.pop → reset → setter）
- * cfg=false: 都度 new Bullet で生成（bullets.push は Bullet 内部で実行）
- *
- * 💡 vsize: 見た目専用のサイズ上書き。当たり判定(radius)には一切影響せず、
- *    描画時の幅・高さだけを vsize に置き換える。未指定なら従来通り w/h(またはsize)で描画。
+ * vsize: 見た目専用サイズ(当たり判定に無関係)
+ * vangle: 見た目専用角度オフセット(進行方向に無関係)
  */
-export function bullet({
-    x, y, angle = 0, speed = 3, color = "white", w = 10, h = 10,
-    type = "Circle", deleteFrame = Infinity,
-    rotate = [],
-    setlist = [], fnlist = [], push = true, custom = [], seta = [],
-    active = true, rd = 1, noAuto = false, size = undefined, vsize = undefined,
-} = {}) {
-    if (cfg) {
-        // --- オブジェクトプール方式 ---
-        const a = spaceb.pop();
-        if (!a) {
-            console.warn("Bullet pool exhausted!");
-            return null;
-        }
-        a.reset();
-        a.setter({
-            x, y, angle, speed, color, w, h, type, deleteFrame,
-            rotate, setlist, fnlist, custom, seta,
-            active: true, noAuto, rd, size, vsize   // ← vsize を追加
-        });
-        a.active = true;
-        a.i = bullets.length;
-        bullets.push(a);
-        return a;
-    } else {
-        // --- 通常方式 ---
-        return new Bullet({
-            x, y, angle, speed, color, w, h, type, deleteFrame,
-            rotate, setlist, fnlist, push, custom, seta,
-            rd, noAuto, size, vsize
-        });
-    }
+export function bullet(opts = {}) {
+    const p = { x: 0, y: 0, angle: 0, speed: 3, color: "white", w: 10, h: 10, type: "Circle",
+        deleteFrame: Infinity, rotate: [], setlist: [], fnlist: [], custom: [], seta: [],
+        rd: 1, noAuto: false, push: true, ...opts };
+
+    if (!cfg) return new Bullet(p);
+
+    const a = spaceb.pop();
+    if (!a) { console.warn("Bullet pool exhausted!"); return null; }
+    a.reset();
+    a.setter({ ...p, active: true });
+    a.i = bullets.length;
+    bullets.push(a);
+    return a;
 }
 
 export class Bullet {
-    constructor({
-        x, y, angle = 0, speed = 3, color = "white",
-        w = 10, h = 10, type = "Circle",
-        deleteFrame = Infinity,
-        rotate = [],
-        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1,
-        active = cfg ? false : true, noAuto = false, size = undefined, vsize = undefined
-    }) {
-        this.custom = custom;
-        this.x = x;
-        this.y = y;
-        this.angle = angle;
-        this.speed = speed;
-        this.w = size ? size : w;
-        this.h = !isLaserType(type) ? size ? size : h : 999;
-        // 💡 見た目専用サイズ（未指定なら null → 描画時は this.w/h をそのまま使用）
-        this.vsize = vsize;
-        // 💡 当たり判定は常に実サイズ(this.w)基準。vsizeの影響を受けない。
-        this.radius = rd <= 0 ? 0 : (this.w * rd) / 2;
-        this.rd = rd
-        this.color = color;
-        // --- 💡 fire / curse は色を固定（呼び出し側の color 指定を上書き） ---
-        if (type === "fire") this.color = "red";
-        else if (type === "curse") this.color = "purple";
-        this.type = type;
-        this.timer = 0;
-    this.imgKey = `${this.type}-${this.color}`;
-        this.deleteFrame = deleteFrame;
-        this.rotate = rotate;
-        this.seta = seta
-        this.active = active;
-        this.noAuto=noAuto
-        // 💡 世代ID：このオブジェクトが何回目の「生」を生きているかを示す通し番号。
-        if (push && !cfg) bullets.push(this); // プール方式のときは bullet() 側で push 済み
-        CC(type, [this.color]);
-        // 💡 レーザー発射地点にnormal弾テクスチャを合成表示するため、
-        //    同色のnormal弾画像もあらかじめロードしておく（未ロードだと最初の数フレーム表示されない）
-        if (isLaserType(type)) CC("normal", [this.color]);
-    }
-
-    /**
-     * プール方式専用：オブジェクトを初期状態へ戻す
-     */
-    reset() {
-        this.custom = [];
-        this.x = 0;
-        this.y = 0;
-        this.angle = 0;
-        this.speed = 0;
-        this.w = 0;
-        this.rd = 1
-        this.color = "FFFFFF";
-        this.type = "nomal";
-        this.h = !isLaserType(this.type) ? 0 : 999;
-        this.size = null
-        this.vsize = null   // 💡 見た目専用サイズもリセット
-        this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2;
-        this.timer = 0;
-        this.deleteFrame = Infinity;
-        //this.setlist = [];
-        //this.fnlist = [];
-this.map?.clear()
-this.smap?.clear()
-        this.rotate = [];
-        this.noAuto = false
-        this.seta = []
-        this.active = false
-    this.cachedImg = null;   
-    this.activeLoop = null;
-    this.sactiveLoop = null;
-this.work = null;
-    }
-
-    /**
-     * プール方式専用：既存インスタンスへ新しいパラメータを再設定する
-     */
-    setter({
-        x, y, angle = 0, speed = 3, color = "white",
-        w = 10, h = 10, type = "Circle",
-        deleteFrame = Infinity,
-        rotate = [],
-        setlist = [], fnlist = [], push = true, custom = [], seta = [], rd = 1, active = false, noAuto = false, size = undefined, vsize = undefined
-    }) {
-        this.custom = custom;
-        this.x = x;
-        this.y = y;
-        this.angle = angle;
-        this.speed = speed;
-        this.w = size ? size : w;
-        this.h = !isLaserType(type) ? size ? size : h : 999;
-        // 💡 見た目専用サイズ（未指定なら null → 描画時は this.w/h をそのまま使用）
-        this.vsize = vsize;
-        // 💡 当たり判定は常に実サイズ(this.w)基準。vsizeの影響を受けない。
-        this.radius = rd <= 0 ? 0 : (this.w * rd) / 2;
-        this.rd = rd
-        this.color = color;
-        // --- 💡 fire / curse は色を固定（呼び出し側の color 指定を上書き） ---
-        if (type === "fire") this.color = "red";
-        else if (type === "curse") this.color = "purple";
-        this.type = type;
-        this.timer = 0;
-        this.deleteFrame = deleteFrame;
-        this.rotate = rotate;
-        this.noAuto=noAuto
-        this.seta = seta
-this.imgKey = `${type}-${this.color}`;
-    // --- 💡 fire / curse はアニメーションスプライトなので専用ロード関数を呼ぶ
-    //     （プール方式(cfg=true)だと CC() 経由のロードが走らないため、ここで確実に発火させる）
-    if (type === "fire" || type === "curse") {
-        loadAnimFrames(type);
-    } else {
-        resolveImg(type, this.color); // ロード開始 or 既存キャッシュ確認（発火だけ）
-    }
-    // 💡 レーザー発射地点にnormal弾テクスチャを合成表示するため、
-    //    同色のnormal弾画像もあらかじめロードしておく
-    if (isLaserType(type)) resolveImg("normal", this.color);
-    this.cachedImg = null;   
-    // 💡 プール再利用時、前の弾のループ参照(activeLoop/sactiveLoop)が
-    // クリアされずに残り、fnlist/setlist未指定の弾でも誤発火してspeedが
-    // 突然壊れる原因になっていたため、setter()の度に明示的にリセットする
-    this.activeLoop = null;
-    this.sactiveLoop = null;
-    if (fnlist) {
-
-    if (!this.map) {
+    constructor(p) {
         this.map = new Map();
-    } else {
-        this.map.clear();
-    }
-
-    for (let i = 0; i < fnlist.length; i++) {
-        const e = fnlist[i];
- const f = e.f | 0
-const time = e ? (e.time | 0) || 1 : 1  // 0除算・NaN化を防ぐ
-this.map.set(f,{f:f,l:e.loop,fn:e.fn,time:time})
-}}
-    if (setlist) {
-
-    if (!this.smap) {
         this.smap = new Map();
-    } else {
+        this.setter({ active: cfg ? false : true, ...p });
+        if (p.push !== false && !cfg) bullets.push(this);
+    }
+
+    /** プール方式専用: 初期状態へ戻す */
+    reset() {
+        this.x = this.y = this.angle = this.speed = this.w = this.timer = 0;
+        this.h = 0;
+        this.rd = 1;
+        this.radius = 0;
+        this.color = "white";
+        this.type = "normal";
+        this.vsize = null;
+        this.vangle = 0;
+        this.deleteFrame = Infinity;
+        this.custom = [];
+        this.rotate = [];
+        this.seta = [];
+        this.noAuto = false;
+        this.active = false;
+        this.cachedImg = null;
+        this.activeLoop = null;
+        this.map.clear();
         this.smap.clear();
+        this.work = null;
     }
-for (let i = 0; i < setlist.length; i++) {
-    const e = setlist[i];
-    const f = e.f | 0;
-    this.smap.set(f, { f: f, l: e.loop, e: e.e });
-}
-        
+
+    setter({
+        x = 0, y = 0, angle = 0, speed = 3, color = "white",
+        w = 10, h = 10, type = "Circle", deleteFrame = Infinity,
+        rotate = [], setlist = [], fnlist = [], custom = [], seta = [],
+        rd = 1, active = false, noAuto = false, size, vsize, vangle = 0
+    }) {
+        this.x = x; this.y = y; this.angle = angle; this.speed = speed;
+        this.w = size ? size : w;
+        this.h = isLaserType(type) ? 999 : (size ? size : h);
+        this.vsize = vsize;        // 見た目専用サイズ
+        this.vangle = vangle;      // 見た目専用角度
+        this.rd = rd;
+        this.radius = rd <= 0 ? 0 : (this.w * rd) / 2; // 当たり判定は実サイズ基準
+        this.type = type;
+        this.color = ANIM_TYPES[type]?.color ?? color; // fire/curseは色固定
+        this.imgKey = `${type}-${this.color}`;
+        this.timer = 0;
+        this.deleteFrame = deleteFrame;
+        this.custom = custom;
+        this.rotate = rotate;
+        this.seta = seta;
+        this.noAuto = noAuto;
+        this.active = active;
+        this.cachedImg = null;
+        this.activeLoop = null;
+
+        preload(type, this.color);
+
+        this.map.clear();
+        for (const e of fnlist) {
+            const f = e.f | 0;
+            this.map.set(f, { f, l: e.loop, fn: e.fn, time: (e.time | 0) || 1 });
+        }
+        this.smap.clear();
+        for (const e of setlist) {
+            const f = e.f | 0;
+            this.smap.set(f, { f, l: e.loop, e: e.e });
+        }
     }
-}
-scolor(c) {
-this.color = c
-    this.imgKey = `${this.type}-${c}`;
-    if (this.type === "fire" || this.type === "curse") {
-        loadAnimFrames(this.type);
-    } else {
-        resolveImg(this.type, c); // ロード開始 or 既存キャッシュ確認（発火だけ）
+
+    scolor(c) {
+        this.color = c;
+        this.imgKey = `${this.type}-${c}`;
+        this.cachedImg = null;
+        preload(this.type, c);
     }
-    if (isLaserType(this.type)) resolveImg("normal", c);
-    this.cachedImg = null;   
-}
+
     update() {
         if (cfg && !this.active) return;
-//superOptimal True
-if (!superOptimal) {
-if (this.type === "pre") this.rd = 0
-this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2; // 追加
-const func = this.map?.get(this.timer);
+        if (superOptimal) return;
 
-// 新しくループ処理が来たら保持する
-if (func && func.l) {
-    this.activeLoop = func; 
-}
+        if (this.type === "pre") this.rd = 0;
+        this.radius = this.rd <= 0 ? 0 : (this.w * this.rd) / 2;
 
-// 単発イベントがあれば実行
-if (func && !func.l) {
-    func.fn.call(this);
-}
-
-// 登録済みのループ処理があれば毎フレーム実行
-if (this.activeLoop && this.timer >= this.activeLoop.f && (this.timer - this.activeLoop.f) % this.activeLoop.time === 0) {
-    this.activeLoop.fn.call(this);
-}
-const sfunc = this.smap?.get(this.timer);
-
-if (sfunc && !sfunc.l) {
-    const val = (typeof sfunc.e === "function") ? sfunc.e.call(this) : sfunc.e;
-    this.speed = val; // もしくは元のsetlist仕様に合わせて speed/x倍率など
-}
-if (this.sactiveLoop && this.timer >= this.sactiveLoop.f) {
-    const val = (typeof this.sactiveLoop.e === "function") ? this.sactiveLoop.e.call(this) : this.sactiveLoop.e;
-    this.speed = val;
-}
-    if (this.seta.length)this.seta.forEach((e, i) => {
-            const isLoop = e.loop ?? false;
-            const type = e.type ?? "set";
-            const isNext = e.next ?? true;
-
-         const next = this.seta[i + 1];
-            const endFrame = (isNext && next) ? Math.floor(next.f) : Infinity;
-
-            const isActive = (isLoop && this.timer >= Math.floor(e.f) && this.timer < endFrame) ||
-                             (!isLoop && this.timer === Math.floor(e.f));
-
-            if (isActive) {
-                const val = (typeof e.e === "function") ? e.e.call(this) : e.e;
-                this.angle = val;
-            }
-        });
-
-      if (this.rotate.length){
-          
-      const looplist = []
-        let LastAngle = this.angle
-        this.rotate.forEach((r) => {
-            if (r.loop && r.f <= this.timer && r.lf > this.timer) looplist.push(r)
-        });
-        const tr = this.rotate.find(r => r.f === this.timer);
-        if (tr) looplist.push(tr);
-
-        looplist.forEach((targetRotate) => {
-            if (targetRotate.a === "target") {
-                LastAngle = pf(this.x, this.y, 0, players[0]);
-            } else if (typeof targetRotate.a === "function") {
-                LastAngle = targetRotate.a.call(this);
-            } else {
-                LastAngle = targetRotate.a;
-            }
-        })
-        this.angle = LastAngle
-}
-        const is = isLaserType(this.type)
-        if (!is) {
-            this.x += Math.cos(this.angle) * this.speed;
+        // --- fnlist ---
+        const func = this.map.get(this.timer);
+        if (func?.l) this.activeLoop = func;
+        else if (func) func.fn.call(this);
+        const loop = this.activeLoop;
+        if (loop && this.timer >= loop.f && (this.timer - loop.f) % loop.time === 0) {
+            loop.fn.call(this);
         }
-        if (!is) {
+
+        // --- setlist(speed変更) ---
+        const sfunc = this.smap.get(this.timer);
+        if (sfunc && !sfunc.l) {
+            this.speed = typeof sfunc.e === "function" ? sfunc.e.call(this) : sfunc.e;
+        }
+
+        // --- seta(angle変更) ---
+        this.seta.forEach((e, i) => {
+            const isLoop = e.loop ?? false;
+            const isNext = e.next ?? true;
+            const next = this.seta[i + 1];
+            const endFrame = (isNext && next) ? Math.floor(next.f) : Infinity;
+            const f = Math.floor(e.f);
+            const active = isLoop ? (this.timer >= f && this.timer < endFrame) : this.timer === f;
+            if (active) this.angle = typeof e.e === "function" ? e.e.call(this) : e.e;
+        });
+
+        // --- rotate ---
+        if (this.rotate.length) {
+            let last = this.angle;
+            const hits = this.rotate.filter(r => (r.loop && r.f <= this.timer && r.lf > this.timer));
+            const once = this.rotate.find(r => r.f === this.timer);
+            if (once) hits.push(once);
+            for (const r of hits) {
+                if (r.a === "target") last = pf(this.x, this.y, 0, players[0]);
+                else if (typeof r.a === "function") last = r.a.call(this);
+                else last = r.a;
+            }
+            this.angle = last;
+        }
+
+        // --- 移動(レーザーは動かない) ---
+        if (!isLaserType(this.type)) {
+            this.x += Math.cos(this.angle) * this.speed;
             this.y += Math.sin(this.angle) * this.speed;
         }
         this.timer++;
-    } 
-}
-
-    /**
-     * 削除すべきかどうかの「判定のみ」を行う。配列からの実際の除去は呼び出し側(engine.js)が担当する。
-     * ※ ここで splice を自分で行うと、呼び出し側のループでも splice される二重削除になり、
-     *    弾が大量に出るほど配列インデックスがズレて無関係な弾まで消えるバグの原因になる。
-     */
-    shouldRemove() {
-if (this.noAuto) {
-    return this.timer >= this.deleteFrame;
-} else {
-        return this.x < -50 || this.x > canvas.w + 50 || this.y < -50 || this.y > canvas.h + 50 || this.timer >= this.deleteFrame;
-}
     }
 
-    /**
-     * プール方式専用：実際に bullets 配列から外して spaceb へ返却する（cfg=true のときだけ engine.js から呼ぶ）
-     */
+    /** 削除判定のみ(実際の除去は engine.js 側) */
+    shouldRemove() {
+        if (this.timer >= this.deleteFrame) return true;
+        if (this.noAuto) return false;
+        return this.x < -50 || this.x > canvas.w + 50 || this.y < -50 || this.y > canvas.h + 50;
+    }
+
     releaseToPool() {
         const i = this.i;
         const last = bullets[bullets.length - 1];
@@ -700,246 +362,142 @@ if (this.noAuto) {
         spaceb.push(this);
     }
 
-// draw() 内、画像描画タイプの分岐を書き換え
-draw(ctx, debug = false) {
-    if (cfg && !this.active) return;
-    ctx.fillStyle = this.color;
-    if (this.color === "null") return;
+    // ------------------------------------------------------------
+    // 描画(全種別ここに集約)
+    // ------------------------------------------------------------
+    draw(ctx, debug = false) {
+        if (cfg && !this.active) return;
+        if (this.color === "null") return;
 
-    let isPathBullet = false;
-
-    // 💡 OP(強調)演出判定：生成から TIMEisOP フレームかけて
-    //    (OP_ALPHA, OP_SCALE) → (1, 1) へ徐々に戻る。
-    //    レーザー(laser/laserwait)には適用しない。
-    const isOpNow = IsOp && this.timer < TIMEisOP;
-    let opAlpha = 1;
-    let opScale = 1;
-    if (isOpNow) {
-        const t = this.timer / TIMEisOP; // 0 〜 1未満
-        opAlpha = OP_ALPHA + (1 - OP_ALPHA) * t;
-        opScale = OP_SCALE + (1 - OP_SCALE) * t;
-    }
-
-    // 💡 見た目専用の描画サイズ。vsize が指定されていればそちらを優先し、
-    //    未指定なら従来通り this.w / this.h をそのまま使う。当たり判定(radius)には無関係。
-    //    OP演出時はさらに opScale 倍される（当たり判定には無関係）。
-    const drawW = (this.vsize ?? this.w) * opScale;
-    const drawH = (this.vsize ?? this.h) * opScale;
-
-  if (isLaserType(this.type)) {
-    // --- 💡 レーザーはOP演出の対象外。常に従来通りのサイズ・alphaで描画する ---
-    const baseDrawW = this.vsize ?? this.w;
-    const baseDrawH = this.vsize ?? this.h;
-
-    if (this.timer >= this.speed - 12) {
-        const growElapsed = this.timer - (this.speed - 12);
-        const growT = Math.min(Math.max(growElapsed / 12, 0), 1);
-        const baseW = this.vsize ?? this.w;
-        const drawWLaser = 1 + (baseW - 1) * growT;
-
-        if (this.type === "laser2") {
-            // 💡 laser2: 9-slice方式で本体+先端/根本キャップを描画
-            //    （先端の尖り・根本の尖りは、元画像の対応部分をそのまま原寸で使用するため不自然に潰れない）
-            drawLaserSliced(this.imgKey, this.x, this.y, drawWLaser, baseDrawH, this.angle, 1);
-
-            // 💡 発射地点にnormal弾のテクスチャを合成して起点を飾る
-            idraw("normal", this.x, this.y, this.w, this.w, this.angle, this.color, 1);
-        } else {
-            // 💡 laser: 旧方式。単純に画像をw×hへ引き伸ばして1枚貼るだけ。
-            idraw("laser", this.x, this.y, drawWLaser, baseDrawH, this.angle, this.color, 1);
+        if (isLaserType(this.type)) {
+            drawLaser(this);
+            return;
         }
-    } else {
-        if (this.waitAlpha === undefined) this.waitAlpha = 0;
-        if (this.waitAlpha < 1) this.waitAlpha += 0.05;
 
-        if (this.colorFactor === undefined) this.colorFactor = 0;
-        if (this.colorFactor < 1) this.colorFactor += 0.05;
-
-        const r = 255 - (255 - 128) * this.colorFactor;
-        const g = 255 - (255 - 128) * this.colorFactor;
-        const b = 255 - (255 - 128) * this.colorFactor;
-
-        const waitColor = `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
-
-        idraw("laserwait", this.x, this.y, baseDrawW, baseDrawH, this.angle, waitColor, Math.min(this.waitAlpha, 1));
-    }
-    return;
-}
-
-    // --- 💡 fire / curse: 18frame毎に4フレームをループするアニメーション描画 ---
-    if (this.type === "fire" || this.type === "curse") {
-        const key = getAnimFrameKey(this.type, this.timer);
-        const cached = imgList.get(key);
-        if (cached && cached !== "loading") {
-            drawCached(cached, this.x, this.y, drawW, drawH, this.angle, opAlpha);
+        // OP演出(生成直後だけ半透明+拡大)
+        let alpha = 1, scale = 1;
+        if (IsOp && this.timer < TIMEisOP) {
+            const t = this.timer / TIMEisOP;
+            alpha = OP_ALPHA + (1 - OP_ALPHA) * t;
+            scale = OP_SCALE + (1 - OP_SCALE) * t;
         }
-        if (debug) {
-            ctx.save();
-            ctx.strokeStyle = "lime";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius * this.rd, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.closePath();
-            ctx.restore();
+        let w = (this.vsize ?? this.w) * scale;
+        let h = (this.vsize ?? this.h) * scale;
+        let key = this.imgKey;
+        const opt = { vangle: this.vangle };
+
+        if (this.type === "pre") {
+            const pulse = Math.sin(((this.timer % 30) / 30) * Math.PI);
+            alpha *= 0.4 + pulse * 0.6;
+            w *= 0.85 + pulse * 0.3;
+            h *= 0.85 + pulse * 0.3;
+        } else if (ANIM_TYPES[this.type]) {
+            const idx = Math.floor(this.timer / ANIM_FRAME_INTERVAL) % ANIM_FRAME_COUNT + 1;
+            key = `${this.type}-${ANIM_TYPES[this.type].color}-${idx}`;
+        } else if (this.type === "star2") {
+            opt.spin = this.timer*0.05
         }
-        return;
-    }
 
-    switch (this.type) {
-        case "pre": {
-            const t = this.timer;
-            const period = 30;
-            const phase = (t % period) / period;
-            const pulse = Math.sin(phase * Math.PI);
+        drawSprite(key, this.x, this.y, w, h, this.angle, alpha, opt);
 
-            const alpha = (0.4 + pulse * 0.6) * opAlpha;
-            const scale = 0.85 + pulse * 0.3;
-
-            idraw(
-                "pre",
-                this.x, this.y,
-                drawW * scale, drawH * scale,
-                this.angle, this.color,
-                alpha
-            );
-
-            if (pulse > 0.7) {
-                ctx.save();
-                ctx.globalAlpha = ((pulse - 0.7) / 0.3) * opAlpha;
-                ctx.translate(this.x, this.y);
-                ctx.fillStyle = "#ffffff";
-                ctx.shadowColor = "#fff6c8";
-                ctx.shadowBlur = 12;
-                const s = drawW * 0.25;
-                ctx.beginPath();
-                ctx.moveTo(0, -s);
-                ctx.lineTo(s * 0.25, -s * 0.25);
-                ctx.lineTo(s, 0);
-                ctx.lineTo(s * 0.25, s * 0.25);
-                ctx.lineTo(0, s);
-                ctx.lineTo(-s * 0.25, s * 0.25);
-                ctx.lineTo(-s, 0);
-                ctx.lineTo(-s * 0.25, -s * 0.25);
-                ctx.closePath();
-                ctx.fill();
-                ctx.restore();
-            }
-            break;
+        // preの光る星
+        if (this.type === "pre") {
+            const pulse = Math.sin(((this.timer % 30) / 30) * Math.PI);
+            if (pulse > 0.7) drawPreStar(this, w / scale, pulse, alpha);
         }
-        case "normal":
-        case "クナイ":
-        case "kunai":
-        case "御札":
-        case "amulet":
-        case "グミ":
-        case "gummy":
-        case "ナイフ弾":
-        case "knife":
-        case "大弾":
-        case "big":
-        case "鱗弾":
-        case "scale":
-        case "米弾":
-        case "diamond":
-        case "陰陽玉":
-        case "陰陽弾":
-        case "onmyoutama":
-        case "om":
-        case "star":
-        case "kunai2":
-        case "heart":
-        case "big2":
-        case "simple":
-        case "fly":
-        case "small":
-        case "arrow":
-        case "orb":
-        case "gun":
-        case "note": 
-case"polygon":
-case"light": 
-case"drop":
-case"eye":
-            // 💡 ここをキャッシュ解決方式に変更
-            if (!this.cachedImg) {
-                const c = imgList.get(this.imgKey);
-                if (c && c !== "loading") {
-                    this.cachedImg = c;
-                } else {
-                    break; // まだロード中なら今フレームは描画スキップ
-                }
-            }
-            // 💡 描画サイズは vsize 優先、OP演出時はさらに拡大＆半透明（当たり判定には影響しない）
-            drawCached(this.cachedImg, this.x, this.y, drawW, drawH, this.angle, opAlpha);
-            break;
 
-        case "四角":
-            isPathBullet = true;
-            ctx.save();
-            ctx.globalAlpha = opAlpha;
-            ctx.beginPath();
-            ctx.rect(this.x - drawW / 2, this.y - drawH / 2, drawW, drawH);
-            ctx.fill();
-            ctx.closePath();
-            ctx.restore();
-            break;
-        default:
-            isPathBullet = true;
-            ctx.save();
-            ctx.globalAlpha = opAlpha;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius * opScale, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.closePath();
-            ctx.restore();
-            break;
+        if (debug) drawDebugCircle(this);
     }
 
-    if (debug) {
-        ctx.save();
-        ctx.strokeStyle = "lime";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius*this.rd, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
-    }
-}
-
-    // Bullet クラス内に追加
     hitTestLaser(px, py, hitboxRadius) {
-        if (this.timer < this.speeed) return;
-        // レーザーの根本(this.x, this.y)から angle 方向へ h の長さの線分として判定
-        const length = this.h; // レーザーの長さ（当たり判定は常に this.h 基準。vsizeは無関係）
-        const dirX = Math.cos(this.angle);
-        const dirY = Math.sin(this.angle);
-
-        // 線分の始点から対象までのベクトル
-        const toPX = px - this.x;
-        const toPY = py - this.y;
-
-        // 線分方向への射影(0〜lengthにクランプ)
-        let t = toPX * dirX + toPY * dirY;
-        t = Math.max(0, Math.min(length, t));
-
-        // 線分上の最近点
-        const closestX = this.x + dirX * t;
-        const closestY = this.y + dirY * t;
-
-        // 幅方向の判定(this.w がレーザーの太さ。vsizeは判定に使わない)
-        const dx = px - closestX;
-        const dy = py - closestY;
-        const laserHalfWidth = ((this.w * 0.87)) / 2;
-
-        return (dx * dx + dy * dy) < Math.pow(hitboxRadius + laserHalfWidth * 0.6, 2);
+        return hitTestLaser(this, px, py, hitboxRadius);
     }
 }
 
-// --- 5. 便利関数 (数学・スポナー) ---
 export function pf(x, y, Offset = 0, entity, yy, xx) {
-    let targetX = (xx !== undefined) ? xx : (entity ? entity.x : (players[0]?.x || 0));
-    let targetY = (yy !== undefined) ? yy : (entity ? entity.y : (players[0]?.y || 0));
-    return Math.atan2(targetY - y, targetX - x) + Offset;
+    const tx = xx !== undefined ? xx : (entity ? entity.x : (players[0]?.x || 0));
+    const ty = yy !== undefined ? yy : (entity ? entity.y : (players[0]?.y || 0));
+    return Math.atan2(ty - y, tx - x) + Offset;
+}
+
+function drawDebugCircle(b) {
+    ctx.save();
+    ctx.strokeStyle = "lime";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius * b.rd, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawPreStar(b, baseW, pulse, opAlpha) {
+    ctx.save();
+    ctx.globalAlpha = ((pulse - 0.7) / 0.3) * opAlpha;
+    ctx.translate(b.x, b.y);
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "#fff6c8";
+    ctx.shadowBlur = 12;
+    const s = baseW * 0.25;
+    ctx.beginPath();
+    ctx.moveTo(0, -s);
+    ctx.lineTo(s * 0.25, -s * 0.25);
+    ctx.lineTo(s, 0);
+    ctx.lineTo(s * 0.25, s * 0.25);
+    ctx.lineTo(0, s);
+    ctx.lineTo(-s * 0.25, s * 0.25);
+    ctx.lineTo(-s, 0);
+    ctx.lineTo(-s * 0.25, -s * 0.25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+}
+
+// ============================================================
+// ▼▼▼ レーザー関連(ここより下はレーザー専用) ▼▼▼
+// ============================================================
+const LASER_CAP_PX = 32;          // laser.png の先端/根本の尖り領域(px)
+const LASER_GROW_FRAMES = 12;     // 予告→本体に切り替わるまでの太さ拡大フレーム数
+
+// laser2 は laser のエイリアス(どちらも9-slice方式)
+function isLaserType(type) {
+    return type === "laser" || type === "laser2";
+}
+
+/**
+ * レーザー描画:
+ *  timer <  speed-12 : 予告線(laserwait)。徐々に濃く・グレーに
+ *  timer >= speed-12 : 本体(9-slice) + 発射地点にnormal弾を重ねる
+ * ※ レーザーの speed は「発射までのフレーム数」として使われる
+ */
+function drawLaser(b) {
+    const baseW = b.vsize ?? b.w;
+    const baseH = b.vsize ?? b.h;
+    const fireAt = b.speed - LASER_GROW_FRAMES;
+
+    if (b.timer >= fireAt) {
+        const t = Math.min(Math.max((b.timer - fireAt) / LASER_GROW_FRAMES, 0), 1);
+        const w = 1 + (baseW - 1) * t;
+        drawSprite(b.imgKey, b.x, b.y, w, baseH, b.angle, 1, { slice: true });
+        drawSprite(`normal-${b.color}`, b.x, b.y, b.w, b.w, b.angle, 1, { vangle: b.vangle });
+    } else {
+        // 予告線
+        b.waitAlpha = Math.min((b.waitAlpha ?? 0) + 0.05, 1);
+        b.colorFactor = Math.min((b.colorFactor ?? 0) + 0.05, 1);
+        const v = Math.floor(255 - (255 - 128) * b.colorFactor).toString(16).padStart(2, "0");
+        const waitColor = `#${v}${v}${v}`;
+        const waitKey = loadImg("laserwait", waitColor);
+        drawSprite(waitKey, b.x, b.y, baseW, baseH, b.angle, b.waitAlpha);
+    }
+}
+
+/** レーザーの当たり判定(根本から angle 方向へ h の線分 + 太さ) */
+function hitTestLaser(b, px, py, hitboxRadius) {
+    if (b.timer < b.speed) return false; // ← 元コードの typo(speeed)を修正
+    const dirX = Math.cos(b.angle);
+    const dirY = Math.sin(b.angle);
+    const t = Math.max(0, Math.min(b.h, (px - b.x) * dirX + (py - b.y) * dirY));
+    const dx = px - (b.x + dirX * t);
+    const dy = py - (b.y + dirY * t);
+    const halfW = (b.w * 0.87) / 2;
+    return dx * dx + dy * dy < (hitboxRadius + halfW * 0.6) ** 2;
 }
