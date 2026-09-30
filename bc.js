@@ -20,7 +20,8 @@ const ANIM_TYPES = {
 const ANIM_FRAME_COUNT = 4;
 const ANIM_FRAME_INTERVAL = 18;
 
-// OP(強調)演出: 生成から TIMEisOP フレームかけて (OP_ALPHA, OP_SCALE) → (1, 1)
+// OP(強調)演出: opTimer が 0 から TIMEisOP フレームかけて (OP_ALPHA, OP_SCALE) → (1, 1)
+// opTimer は timer とは別カウンタ。b.spawn() で 0 に戻せる
 const IsOp = true;
 const TIMEisOP = 6;
 const OP_ALPHA = 0.4;
@@ -216,6 +217,7 @@ export class Bullet {
     constructor(p) {
         this.map = new Map();
         this.smap = new Map();
+        this.fncaches = [];
         this.setter({ active: cfg ? false : true, ...p });
         if (p.push !== false && !cfg) bullets.push(this);
     }
@@ -223,6 +225,7 @@ export class Bullet {
     /** プール方式専用: 初期状態へ戻す */
     reset() {
         this.x = this.y = this.angle = this.speed = this.w = this.timer = 0;
+        this.opTimer = 0;
         this.h = 0;
         this.rd = 1;
         this.radius = 0;
@@ -234,6 +237,7 @@ export class Bullet {
         this.custom = [];
         this.rotate = [];
         this.seta = [];
+        this.fncaches = [];
         this.noAuto = false;
         this.active = false;
         this.cachedImg = null;
@@ -260,10 +264,12 @@ export class Bullet {
         this.color = ANIM_TYPES[type]?.color ?? color; // fire/curseは色固定
         this.imgKey = `${type}-${this.color}`;
         this.timer = 0;
+        this.opTimer = 0;
         this.deleteFrame = deleteFrame;
         this.custom = custom;
         this.rotate = rotate;
         this.seta = seta;
+        this.fncaches = [];
         this.noAuto = noAuto;
         this.active = active;
         this.cachedImg = null;
@@ -288,6 +294,12 @@ export class Bullet {
         this.imgKey = `${this.type}-${c}`;
         this.cachedImg = null;
         preload(this.type, c);
+    }
+
+    /** OP(スポーン強調)演出をもう一度発動。timerには触らない */
+    spawn() {
+        this.opTimer = 0;
+        return this;
     }
 
     update() {
@@ -342,6 +354,18 @@ export class Bullet {
             this.x += Math.cos(this.angle) * this.speed;
             this.y += Math.sin(this.angle) * this.speed;
         }
+
+        // --- fncaches (wai/smooth専用。弾のtimer基準) ---
+        if (this.fncaches.length) {
+            const c = this.fncaches;
+            const due = c.filter(t => this.timer >= t.at);
+            if (due.length) {
+                this.fncaches = c.filter(t => this.timer < t.at); // 先に除去(実行中の追加に備える)
+                for (const t of due) t.fn.call(this);
+            }
+        }
+
+        if (this.opTimer < TIMEisOP) this.opTimer++;
         this.timer++;
     }
 
@@ -374,10 +398,10 @@ export class Bullet {
             return;
         }
 
-        // OP演出(生成直後だけ半透明+拡大)
+        // OP演出(opTimerが小さい間だけ半透明+拡大)
         let alpha = 1, scale = 1;
-        if (IsOp && this.timer < TIMEisOP) {
-            const t = this.timer / TIMEisOP;
+        if (IsOp && this.opTimer < TIMEisOP) {
+            const t = this.opTimer / TIMEisOP;
             alpha = OP_ALPHA + (1 - OP_ALPHA) * t;
             scale = OP_SCALE + (1 - OP_SCALE) * t;
         }

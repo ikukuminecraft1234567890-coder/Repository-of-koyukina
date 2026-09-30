@@ -2175,3 +2175,476 @@ img: "./noise.png",
   imgAlpha: 1,
 }
 functions.push(spell27)
+const spell28 = {
+  name: "真実｢フリーメイソン｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "見た目重視。中心に行くと当たりますw綺麗なピラミッドになったんじゃない？",
+  nm: "気に入ってるけどもうちょい何とかできそう..",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+if (time()) {
+[-180,0,90,-90].forEach(e=>bullet({
+          angle: dtr(e),
+          x: Half.x,
+          y: Half.y,
+          size: 32,
+          type: "laser",
+          color: "red",
+          speed:120,
+          rd: 0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+    const cyc = this.timer % 240
+    const s = 2
+    if (cyc === 60*2+1) {           // 60を超えた最初のフレームだけ発火
+        this.speed = this.timer + 12   // ここから12フレームかけて広がる
+    } else if (cyc <= 60*2) {
+        this.speed = Infinity
+    }
+this.angle+=dtr(-0.25)
+}
+}]
+}))
+bullet({
+          angle: dtr(0),
+          x: Half.x,
+          y: Half.y,
+          size: 230,
+          type: "simple",
+          color: "red",
+          speed:0,
+          rd: 1.5,
+vsize:0,
+fnlist:[{f:0,loop:true,fn:function(){this.vsize+=(230/1800)/3}}]
+})
+}
+    if (time(15)) {
+const seeds = this.seeds
+this.prop.c += 16
+//wayしきねらい
+const x = Half.x;
+const y = Half.y
+const ang = this.prop.c
+triangle((ev) => {
+        bullet({
+          angle: dtr(ev.deg),
+          x: ev.x,
+          y: ev.y,
+          size: 16,
+          type: "eye",
+          color: "yellow",
+          speed:0,
+          rd: 0.65,
+custom:ang,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer===30) {this.speed = 0.75;}
+if (this.timer===60) {
+smooth(this,dtr(seeds[439].random(-45,45)),90)}
+if (this.timer>60&&this.timer<120){
+    this.h += 8/60
+    this.w += 8/60
+}
+}
+}]
+})
+     },{x,y,count:18,dist:105,startDeg:90+180})
+  }},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell28)
+const spell29 = {
+  name: "奇跡｢ミラクルスター｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "自機狙いの跡から流れる星。赤星は反射する。これ気に入ってる",
+  nm: "やるね！これ割と簡単かも？Nはもったかなあ",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+const cyc = pfr % 480
+    if (cyc<120&&time(3)) {
+const seeds = this.seeds
+this.prop.c += 16
+//wayしきねらい
+const x = Half.x;
+const y = Half.y
+const ang = this.prop.c
+        bullet({
+          angle: pf(x,y)+dtr(seeds[431].random(-2.5,2.5)),
+          x: x,
+          y: y-100,
+          size: 48,
+          type: "simple",
+          color: "pink",
+          speed:7,
+          rd: 0.65,
+fnlist:[{f:0,fn:function() {
+            bullet({
+          angle: this.angle+dtr(180+seeds[34].random(-180,180)),
+          x: this.x,
+          y: this.y,
+          size: 64,
+          type: "star2",
+          color: "red",
+          speed:1.5,
+          rd: 0.65,
+custom:false,
+fnlist:[{f:0,loop:true,fn:function() {
+    if (this.custom) return;
+const a = reverse(this)
+if(a)this.custom=true;
+}}]
+})
+            bullet({
+          angle: this.angle+dtr(180+seeds[34].random(-45,45)),
+          x: this.x,
+          y: this.y,
+          size: 48,
+          type: "star2",
+          color: "blue",
+          speed:3.5,
+          rd: 0.65,
+custom:false,
+fnlist:[{f:0,loop:true,fn:function() {
+    if (this.custom) return;
+const a = reverse(this)
+if(a)this.custom=true;
+}}]
+})
+}}]
+})
+  }},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell29)
+//16か8の全方位32シンプル(黄色)
+const spell30 = {
+  name: "無符｢霧雨魔理沙通常5｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "通常っぽい弾幕。割とむずいなあ..ルナティッククラス(？)",
+  nm: "通常イメージなだけあって懲役感があるかも",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+    if (time(120)) {
+const seeds = this.seeds
+//wayしきねらい
+for (let i = 0;i<=60;i+=30) {
+    wait(() => {
+this.prop.c += 72
+const x = Half.x;
+const y = Half.y
+const ang = this.prop.c
+arc((ev) => {
+bullet({
+          angle: dtr(ev.deg+ang),
+          x: ev.x,
+          y: ev.y,
+          size: 48,
+          type: "simple",
+          color: "yellow",
+          speed:1.5,
+          rd: 0.65,
+})
+  },{count:8,x,y})
+arc((ev) => {
+bullet({
+          angle: dtr(ev.deg+ang),
+          x: ev.x,
+          y: ev.y,
+          size: 16,
+          type: "normal",
+          color: "red",
+          speed:1.75,
+          rd: 0.65,
+})
+  },{count:36,x,y})
+    if (i===60) {
+arc((ev) => {
+bullet({
+          angle: dtr(ev.deg+ang),
+          x: ev.x,
+          y: ev.y,
+          size: 48,
+          type: "star2",
+          color: "green",
+          speed:0.75,
+          rd: 0.65,
+})
+bullet({
+          angle: dtr(ev.deg+ang),
+          x: ev.x,
+          y: ev.y,
+          size: 48,
+          type: "star2",
+          color: "blue",
+          speed:2,
+          rd: 0.65,
+})
+  },{count:36,x,y})
+    }
+},i)}}},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell30)
+const spell31 = {
+  name: "滝符｢アミュレットウォーターウォール｣",
+  dif: "e",
+  desc: "",
+  hint: "",
+  ct: "改善点はあるね^^;よく分からない系スペル。まあまあまあ。...",
+  nm: "アプデうぇん、、、じゃなくて、この弾幕はもうちょいムズくしても良かったかも",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 20,
+  run() {
+    if (time(12)) {
+const seeds = this.seeds
+const wx = 0;
+const wy = 0;
+way((ev) => {
+const x = seeds[192].random(-15,15)+ev.x
+        bullet({
+          angle: dtr(90),
+          x: x,
+          y: ev.y,
+          size: 24,
+          type: "amulet",
+          color: "red",
+          speed:0.5,
+          rd: 0.65,
+setlist:[{f:120,e:0},{f:180,e:3},{f:240,e:0.4}]
+})
+     },{x:wx,y:wy,angle:dtr(90),lock:dtr(90),count:18,sx:30,sy:0})
+
+
+}},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell31)
+const spell32 = {
+  name: "核符｢ステラレータサン｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "核融合炉はトカマク型とステラレータ型に分かれているので、ステラレータを採用。珍しいスペルじゃないかな？移動制限系スペル今後も作りたいね。",
+  nm: "懲役感が強くなったwまあまあま...",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+if(players[0].y>=0)players[0].y -= 1.5
+    if (time(30)) {
+const seeds = this.seeds
+const wx = Half.x;
+const wy = Half.y;
+this.prop.s += 72;
+const g = this.prop.s
+arc((ev) => {
+        bullet({
+          angle: dtr(ev.deg+g),
+          x: ev.x,
+          y: 0,
+          size: 128,
+          type: "big",
+          color: "red",
+          speed:7.5,
+          rd: 0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+    if(this.timer<60) this.speed-=4/60
+}}]
+})
+     },{x:wx,y:wy,count:18})
+
+
+}},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell32)
+//なんかの闇弾 >定期的に反転からの自機狙い
+const spell33= {
+  name: "永符｢不死鳥リザレクト｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "良くない！？個人的に自信作。白弾は当たり判定が小さい。自機狙い便利っすね",
+  nm: "不死鳥リザレクトの語感良くない？俺だけ？",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+  run() {
+const seeds = this.seeds
+const cyc = pfr % 300;
+if (cyc === 0) bullets.forEach((e)=> {
+e.angle=pf(e.x,e.y)+dtr(seeds[13].random(-45,45))
+e.speed = 0
+e.timer = 0;
+const color = Math.random()>0.5?"white":"red"
+e.scolor(color)
+e.rd = 0.65
+e.custom.a=true
+})
+if (cyc === 180) bullets.forEach((e)=> {
+e.angle=e.angle+dtr(180)
+e.speed = 3
+e.scolor("gray")
+e.rd = 0.0
+})
+if(time())this.bool=false
+if(time(300)) {
+this.bool = !this.bool
+const rg = this.bool
+for (let i = 0;i<60;i++) {
+wait(() => {
+const g = rg || (i % 2 === 0);
+const o = [{x:canvas.w -50,a:145},{x:50,a:45}]
+o.forEach((d) => {
+const color = Math.random()>0.5?"white":"red"
+        bullet({
+          angle: dtr(d.a+seeds[134].random(-45,45)),
+          x: d.x+seeds[1].random(-15,15),
+          y: 45,
+          size: 32,
+          type: "scale",
+          color: color,
+          speed:1.5,
+          rd: 0.65,
+custom:{a:false,b:rg,i},
+fnlist:[{f:0,loop:true,fn:function() {
+if(this.color==="white")this.rd=0.4
+  if(this.timer<30) this.speed += 4/30
+if (this.custom.b&&this.custom.i%2===0) {const s = keep(this)
+if(s)this.speed=0}
+//if (s && this.timer>60&&this.custom.a)this.deleteFrame=0
+}}]
+})
+})
+    
+},i*2)
+    
+}}},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell33)
+//プレイヤーを挟む-5ー5の自機狙いSimpleかBigx2+全方位notmal
+//画面に4つのスケール弾、下と上両方に出る、時間経過で動く、中央から端に向かって順々にアングルランダムに変更、|  |  |  |みたいな感じ。
+const spell34 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+  const seeds = this.seeds
+  if (time()) this.bool = false
+  if (time(600)) {
+    const k = 25   // 縦方向の弾の段数
+    const F = 60  // 遅延の最大フレーム数(1〜F)
+    const xs = [Half.x + 200, Half.x - 100, Half.x + 100, Half.x - 200]
+
+    xs.forEach((x) => {
+      for (let i = 0; i < k; i++) {
+        const y = (i + 0.5) * canvas.h / k
+        const down = y >= Half.y
+        // 中心からの距離を 1〜F に正規化して整数化
+        const delay = Math.round(1 + (Math.abs(y - Half.y) / Half.y) * (F - 1))
+
+        wait(() => {
+for (let a =0;a<1;a++)bullet({
+            angle: dtr(down ? 90 : -90),
+            x,
+            y,
+            size: 32,
+            type: "scale",
+            color: down ? "purple" : "green",
+            speed: 0,
+            rd: 0.65,
+custom:{a:true,b:false},
+            fnlist: [{
+              f: 60,loop:true,
+              fn: function () {
+if (this.timer===61){this.speed = 1.5;this.spawn()}
+if (this.custom.a) {
+const a = reverse(this)
+if (a) {
+    this.custom.a = false;
+this.custom.b = 3;
+this.angle=dtr(seeds[164].random(-180,180))
+this.speed=2
+}}
+if (this.custom.b>0) {
+    const a = reverse(this)
+if (a) this.custom.b-=1
+}
+}
+              }]
+          })
+        }, delay)
+      }
+    })
+  }
+},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell34)

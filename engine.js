@@ -15,6 +15,7 @@ img2:new Image(),
 src1:"",
 src2:""
 }
+const pauseE = true;
 const ondebug = false; // aa
 let esc = false
 let escPrev = false
@@ -498,7 +499,7 @@ if (window.Allkeys.Escape && !escPrev) {
 escPrev = !!window.Allkeys.Escape; // 現在の状態を保存
 
 // ポーズ判定
-const pause = players[0].death || esc;
+const pause = pauseE ? players[0].death || esc : false
 
 
     if (!pause)stat.pfr += 1
