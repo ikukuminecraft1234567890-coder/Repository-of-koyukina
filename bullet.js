@@ -58,6 +58,23 @@ export function wait(callback, time, isFrame = true) {
     });
 }
 
+/**
+ * wait の弾対応版。b を渡すと弾の fncaches に登録され、弾自身の timer 基準で実行される。
+ * (弾が再利用/解放されると fncaches ごと消えるので、グローバルの pfr による汚染が起きにくい)
+ * b を省略した場合は従来の wait と同じ動作。
+ * @param {Function} callback - 実行したい関数(b指定時は this が弾)
+ * @param {number} time - 待機する時間（フレーム数またはミリ秒）
+ * @param {boolean} [isFrame=true] - trueならフレーム換算、falseならミリ秒換算
+ * @param {Bullet} [b=null] - 紐づける弾
+ */
+export function wai(callback, time, isFrame = true, b = null) {
+    if (typeof callback !== 'function') return;
+    if (!b) return wait(callback, time, isFrame);
+
+    const targetFrames = isFrame ? time : Math.round((time * 60) / 1000);
+    b.fncaches.push({ at: b.timer + targetFrames, fn: callback });
+}
+
 export function random(min, max, f = false) {
     const result = Math.random() * (max - min) + min;
     // f が true の場合は整数に変換（切り捨て）、そうでない場合はそのまま Float で返す
@@ -481,18 +498,35 @@ export class SeedKey {
     return SeedKey.#get(entity, v, add).next(min, max, isFloat);
   }
 }
-export function smooth(bull,target,time) {
-const smoothTime = target / time
-const snapshot = bull.timer 
-for (let i = 0;i<time;i++) wait(()=>{bull.angle+=(smoothTime)},i,true)
+
+/**
+ * bull[prop] を time フレームかけて target 分だけ加算する(弾のtimer基準)
+ * @param {Bullet} bull
+ * @param {number} target - 合計の加算量
+ * @param {number} time - フレーム数
+ * @param {string} [prop="angle"] - 対象プロパティ名
+ */
+export function smooth(bull, target, time, prop = "angle") {
+    const step = target / time;
+    for (let i = 0; i < time; i++) {
+        wai(() => { bull[prop] += step }, i, true, bull);
+    }
 }
-export function smoothSet(bull, target, time) {
-    const start = bull.angle
-    const diff = target - start
+
+/**
+ * bull[prop] を time フレームかけて target の値まで補間する(弾のtimer基準)
+ * @param {Bullet} bull
+ * @param {number} target - 最終的な値
+ * @param {number} time - フレーム数
+ * @param {string} [prop="angle"] - 対象プロパティ名
+ */
+export function smoothSet(bull, target, time, prop = "angle") {
+    const start = bull[prop];
+    const diff = target - start;
     for (let i = 1; i <= time; i++) {
-        wait(() => {
-            bull.angle = start + diff * (i / time)
-        }, i, true)
+        wai(() => {
+            bull[prop] = start + diff * (i / time);
+        }, i, true, bull);
     }
 }
 
@@ -843,15 +877,25 @@ export function corner(margin=50,offset=0) {
     bottomRight: { x: canvas.w - offset, y: canvas.h - offset }
   };
 }
+
+/**
+ * f フレームかけて target 分を分割し、毎フレーム fn(ev) を呼ぶ
+ * 最後の引数 b に弾を渡すと wai(弾のtimer基準・fncaches)で動く。省略時は従来の wait。
+ * b指定時、fn の this は弾になる。
+ * @param {Function} fn
+ * @param {Object} opts - { target, f, custom }
+ * @param {Array} [rl=[]]
+ * @param {Bullet} [b=null]
+ */
 export function smoothFn(fn, {
 target = 0,
 f= 0,
 custom=0,
-} = {}, rl = []) {
+} = {}, rl = [], b = null) {
 const rf = Math.floor(f)
   const NowTarget = target / rf
 for (let i = 0;i<rf;i++) {
-    wait(() =>{
+    const run = () =>{
         const ev = {
             i,
 target,
@@ -860,10 +904,13 @@ def:target/rf,
 custom,
 v:NowTarget,
 rf,
+b,
         };
         rl.push(ev);
-        fn(ev);
-    },i,true)
+        fn.call(b ?? undefined, ev);
+    };
+    if (b) wai(run, i, true, b);
+    else wait(run, i, true);
 }
 }
 /**
