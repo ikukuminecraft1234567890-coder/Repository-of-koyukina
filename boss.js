@@ -2648,3 +2648,1085 @@ img: "./noise.png",
   imgAlpha: 1,
 }
 functions.push(spell34)
+//8Way全方位ちょうちょブレアリ、最初早い、なめらかに遅くなる、多分反射、浮動する。アングル反転多分あり(完全なる墨染の桜イメージ)
+//だんげんがぐるぐるするおんみょうだまからのぜんほういすけーる
+//⬆さらに自機狙いとしておんみょうだまが動く、反射したらアングル変更。全方位はスケールじゃなくてSimpkeのYellow
+const spell35 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+  const seeds = this.seeds
+  if (time()) {
+const bx = Half.x;
+const by = 0;
+      bullet({
+            angle: pf(bx,by),
+            bx,
+            by,
+            size: 64,
+            type: "om",
+            color: "7327B0",
+            speed: 2,
+            rd: 0.65,
+custom:{loc:{x:bx,y:by,a:pf(bx,by)},a:0},
+            fnlist: [{
+              f: 0,loop:true,
+              fn: function () {
+this.angle=this.custom.loc.a
+const a = keep(this)
+if (a) {
+this.custom.loc.x=this.x;
+this.custom.loc.y=this.y
+this.custom.loc.a=pf(this.x,this.y)
+}
+if (time(15,this.timer)) {
+this.spawn()
+this.custom.a += 72;
+const t = this.custom.a
+const ax = Math.cos(this.timer*2)*15;
+const ay = Math.sin(this.timer*2)*15;
+const x = this.x+ax;
+const y = this.y+ay
+arc((ev) => {
+        bullet({
+          angle: dtr(ev.deg+t),
+          x: ev.x,
+          y: ev.y,
+          size: 32,
+          type: "simple",
+          color: "yellow",
+          speed:5+seeds[134].random(-0.75,0.75),
+          rd: 0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+    if(this.timer<60) this.speed-=4/60
+}}]
+})
+     },{x,y,count:13,length:3})
+}
+              }}]
+          })
+  }
+},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell35)
+const spell36 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 65,
+run() {
+  const seeds = this.seeds
+if (time(600)){
+for (let i = 0;i<10;i++) {
+wait(() => {
+const ax = Math.cos(pfr*2)*15;
+const ay = Math.sin(pfr*2)*15;
+const x = Half.x+ax;
+const y = 30+ay
+arc((ev) => {
+const s = 7.5+seeds[416].random(-0.75,0.75)
+        bullet({
+          angle: dtr(ev.deg),
+          x: ev.x,
+          y: ev.y,
+          size: 32,
+          type: "fly",
+          color: "pink",
+          speed:s,
+          rd: 0.65,
+vsize:48,
+custom:{a:s-7.5,s,b:true},
+fnlist:[{f:0,loop:true,fn:function() {
+    if(this.timer<60) this.speed-=this.custom.s/60
+if (this.timer===120) {
+this.angle=dtr(seeds[493].random(-180,0)+180)
+smooth(this,0.6+seeds[134].random(-0.15,0.15),60,"speed")
+}
+if (this.timer===600){this.angle+=dtr(180);this.custom.b=false;this.w=24;this.h=24;this.vsize=32}
+if(this.custom.b)keep(this)
+}}]
+})
+     },{x,y,count:54,length:3})
+},i*6)}}
+},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell36)
+//8Way全方位ちょうちょブレアリ、最初早い、なめらかに遅くなる、多分反射、浮動する。アングル反転多分あり(完全なる墨染の桜イメージ)
+
+//自機の方へY0Xランダムから高速で振ってくる玉、途中で停止した全方位>30F後に動き出すになる
+const spell37 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+if (time())this.prop.s=60;
+if(time(90))this.prop.s-=1
+  const seeds = this.seeds
+const arr =[{c:"yellow",s:5},{c:"red",s:3},{s:1.5,c:"blue"}]
+if (time(this.prop.s)){
+const k = select(arr)
+const x = random(0,canvas.w)
+        bullet({
+          angle: pf(x,0),
+          x: x,
+          y: 0,
+          size: 32,
+          type: "simple",
+          color: k.c,
+          speed:7,
+          rd: 0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+const p=reverse(this)
+if (this.timer===60 || p&&this.timer>6){arc((ev) => {
+        bullet({
+          angle: dtr(ev.deg),
+          x: ev.x,
+          y: ev.y,
+          size: 32,
+          type: "simple",
+          color: k.c,
+          speed:k.s+0.1,
+          rd: 0.65,
+vsize:48,
+fnlist:[{f:0,loop:true,fn:function() {
+    if(this.timer<60) this.speed-=k.s/60;
+    if(this.timer>60&&this.timer<120) this.speed+=k.s/60;
+}}]
+})
+     },{x:this.x,y:this.y,count:18,length:0})
+this.deleteFrame=0}
+}}]
+})}},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell37)
+
+const spell38 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+if (time(13433333)) {
+    arc((ev) => {
+        bullet({
+          angle: dtr(ev.deg+seeds[30].random(-45,45)),
+          x: ev.x,
+          y: ev.y,
+          size: 32,
+          type: "big",
+          color: "crim",
+          speed:3,
+          rd: 0.65,
+})
+     },{x:Half.x,y:50,count:54,length:0})
+}
+if (time(15)) {
+const x = Math.sin(pfr)*canvas.w
+const y = 40
+    let base = pf(x,y)
+for (let i = 0;i<5;i++) {
+    wait(() => {
+way((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"amulet",
+color:"red",
+speed:0.5,
+rd:0.65,
+fnlist:[{f:0,fn:function() {
+smooth(this,6,180,"speed")
+}}]
+})
+},{spreadDeg:45,count:3,x,y,angle:base})    
+},i*6)}
+const x2 = Math.cos(pfr)*canvas.w
+const y2 = canvas.h
+    let base2 = pf(x2,y2)
+  for (let i = 0;i<5;i++) {
+    wait(() => {
+way((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"amulet",
+color:"blue",
+speed:0.5,
+rd:0.65,
+fnlist:[{f:0,fn:function() {
+smooth(this,6,180,"speed")
+}}]
+})
+},{spreadDeg:45,count:2,x:x2,y:y2,angle:base2})    
+},i*6)}
+this.bool = !this.bool
+const x3 = this.bool ? 0 : canvas.w
+const y3 = Half.y
+    let base3 = pf(x3,y3)+dtr(seeds[491].random(-45,45))
+for (let i = 0;i<5;i++) {
+    wait(() => {
+way((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"amulet",
+color:"green",
+speed:0.5,
+rd:0.65,
+fnlist:[{f:0,fn:function() {
+smooth(this,6,180,"speed")
+}}]
+})
+},{spreadDeg:45,count:1,x:x3,y:y3,angle:base3})    
+},i*6)}
+}
+},
+img: "./noise.png",
+  mask: "./",
+  maskAlpha: 0,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 1,
+}
+functions.push(spell38)
+//雨が降る！のは嘘かも笑作る予定ないわ多分、
+const spell39 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+if (time(4)) {
+const x = Half.x
+const y = 0
+    let base = dtr(seeds[134].random(0,180))
+way((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:64,
+type:"big2",
+color:"red",
+speed:0.5+seeds[41].random(-0.5,0.5),
+rd:0.65,
+fnlist:[{f:0,fn:function() {
+smooth(this,6+seeds[426].random(-1.5,1.5),180,"speed")
+}}]
+})
+},{spreadDeg:45,count:3,x,y,angle:base})
+}
+if (time(12)) {
+const x2 = Half.x
+const y2 = 0
+    let base2 = dtr(seeds[134].random(60,120))
+way((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:64,
+type:"big2",
+color:"blue",
+speed:0.5,
+rd:0.65,
+fnlist:[{f:0,fn:function() {
+smooth(this,8,180,"speed")
+}}]
+})
+},{spreadDeg:45,count:3,x:x2,y:y2,angle:base2})
+}
+},
+img: "./glass.png",
+  mask: "./retro.png",
+  maskAlpha: 0.6,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell39)
+const spell40 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+players[0].hitboxRadius = 16;
+players[0].radius = 32;
+
+players[0].h = 64;
+const seeds = this.seeds
+if (time(15)) {
+const x = Half.x
+const y = 0
+    let base = dtr(seeds[134].random(0,180))
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg+base),
+x:ev.x,
+y:ev.y,
+size:64,
+type:"big2",
+color:"red",
+speed:3.5,
+rd:0.65,
+})
+},{spreadDeg:45,count:30,x,y,angle:base})
+}},
+img: "./glass.png",
+  mask: "./retro.png",
+  maskAlpha: 0.6,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell40)
+const spell41 = {
+  name: "空間剣｢ディメンショナルスラッシュ｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+if (time(6)) {
+const x = 0
+const y = 0
+    let base = dtr
+way((ev) => {
+bullet({
+    angle:dtr(90),
+x:ev.x+random(-15,15),
+y:ev.y,
+size:32,
+type:"polygon",
+color:select(rainbowHex),
+speed:1.5,
+rd:0.4,
+vsize:48,
+fnlist:[{f:0,fn:function() {
+this.angle+=dtr(random(-45,45))
+}}]
+})
+},{count:30,x,y,angle:dtr(90),sx:46,sy:0})
+}
+},
+img: "./glass.png",
+  mask: "./retro.png",
+  maskAlpha: 0.6,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell41)
+const spell42 = {
+  name: "空間剣｢悪退札傘｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+if (time(3))this.prop.s=this.seeds[134].random(-45,45)
+const seeds = this.seeds
+if (time(3)) {
+const c = this.prop.s
+const x = 0
+const y = 0
+    let base = dtr
+const cc = select(["red","aqua","green","blue","pink",])
+way((ev) => {
+bullet({
+    angle:dtr(90),
+x:ev.x+random(-15,15),
+y:ev.y,
+size:32,
+type:"amulet",
+color:cc,
+speed:1.5,
+rd:0.4,
+vsize:24,
+fnlist:[{f:0,loop:true,fn:function() {
+if(this.timer===1)this.angle=pf(this.x,this.y)+dtr(c)
+}}]
+})
+},{count:60,x,y,angle:dtr(90),sx:72,sy:0})
+}
+},
+img: "./glass.png",
+  mask: "./retro.png",
+  maskAlpha: 0.6,
+  maskSpeed: 0.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell42)
+//0ーcanvas.wの配列をランダムにそーとして、waitで回してaquaのkunai2をdtr(90)で3つ出す(waitをそれにもかける)そしてf=240で発射、
+const spell43 = {
+  name: "空間剣｢悪退札傘｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+if (time(3)) {
+for (let a = 0;a<5;a++)wait(()=>{bullet({
+    angle:dtr(90),
+x:random(0,canvas.w),
+y:0,
+size:32,
+type:"kunai2",
+color:"aqua",
+speed:0,
+rd:0.4,
+vsize:24,
+custom:a,
+fnlist:[{f:a*3,fn:function() {
+smooth(this,this.custom,60,"speed")
+}}]
+})
+},a*18)
+}
+},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell43)
+//Xランダムから降ってくるポリゴン、6Way自機狙いに途中で変更
+const spell44 = {
+  name: "空間剣｢悪退札傘｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+const colors = ["red","blue","green"]
+if (time(15)) {
+this.prop.s++
+const c = colors[normal(this.prop.s,0,colors.length)]
+bullet({
+    angle:dtr(90),
+x:random(0,canvas.w),
+y:0,
+size:32,
+type:"polygon",
+color:c,
+speed:2,
+rd:0.4,
+vsize:64,
+fnlist:[{f:0,fn:function() {
+smooth(this,1.5,60,"speed")
+}},{
+f:1,fn:function() {
+    wayEx((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:64,
+type:"polygon",
+color:this.color,
+speed:0.25,
+rd:0.25,
+fnlist:[{f:0,fn:function() {
+smooth(this,2,30,"speed")
+}},{f:60,fn:function(){
+    smooth(this,-1.5,240,"speed")
+}}]
+})
+},{spreadDeg:45,count:9,x:this.x,y:this.y,angle:pf(this.x,this.y)+dtr(normal(this.x,-15,15))})
+}}]
+})
+}
+},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell44)
+//全方位弾とかじきねらい(簡単め)、移動跡にレーザー、F=なんかの指定したフレームに全部同時起動！！！？
+const spell45 = {
+  name: "真実｢ノストラダムスの大予言｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 20,
+run() {
+const seeds = this.seeds
+if (time(30))bullet({
+    angle:pf(Half.x,Half.y),
+x:Half.x,
+y:Half.y,
+size:32,
+type:"laser",
+color:"yellow",
+speed:Infinity,
+rd:0.65,
+fnlist:[{f:0,loop:true,fn:function(){
+if(pfr>17*60&&this.timer>60)this.speed=0
+    
+}}]
+})
+if (time(15)) for(let i=1;i<5;i++)bullet({
+    angle:pf(Half.x,Half.y),
+x:Half.x,
+y:Half.y,
+size:24,
+type:"amulet",
+color:"green",
+speed:i,
+rd:0.65,
+})
+const cfg = {
+waittime:3,
+count:54,
+}
+const o = this.prop.a
+this.prop.a+=72;
+if (time(cfg.waittime*cfg.count)) {
+arc((ev) => {
+wait(() => {
+for (let i =1;i<4.5;i+=1.5)bullet({
+    angle:dtr(ev.deg+o),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"scale",
+color:"blue",
+speed:i,
+rd:0.65,
+})
+},ev.i*cfg.waittime)
+},{x:Half.x,y:Half.y,count:cfg.count})
+}
+
+const colors = ["red","blue","green"]
+if (time(240)) {
+this.prop.s+=72;
+const a=this.prop.s
+const c = colors[normal(this.prop.s,0,colors.length)]
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg+a),
+x:ev.x+random(-5,5),
+y:ev.y,
+size:32,
+type:"normal",
+color:"crim",
+speed:2,
+rd:0.65,
+})
+},{x:Half.x,y:Half.y,count:18})
+}
+},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell45)
+//弾幕結界(プレイヤーの中心から基準にlength:デカめの四角か全方位、停止、低速でアングル変更とかしながらなんかいい感じにする！)
+//ふうまじん(startDegがランダム、waitつけて全方位かしかく！んでn秒後に内側に向かって進む。中心に行くとたまきえる(f調整で頼むわ笑)速度は7.5とかかなアミュレット。これが高頻度で行われてどんどん完成し切る前に隙間をぬけていく！！！)
+//スカーレットマイスタみたいなの
+const spell46 = {
+  name: "真実｢ノストラダムスの大予言｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+/**
+ * 配列の始点を変更し、元の順番を保ったままシフト回転させる関数
+ * @template T
+ * @param {T[]} array - 対象の配列
+ * @param {number} [startIndex] - 始点にするインデックス（省略時はランダム）
+ * @returns {T[]} - 始点が変更された新しい配列
+ */
+function shuffle(array, startIndex) {
+  if (array.length === 0) return [];
+
+  // インデックスが指定されていない場合はランダムに決定
+  const idx = startIndex ?? Math.floor(Math.random() * array.length);
+
+  // 範囲外のインデックスにも対応（余り計算で安全に循環）
+  const validIndex = ((idx % array.length) + array.length) % array.length;
+
+  // 始点以降 + 始点より前の部分
+  return [...array.slice(validIndex), ...array.slice(0, validIndex)];
+}
+
+const seeds = this.seeds
+//ふうまじん(startDegがランダム、waitつけて全方位かしかく！んでn秒後に内側に向かって進む。中心に行くとたまきえる(f調整で頼むわ笑)速度は7.5とかかなアミュレット。これが高頻度で行われてどんどん完成し切る前に隙間をぬけていく！！！)
+   const cfg = {
+waittime:1.00,
+count:18,
+}
+const o = 0
+this.prop.a+=72;
+const k = 120
+if (time(cfg.waittime*(cfg.count*4)+60)) {
+let g
+square((ev) => {
+if(ev.i===cfg.count*4-1)g=ev.rl
+},{x:players[0].x,y:players[0].y,count:cfg.count,dist:150})
+const gg = shuffle(g,random(0,g.length)).map((e,i)=> ({...e,i:i}))
+for(const ev of gg)wait(() => {
+bullet({
+    angle:dtr(ev.deg+o+180),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"amulet",
+color:"red",
+speed:1,
+rd:0,
+noAuto:true,
+deleteFrame:k,
+fnlist:[{f:6,fn:function(){this.rd=0.65}}]
+})
+bullet({
+    angle:dtr(ev.deg+o+180),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"polygon",
+color:"yellow",
+speed:0.525,
+rd:0,
+noAuto:true,
+vsize:48,
+deleteFrame:k+30,
+fnlist:[{f:6,fn:function(){this.rd=0.65}}]
+})
+bullet({
+    angle:dtr(ev.deg+o),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"amulet",
+color:"green",
+speed:1,
+rd:0,
+noAuto:true,
+deleteFrame:k,
+fnlist:[{f:6,fn:function(){this.rd=0.65}}]
+})
+bullet({
+    angle:dtr(ev.deg+o),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"gummy",
+color:"red",
+speed:7,
+rd:0.35,
+deleteFrame:Infinity,
+setlist:[{f:12,e:0}]
+})
+},ev.i*cfg.waittime)
+}
+},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell46)
+//弾幕結界(プレイヤーの中心から基準にlength:デカめの四角か全方位、停止、低速でアングル変更とかしながらなんかいい感じにする！)
+//ふうまじん(startDegがランダム、waitつけて全方位かしかく！んでn秒後に内側に向かって進む。中心に行くとたまきえる(f調整で頼むわ笑)速度は7.5とかかなアミュレット。これが高頻度で行われてどんどん完成し切る前に隙間をぬけていく！！！)
+//スカーレットマイスタみたいなの
+//バベルの塔 途中でバラける
+const spell47 = {
+  name: "真実｢ノストラダムスの大予言｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+   const cfg = {
+waittime:1.00,
+count:18,
+}
+const o = this.prop.a
+this.prop.a+=72;
+const k = 120
+if (time(300,pfr,60)) {
+for (let y =-15;y<canvas.h+15;y+=15)wait(()=>{way((ev) => {
+bullet({
+    angle:dtr(-90),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"polygon",
+color:"yellow",
+speed:0,
+rd:0.65,
+custom:true,
+fnlist:[{f:(120+y/15*3)-1,fn:function(){this.speed=1.4,this.angle+=dtr(180+random(-45,45))
+smooth(this,dtr(random(-180,180)),120)
+}},{f:120+y/15*3,loop:true,fn:function() {
+if(this.timer===150+y/15*3) smooth(this,dtr(random(-45,45)),60)
+if(this.custom&&this.y > canvas.h-5) {
+const a = reverse(this)
+if(a)this.custom=false,smooth(this,dtr(random(-180,180)),120)
+}
+}}]
+})
+bullet({
+    angle:dtr(-90),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"polygon",
+color:"yellow",
+speed:0,
+rd:0.65,
+custom:true,
+fnlist:[{f:(120+y/15*2)-1,fn:function(){this.speed=1.4,this.angle+=dtr(180+random(-45,45))
+smoothSet(this,dtr(random(-1,-180)),30)
+}},{f:120+y/15*2,loop:true,fn:function() {
+if(this.timer===150+y/15*2) smooth(this,dtr(random(-45,45)),60)
+if(this.custom&&this.y > canvas.h-5) {
+const a = reverse(this)
+if(a)this.custom=false,smoothSet(this,dtr(random(-1,-180)),120)
+}
+}}]
+})
+},{x:Half.x-40,y:y,count:5,sx:24})
+},60/y*0.15)
+}},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell47)
+//レーザーの弾痕からレーザーアングルにあった1〜10速度のたま
+//夢想封印 72個のBIGなSimpleがレインボーでじきねらいとしてなんかくる
+const spell48 = {
+  name: "真実｢ノストラダムスの大予言｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+if (time(90,pfr,60)) {
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg+180),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"diamond",
+color:"red",
+speed:7.5,
+rd:0.65,
+deleteFrame:20
+})
+},{x:Half.x,y:100,count:72,length:120})
+this.bool = !this.bool
+const o = this.bool
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:64,
+type:"simple",
+color:select(rainbowHex),
+speed:0,
+rd:0.65,
+custom:o,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer < 60+ev.i*3) {
+    this.x += random(-0.35,0.35)
+    this.y += random(-0.35,0.35)
+}
+if (this.timer === 60+ev.i*3 && this.custom) {
+this.angle = pf(this.x,this.y)
+this.speed = 3.5
+}
+if (this.timer === 60+ev.i*3 && !this.custom) {
+if(ev.i%2===0)this.deleteFrame=0
+this.speed = 3.5
+}    
+}}]
+})
+},{x:Half.x,y:100,count:72,length:120})
+}},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell48)
+const spell49 = {
+  name: "真実｢ノストラダムスの大予言｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 35,
+run() {
+const seeds = this.seeds
+const Out = 900
+if (time(15,pfr,60) && pfr < Out) {
+this.bool = !this.bool
+const o = this.bool
+for (let i = 0;i<15;i++)bullet({
+    angle:dtr(90),
+x:random(0,canvas.w),
+y:0,
+size:24,
+type:"amulet",
+color:"red",
+speed:3,
+rd:0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+    keep(this)
+if (this.timer === Out+120) {
+this.speed = 5;
+this.angle=dtr(-90)
+}
+}}]
+})
+}
+
+},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell49)
+//アミュレットウォーターウォールみたいに弾の列 > 停止 > そのまま3秒後に画面真上以外は即終了のエリアになる
+const spell50 = {
+  name: "真実｢ノストラダムスの大予言｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "なう(2026/09/30 14:09:53)最後のスペル。自信作。見た目に力入れたり...反射は3回もあるw",
+  nm: "演出面に力入れた。自機狙いはない。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 32,
+run() {
+const seeds = this.seeds
+if (time(480)) {
+for (let x = 60;x<canvas.w-40;x+=canvas.w/3)arc((ev) => {
+wait(()=>{
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"knife",
+color:"red",
+speed:0,
+rd:0.65,
+fnlist:[{f:120,fn:function() {
+   smooth(this,4,60,"speed")
+    this.angle+=dtr(random(-45,45))
+}}]
+})
+bullet({
+    angle:dtr(ev.deg+180),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"knife",
+color:"green",
+speed:0,
+rd:0.65,
+fnlist:[{f:120,fn:function() {
+    smooth(this,3.5,60,"speed")
+    this.angle+=dtr(random(-45,45))
+}}]
+})
+for (let i =0;i<2;i++)bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"knife",
+color:"blue",
+speed:0,
+rd:0.65,
+fnlist:[{f:120,fn:function() {
+   smooth(this,2,60,"speed")
+    this.angle+=dtr(random(-90,90))
+}}]
+})
+for(let i=0;i<3;i++)bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"knife",
+color:"yellow",
+speed:0,
+rd:0.65,
+fnlist:[{f:240,fn:function() {
+   smooth(this,5,300,"speed")
+    this.angle+=dtr(random(-180,180))
+}}]
+})
+},ev.i*0.75)
+},{x,y:72,count:54,length:30})
+
+}},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell50)
+//6個の全方位ナイフだんげん！！

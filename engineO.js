@@ -25,10 +25,6 @@ let fps = 0;
 export const sp = (num) => num * 60;
 export const sd = (a, b = 1) => a % (60 * b) === 0;
 export const fs = (m) => m / 60;
-
-// 💡 時間切れ後の停止フレーム数（60 = 1秒）
-const FREEZE_FRAMES = 60;
-
 export const stat = {
     pfr: 0,
     entity: null,
@@ -51,9 +47,6 @@ export const stat = {
     inspectIndex:0,        // inspectSelected内での現在表示インデックス
     inspectHighlighted:null, // 弾選択モード中、タップでハイライトされている弾（まだ未確定）
     inspectCandidates:null,  // ハイライト対象を含む、タップ位置周辺の候補弾リスト（確定時にスライド候補として使う）
-    // 💡 時間切れ後の停止（グレイズ回収）用
-    freezeLeft:0,      // 残り停止フレーム数（0より大きい間は停止中）
-    freezeDone:false,  // 停止が終わったか（trueになったらクリア処理へ）
 }
 const rb = document.createElement('button');
 rb.id = "btn";
@@ -121,9 +114,6 @@ function rbpush() {
         activeCanvas.remove(); // ⭕ これで確実に消えます
     }
 
-    // 💡 停止状態をリセットしてから再開
-    stat.freezeLeft = 0;
-    stat.freezeDone = false;
     start(stat.nowspell);
     cb.remove();
     rb.remove();
@@ -511,11 +501,8 @@ escPrev = !!window.Allkeys.Escape; // 現在の状態を保存
 // ポーズ判定（💡 下で pause=false と再代入するので let にしています）
 let pause = pauseE ? players[0].death || esc : false
 
-// 💡 時間切れ後の停止中かどうか（この間は弾・敵・スペル進行が止まり、グレイズ回収だけ行う）
-const frozen = stat.freezeLeft > 0;
-players[0].frozen = frozen;
 
-    if (!pause && !frozen && !stat.freezeDone) stat.pfr += 1
+    if (!pause)stat.pfr += 1
 if (stat.pfr === 2&&!stat.isChallenge) {
 document.body.append(cb, rb)
 if (window.Allkeys.r || window.Allkeys.Enter) rbpush()
@@ -523,8 +510,7 @@ if (window.Allkeys.Escape || window.Allkeys.c) cbpush()
         }
     ctx.clearRect(0, 0, canvas.w, canvas.h);
     const fn = functions[spelln]
-    // 💡 停止中・停止完了後はスペルを進めない（pfrが固定されるので、同じフレームの処理が毎回走るのを防ぐ）
-    if (!frozen && !stat.freezeDone) functions[spelln].run()
+    functions[spelln].run()
 if (fn.img) {
     const bgPath = "./assets/bg/" + fn.img;
     const maskPath = fn.mask ? "./assets/bg/" + fn.mask : "./assets/bg/flame.png";
@@ -575,13 +561,8 @@ if (fn.img) {
     const effectiveTime = (stat.isChallenge && stat.timeOverride !== null && stat.timeOverride !== undefined)
         ? stat.timeOverride
         : fn.time;
-
-    // 💡 時間切れ：まず1秒停止（グレイズ回収）、停止が終わったらクリア処理へ
-    const timeUp = effectiveTime === fs(stat.pfr) && players[0].zanki > 0;
-    if (timeUp && !stat.freezeDone && stat.freezeLeft === 0) {
-        stat.freezeLeft = FREEZE_FRAMES;
-    }
-    if (timeUp && stat.freezeDone) {clearAllUI()
+if (effectiveTime-1===fs(stat.pfr)&&players[0].zanki>0) players[0].gs =999999
+    if (effectiveTime === fs(stat.pfr) && players[0].zanki > 0) {clearAllUI()
         const miss = players[0].zanki
 stat.nowzanki = miss
 const m = stat.maxz - stat.nowzanki
@@ -652,7 +633,7 @@ pause=false
     // 敵・ボス処理
     for (let i = entitys.length - 1; i >= 0; i--) {
         const e = entitys[i];
-      if (!pause && !frozen)  e.update();
+      if (!pause)  e.update();
 
         e.draw(ctx, true);
 e.hitTests()
@@ -675,14 +656,13 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
         // active な弾のみ更新・描画。削除対象なら releaseToPool() で明示的に swap-pop → spaceb へ返却。
         for (let i = bullets.length - 1; i >= 0; i--) {
             const b = bullets[i];
-            if (!b) continue; // 💡 停止中のグレイズ回収でbulletsが縮むことがあるので念のため
             if (!b.active) continue;
 
             if (b.shouldRemove()) {
                 b.releaseToPool();
                 continue;
             }
-        if (!pause && !frozen)        b.update();
+        if (!pause)        b.update();
             b.draw(ctx,ondebug);
             registerBulletToGrid(b, grid);
         }
@@ -691,8 +671,7 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
         // 毎回 update → draw → shouldRemove で splice 削除。
         for (let i = bullets.length - 1; i >= 0; i--) {
             const b = bullets[i];
-            if (!b) continue;
-            if (!frozen) b.update();
+            b.update();
             b.draw(ctx);
 
             if (b.shouldRemove()) {
@@ -704,13 +683,12 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
     }
     if (players[0]) {
         // player.hitTest の中身で `grid` を使って some() を回す
-        // 💡 停止中(frozen)は player 側で全弾を走査してグレイズ回収し、被弾判定は無効になる
         players[0].hitTest(false, grid);
     }
     // ⚠️ boss.js の gameLoop() の最後にこれがないため、ループが1フレーム目で停止しています
     updateFrame();
     // 💡 安全な wait タスクの更新処理（存在するときだけ実行し、return で止めない）
-    if (!frozen && globalThis._waitTasks && globalThis._waitTasks.size > 0) {
+    if (globalThis._waitTasks && globalThis._waitTasks.size > 0) {
         for (const [id, task] of globalThis._waitTasks.entries()) {
             // 条件を満たして callback が実行されたら（trueが返ってきたら）
             if (task.execute()) {
@@ -750,13 +728,6 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
     // textAlign をデフォルトの左寄せに戻しておくのが安全です。
     ctx.textAlign = "left";
 if (window.Allkeys.Escape && window.Allkeys.c) cbpush()
-
-    // 💡 停止フレームを1つ消費。0になったら停止完了フラグを立てる（次フレームでクリア処理へ）
-    if (!pause && stat.freezeLeft > 0) {
-players[0].gs=999999
-        stat.freezeLeft--;
-        if (stat.freezeLeft === 0) stat.freezeDone = true;
-    }
     stat.gameId = requestAnimationFrame(gameLoop)
 }
 
@@ -802,8 +773,7 @@ function registerBulletToGrid(b, grid) {
     }
 }
 export function nsnew(v) { stat.nowspell = v }
-// 💡 スペル開始時にpfrと一緒に停止状態もリセットする
-export function rpfr() { stat.pfr = 0; stat.freezeLeft = 0; stat.freezeDone = false }
+export function rpfr() { stat.pfr = 0 }
 export function setent(a) { stat.entity = a }
 
 // 毎フレーム呼ぶ
@@ -849,8 +819,6 @@ stat.timeQueue = [];
 stat.timeOverride = null;
 stat.ntxt = "";
 stat.rushId = null;
-stat.freezeLeft = 0;
-stat.freezeDone = false;
 const n = (dat.number[0] -1)
 console.log(n)
 stat.ctxt = dat.ctxt

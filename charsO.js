@@ -6,7 +6,6 @@ import {Bullet} from "./bc.js"
 import {PlayerBullet} from "./pb.js"
 import {pf}from"./bullet.js"
 import {stat}from"./engine.js"
-import { cfg } from "./logs/cfg.js"
 
 // ===== グレイズ設定 =====
 // グレイズ範囲 = 当たり判定半径 × multi
@@ -165,8 +164,6 @@ export class Player extends Entity {
         this.invincible = 0;
         this.death = false;
         this.deathF=0
-        // 💡 時間切れ後の停止中フラグ（engine.js の gameLoop が毎フレーム設定する）
-        this.frozen = false;
         // グレイズ
         this.graze = 0;
         this.grazeMap = new WeakMap(); // グレイズ済みの弾を登録（弾が消えれば自動解放）
@@ -215,13 +212,8 @@ hitTest(invincible = false, grid) {
     const cell = grid[data.w][data.h];
 
     // --- グレイズ判定（無敵中も有効） ---
-    // 💡 停止中は、プレイヤーのいるマスだけでなく「全弾」を走査する（マス境界の取りこぼし対策）
-    //    走査中に弾を消すので、コピーした配列を回す
-    const src = this.frozen ? [...bullets] : cell;
     const grazeR = this.gs
-    for (const b of src) {
-        if (!b) continue;
-        if (cfg && b.active === false) continue; // プール内の非アクティブ弾は無視
+    for (const b of cell) {
         // プールで再利用された弾は uid が変わるので、別の弾として扱われる
         if (b.radius <= 0 || this.grazeMap.get(b) === b.uid) continue;
         let grazed;
@@ -237,22 +229,11 @@ hitTest(invincible = false, grid) {
             this.grazeMap.set(b, b.uid);
             this.graze += 1;
             playGrazeSound();
-
-            // 💡 停止中はグレイズした弾を消す
-            if (this.frozen) {
-                if (cfg) {
-                    b.releaseToPool();
-                } else {
-                    const i = bullets.indexOf(b);
-                    if (i >= 0) bullets.splice(i, 1);
-                }
-            }
         }
     }
 
     // --- 被弾判定 ---
-    // 💡 停止中は当たり判定なし
-    if (this.invincible > 0 || this.frozen) return false;
+    if (this.invincible > 0) return false;
     const OnHit = cell.some(bullet => {
    if (bullet.radius <= 0) return false; // ← 追加：判定無効化
         if (bullet.type === "laser"||bullet.type==="laser2") {

@@ -4,7 +4,7 @@ import { cfg, superOptimal } from "./logs/cfg.js"
 const asset = "./assets/";
 const imgList = new Map();
 export const spaceb = [];
-
+let uidCounter = 0;
 // ============================================================
 // 定数
 // ============================================================
@@ -251,7 +251,7 @@ export class Bullet {
         x = 0, y = 0, angle = 0, speed = 3, color = "white",
         w = 10, h = 10, type = "Circle", deleteFrame = Infinity,
         rotate = [], setlist = [], fnlist = [], custom = [], seta = [],
-        rd = 1, active = false, noAuto = false, size, vsize, vangle = 0
+        rd = 1, active = false, noAuto = false, size, vsize, vangle = 0,
     }) {
         this.x = x; this.y = y; this.angle = angle; this.speed = speed;
         this.w = size ? size : w;
@@ -264,6 +264,7 @@ export class Bullet {
         this.color = ANIM_TYPES[type]?.color ?? color; // fire/curseは色固定
         this.imgKey = `${type}-${this.color}`;
         this.timer = 0;
+this.uid = ++uidCounter; // スポーンごとに新しいID（プール再利用対策）
         this.opTimer = 0;
         this.deleteFrame = deleteFrame;
         this.custom = custom;
