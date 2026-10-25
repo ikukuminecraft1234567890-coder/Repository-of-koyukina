@@ -7,7 +7,7 @@ import {bullet,Bullet,CC} from "./bc.js"
 
 import {
 dtr,intern,nextTaskId,wait,random,fr,ondebug,sp,sd,fs,itraw,it,gi,normal,circle,reverse,pf,square,triangle,spiral,gspiral
-,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn,way,select,corner,smoothFn,Seed,SeedKey,formula,time,setup,look,pc,wayEx,wr,snake,end,endd} from "./bullet.js"
+,keep,ccolor,ns,seed,arc,smooth,smoothSet,getArea,pfneo,VSpawn,way,select,corner,smoothFn,Seed,SeedKey,formula,time,setup,look,pc,wayEx,wr,snake,end,endd,star,flower} from "./bullet.js"
 const mx = 384*2
 const my = 448*2
 // 英語表記
@@ -48,7 +48,8 @@ Object.defineProperties(globalThis, {
 });
 
 //バラマキ高速
-export const functions = []
+import { functions } from "./functions.js"
+export { functions }
 
 const spell1 = {
 name: "｢イビルアイ∑｣",
@@ -3730,3 +3731,1056 @@ img: "./cloud.png",
 }
 functions.push(spell50)
 //6個の全方位ナイフだんげん！！
+//X字のグミ弾 > 角度変更からの反射無限
+const spell51 = {
+  name: "斬撃｢Xスラッシュ｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "気に入ってる！レーザーの置き方がいいよね。",
+  nm: "割と判断力が必要？",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 34,
+run() {
+const seeds = this.seeds
+if (time(600)) {
+
+way((ev) => {
+wait(() => {
+bullet({
+    angle:dtr(90),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"gummy",
+color:"red",
+speed:0,
+rd:0.65,
+custom:{t:0,b:false},
+fnlist:[{f:120,loop:true,fn:function() {
+if(this.timer===121)smooth(this,2.5,240,"speed")
+if (this.custom.b) {this.custom.t++}else{this.custom.t=0}
+const a = reverse(this)
+if (a) {
+smooth(this,dtr(seeds[431].random(-45,45)),30,"angle")
+if(!this.custom.b) {
+this.custom.b = true;
+smooth(this,-2.5,240,"speed")
+}
+}
+if (!a&&this.custom.b&&this.custom.t > 240) {
+bullet({
+    angle:this.angle,
+x:this.x,
+y:this.y,
+size:32,
+type:"laser",
+color:"red",
+speed:90,
+rd:0.65,
+deleteFrame:120
+})
+bullet({
+    angle:this.angle,
+x:this.x,
+y:this.y,
+size:32,
+type:"eye",
+color:"yellow",
+speed:1,
+rd:0.65,
+})
+    this.custom.b = false
+smooth(this,2.5,240,"speed")
+}
+}}]
+})
+},ev.i*0.75)
+},{x:Half.x-40,y:Half.y-40,count:18,sx:5,sy:5})
+
+way((ev) => {
+wait(() => {
+bullet({
+    angle:dtr(90),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"gummy",
+color:"red",
+speed:0,
+rd:0.65,
+custom:{t:0,b:false},
+fnlist:[{f:120,loop:true,fn:function() {
+if(this.timer===121)smooth(this,2.5,240,"speed")
+if (this.custom.b) {this.custom.t++}else{this.custom.t=0}
+const a = reverse(this)
+if (a) {
+smooth(this,dtr(seeds[431].random(-45,45)),30,"angle")
+if(!this.custom.b) {
+this.custom.b = true;
+smooth(this,-2.5,240,"speed")
+}
+}
+if (!a&&this.custom.b&&this.custom.t > 240) {
+bullet({
+    angle:this.angle,
+x:this.x,
+y:this.y,
+size:32,
+type:"laser",
+color:"red",
+speed:90,
+rd:0.65,
+deleteFrame:120
+})
+bullet({
+    angle:this.angle,
+x:this.x,
+y:this.y,
+size:32,
+type:"eye",
+color:"yellow",
+speed:1,
+rd:0.65,
+})
+    this.custom.b = false
+smooth(this,2.5,240,"speed")
+}
+}}]
+})
+},ev.i*0.75)
+},{x:Half.x+40,y:Half.y-40,count:18,sx:-5,sy:5})
+
+}},
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell51)
+//四つのSimple(Size=16)、X,yはランダムだけど範囲指定である程度下側に来にくく。んでまいふれーむさいずふやして128になったら60フレーム経過後Arc(Length:128)にしていい感じに。あーくのたまは初速は早いけどスムーズで減らす
+const spell52 = {
+  name: "爆符｢風船ボム｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "爆発するタイプの風船。害悪なことこの上ない。風船の位置ちゃんと見ないと高速が割と下まで来ることあるので怖いw",
+  nm: "個人的には完成度かなり高いよ",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 34,
+run() {
+const seeds = this.seeds
+if (time(300)) {
+for (let i = 0;i < 10 ;i++) {
+wait(() => {
+const x = random(40,canvas.w-40)
+const y = random(40,canvas.h - 200)
+bullet({
+    angle:dtr(90),
+x:x,
+y:y,
+size:16,
+type:"simple",
+color:"red",
+speed:0,
+rd:0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer < 120) {
+    this.w += (128-16)/120
+    this.h += (128-16)/120
+}
+if (this.timer === 180) {
+    this.deleteFrame=0
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"light",
+color:"red",
+speed:4.5,
+rd:0.65,
+fnlist:[{f:0,loop:false,fn:function() {
+if(this.timer===0)smooth(this,-4,90,"speed")
+}}]
+})
+},{x:this.x,y:this.y,count:36,length:this.zie})
+}
+}}]
+})
+},i*6)
+}
+    }
+},
+//y:448*2,
+//x:384*2,
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell52)
+const spell53 = {
+  name: "炸裂｢風船爆弾｣",
+  dif: "l",
+  desc: "",
+  hint: "",
+  ct: "画面サイズ広いしじゃあ風船増やしてもいいよね？wの弾幕。普通にかなりムズい。主に目が疲れる。",
+  nm: "高難易度気合い。昔っぽい難易度感",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 34,
+run() {
+const seeds = this.seeds
+if (time(300)) {
+for (let i = 0;i < 25 ;i++) {
+wait(() => {
+const x = random(40,canvas.w-40)
+const y = random(40,canvas.h - 200)
+bullet({
+    angle:dtr(90),
+x:x,
+y:y,
+size:16,
+type:"simple",
+color:"red",
+speed:0,
+rd:0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.timer < 120) {
+    this.w += (128-16)/120
+    this.h += (128-16)/120
+}
+if (this.timer === 180) {
+    this.deleteFrame=0
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"light",
+color:"red",
+speed:4.5,
+rd:0.65,
+fnlist:[{f:0,loop:false,fn:function() {
+if(this.timer===0)smooth(this,-4,90,"speed")
+}}]
+})
+},{x:this.x,y:this.y,count:36,length:this.zie})
+}
+}}]
+})
+},i*6)
+}
+    }
+},
+y:448*2,
+x:384*2,
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell53)
+const spell54 = {
+  name: "日符｢太陽フレア｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "消えると全方位を置くレーザーを出す太陽！！めちゃくちゃ演出は良くない？！個人的にはかなり高評価",
+  nm: "個人的にめちゃくちゃ高評価。難易度もちょうどいいかな。ハズレ配置来たら詰むけどねw",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 34,
+run() {
+const seeds = this.seeds
+if (time()) {
+bullet({
+    angle:dtr(90),
+x:Half.x,
+y:Half.y - 100,
+size:256,
+type:"light",
+color:"orange",
+speed:0,
+rd:1.025,
+def:true,
+glow:3,
+fnlist:[{f:0,loop:true,fn:function() {
+ if (time(300))for (let i = 0;i < 18 ;i++) wait(() => {
+bullet({
+    angle:dtr(random(-180,180)),
+x:Half.x,
+y:Half.y - 100,
+size:32,
+type:"laser",
+color:"yellow",
+speed:180,
+fnlist:[{f:0,fn:function(){this.timer+=i*6}},{f:180+120,fn:function() {
+this.deleteFrame=180+120+30
+  bullet({
+    angle:this.angle,
+x:this.x,
+y:this.y,
+size:8,
+type:"eye",
+color:"yellow",
+speed:18, 
+fnlist:[{
+f:0,loop:true,fn:function() {
+const a = reverse(this)
+if(a) {
+    this.deleteFrame=0
+arc((ev) => {
+bullet({
+    angle:dtr(ev.deg),
+x:ev.x,
+y:ev.y,
+size:16,
+type:"light",
+color:"orange",
+speed:0.25,
+glow:0.65,
+rd:0.65,
+})
+},{x:this.x,y:this.y,count:36,length:6})
+}
+}
+}]
+
+      })
+  }}]
+
+})
+      
+  },i*6)
+}
+}]
+    
+})}},
+//y:448*2,
+//x:384*2,
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell54)
+//太陽フレア:レーザー発射、消えると同時にちょうこうそくだんはっしゃして反射と同時に全方位光弾
+
+
+const spell56 = {
+  name: "三角｢御札陣｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "テスト中にノーミスクリアできたwwwうわぶれもあるけどね。御札が左から迫ってくる+三角形を抜ける弾幕。結構運要素はあるけれどそれでも普通にムズい",
+  nm: "まあまあまあまあまあって感じの難易度？自分でもよく分からない。御札弾使うの結構難しいんだよね",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 36,
+run() {
+if(time())this.prop.a=18;
+const seeds = this.seeds
+if(time(3))bullet({
+    angle:dtr(random(-90,90)),
+x:2,
+y:random(0,canvas.h),
+size:24,
+type:"amulet",
+color:"gray",
+speed:2,
+fnlist:[{
+    f:0,loop:true,fn:function() {
+        const a = (canvas.w-this.x)<10
+if(a&&Math.random()<0.0000) {
+        bullet({
+    angle:pf(this.x,this.y)+dtr(180),
+x:this.x,
+y:this.y,
+size:32,
+type:"arrow",
+color:"red",
+speed:0,
+rd:0.65,
+fnlist:[{f:0,loop:true,fn:function() {
+    if (this.timer <30) this.angle += dtr(6)
+if (this.timer===31)this.speed = 1.5
+}}],
+deleteFrame:360
+})
+this.deleteFrame=0
+}
+    }
+}]
+})
+if (time(180)) {
+this.prop.a += 72;
+this.prop.s++
+const g = this.prop.a
+const c = rainbow[normal(this.prop.s,0,rainbow.length)]
+circle((k) => {triangle((ev) => {
+bullet({
+    angle:dtr(k.deg+g),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"light",
+color:c,
+speed:0,
+glow:0.9,
+gglow:0.15,
+rd:0.65,
+noAuto:true,
+fnlist:[{f:0,loop:false,fn:function(){keep(this)}}],
+setlist:[{f:60,e:1.5}]
+})
+},{x:Half.x,y:Half.y,count:1,dist:1000,startDeg:90+180})
+    
+},{count:40})
+    
+}},
+//y:448*2,
+//x:384*2,
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell56)
+const spell57 = {
+  name: "集合｢弾幕吸引器｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "配置は固定なんだけど結構ムズい。一回目が苦手",
+  nm: "なかなかやるね。",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 41,
+run() {
+if(time())this.prop.a=18;
+const seeds = this.seeds
+if (time(480+120)&&pfr<1830) {
+for (let i = 0;i<450;i++) {
+const x = seeds[831+73].random(0,canvas.w)
+const y = seeds[93].random(0,canvas.h)
+const angle = pf(x,y,0,null,Half.x,40)+dtr(180)
+bullet({
+    angle:angle,
+x:Half.x,
+y:40,
+size:64,
+type:"light",
+color:"yellow",
+speed:7,
+glow:0.85,
+rd:0.0,
+custom:{x,y,b:false},
+fnlist: [{
+  f: 0,
+  loop: true,
+  fn: function() {
+if (this.timer < 180) {
+const dx = this.custom.x - this.x
+    const dy = this.custom.y - this.y
+    const distance = Math.hypot(dx, dy)
+
+    if (distance < 2) {
+      this.speed = 0
+      return
+    }
+
+    this.angle = Math.atan2(dy, dx)
+    this.speed = Math.min(distance * 0.06, 7)
+}
+if(this.timer===0) {
+    smooth(this, -48, 60, "h")
+    smooth(this, -48, 60, "w")
+}
+if (this.timer>90){this.rd=0.65}
+if(this.timer===180) {
+    this.angle+=dtr(180)
+smooth(this,3.5,120,"speed")
+}
+if(this.timer>180&&!this.custom.b) {
+    const a = reverse(this)
+if (a) {
+this.gglow=0.1
+this.custom.b =true
+smooth(this,-1,60,"speed")
+}
+}
+  }
+}]
+})
+}}
+if (pfr === 1830) {
+for (let i = 0;i<300;i++) {
+const x = seeds[1].random(0,canvas.w)
+const y = seeds[72].random(0,canvas.h)
+const angle = pf(x,y,0,null,Half.x,40)+dtr(180)
+bullet({
+    angle:angle,
+x:Half.x,
+y:40,
+size:64,
+type:"light",
+color:"yellow",
+speed:7,
+glow:0.85,
+rd:0.0,
+custom:{x,y,b:false},
+fnlist: [{
+  f: 0,
+  loop: true,
+  fn: function() {
+if (this.timer < 180) {
+const dx = this.custom.x - this.x
+    const dy = this.custom.y - this.y
+    const distance = Math.hypot(dx, dy)
+
+    if (distance < 2) {
+      this.speed = 0
+      return
+    }
+
+    this.angle = Math.atan2(dy, dx)
+    this.speed = Math.min(distance * 0.06, 7)
+}
+if(this.timer===0) {
+    smooth(this, -48, 60, "h")
+    smooth(this, -48, 60, "w")
+}
+if (this.timer>90){this.rd=0.65}
+if(this.timer===180) {
+    this.angle+=dtr(180)
+smooth(this,3.5,120,"speed")
+}
+if(this.timer>180&&!this.custom.b) {
+    const a = reverse(this)
+if (a) {
+this.custom.b =true
+smooth(this,-1.5,60,"speed")
+}
+}
+  }
+}]
+})
+}
+}},
+
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell57)
+//マップ全域に動かないランダムだん
+//x yを先に決めてpfでだんげんいれて+180でいい感じ、速度は高め
+//そしてそのランダム弾に当たらないように全方位避ける
+//やっぱり射出>時間経過後に反転してリス地にもどる   >新しいやつ射出のが楽しいかも
+//全方位 > 大きい弾が元々あってそいつが反射すると同時に、アングルがブレる！あと全方位も反射か低速かキープつける
+//それか元々速度遅くて反射すると同時にスムーズ速度+あんぐるらんだむぶれ
+const spell58 = {
+  name: "無限｢転星｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "美しさポイントが個人的に爆高い！65sたけど虚無時間多いのでギリ耐えてる。これが耐久スペカ",
+  nm: "個人的に気に入ってるスペカ。星の見た目と復活の動作めちゃくちゃこだわった",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 65,
+run() {
+const seeds=  this.seeds
+const d = 6
+if(time()){players[0].y=40;
+    players[0].x = 120
+}
+//660
+if (time())
+for (let i = 1;i <5;i++) star((ev) => {
+wait(() => {
+bullet({
+    angle:dtr(90),
+x:ev.x,
+y:ev.y,
+size:32,
+type:"normal",
+color:"red",
+speed:0,
+rd:0.65,
+gglow:0.05,
+glow:0.75,
+custom:{s:Math.floor(ev.i/d),b:2,m:[],i:-1,rm:null,sw:true},
+fnlist:[{f:0,loop:true,fn:function(){
+if (this.timer===0)keep(this,12)
+if (this.timer>780) {
+    this.rd=0.65
+this.scolor("red")
+this.timer=0
+this.custom.sw = !this.custom.sw
+this.custom={...this.custom,s:Math.floor(ev.i/d),b:2,m:[],i:-1,rm:null}
+}
+if (this.custom.b > 0) this.custom.m.push({x:this.x,y:this.y,a:this.angle})
+if (this.custom.b === 0&&!this.custom.rm) {
+this.scolor("white")
+this.rd=0;
+this.custom.rm = this.custom.m.reverse()
+}
+if (this.custom.rm?.length>0) {
+const data = this.custom.rm[this.custom.i]
+const is = this.custom.i >= this.custom.rm?.length
+this.custom.i += 4
+if (is) this.speed=0
+if (data) {
+this.x=data.x;
+this.angle=data.a;
+this.y=data.y
+}}
+    if (this.timer+this.custom.s === 120) this.speed=1.5;
+if (this.custom.b > 0) {
+    const a = reverse(this)
+if (a) {
+if (this.custom.sw)this.angle+=dtr(seeds[731].random(-180,180))
+if (!this.custom.sw) {
+const k = Math.random() < 0.5
+this.angle=k ? pf(this.x,this.y)+dtr(random(-15,15)) : seeds[7613].random(-180,180)
+}
+this.speed= this.custom.sw ? 2 : random(2,2.75)
+this.custom.b--
+}
+}
+}}]
+})
+},ev.i/d)
+},{x:Half.x,y:200,count:i*12,dist:i*50+30,startDeg:90+180})
+},
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell58)
+//自陣から放射状にはな
+//arcを使ってさらにarcのx,yをflowerの基準地点にするとかか？
+//フレームごとに位置記憶してアングル90に戻してスター復活(めも)
+//博麗霊夢: dtr(90)の2way御札(s:9)、45,-45aquaすけーるがじきねらいになる、s:7.5、定期的に無双封印
+const spell59 = {
+  name: "逆転｢博麗霊夢｣",
+  dif: "l",
+  desc: "",
+  hint: "",
+  ct: "高難易度の自機狙いスペカ！パターン化というか誘導しても全然ムズい様な...二回目で1m出せたけどかなり苦手;;",
+  nm: "個人的にはもうちょい簡単にしても良かったかなと思いつつもこれ以上いじると逆に変になりそう",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds=  this.seeds
+//660
+if (time(120)) entity.mov(players[0].x,players[0].y-120)
+if (time(6)) {
+for (let i = -15/2;i<30/2;i+=30/2) bullet({
+    angle:dtr(90),
+x:entity.x+i,
+y:entity.y,
+size:24,
+type:"amulet",
+color:"red",
+speed:9,
+rd:0.65,
+})
+}
+const dat = [{x:15,a:-180},{x:-15,a:0}]
+if (time(45)) for (const i of dat) bullet({
+    angle:dtr(i.a),
+x:entity.x+i.x,
+y:entity.y,
+size:48,
+type:"scale",
+color:"aqua",
+speed:7,
+rd:0.65,
+fnlist:[{f:12,fn:function() {
+this.speed=2.5
+this.angle=dtr(0)
+smooth(this,pf(this.x,this.y),1)
+}}]
+})
+
+if (time(300)) {
+arc((ev) => {
+bullet({
+    angle:pf(ev.x,ev.y),
+x:ev.x,
+y:ev.y,
+size:64,
+type:"light",
+color:rainbow[normal(ev.i,0,rainbow.length)],
+speed:0,
+rd:0.65,
+gglow:0.45,
+glow:0.9,
+fnlist:[{f:0,loop:true,fn:function() {
+    this.x+=random(-2,2)
+this.y+=random(-2,2)
+}},{f:60+(ev.i*3),fn:function() {
+    this.angle=pf(ev.x,ev.y)
+smooth(this,4.5,120,"speed")
+}}],
+noAuto:true,
+deleteFrame:600
+})
+},{x:entity.x,y:entity.y,count:36,length:100})
+}
+    if(time()) {
+bullet({
+    angle:dtr(0),
+x:0,
+y:30,
+size:32,
+type:"laser",
+color:"red",
+speed:60,
+rd:0.65,
+})
+this.prop.bool = true}
+if (this.prop.bool) {
+    if (players[0].y < 30) {
+this.prop.bool = false
+end()
+}}
+},
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell59)
+//斜めの左右に
+//halfxの-100と+100がだんげんですぱいらるスケールの赤と青
+const spell60 = {
+  name: "執念｢四面札｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "十字に出る自機狙い御札。実はこれ御札が自機狙いなんじゃなくて敵が自機狙いなだけw反射でさいどじきねらいになるのでしっかり誘導上手くしないといけない。",
+  nm: "個人差結構ありそう。俺は苦手寄りっす",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 50,
+run() {
+const seeds=  this.seeds
+//660
+entity.mov(players[0].x,entity.x)
+const cfg = {
+    multi:9,
+count:4,
+}
+const f = cfg.count * cfg.multi
+if (time(f+3)) {
+arc((ev) => {
+wait(() => {
+for(let i=0;i<360;i+=90)bullet({
+    angle:dtr(ev.deg+i),
+x:entity.x,
+y:entity.y,
+size:32,
+type:"amulet",
+color:"yellow",
+speed:1,
+rd:0.65,
+custom:{b:false,a:pf(entity.x,entity.y)},
+fnlist:[{f:0,loop:true,fn:function() {
+if (this.custom.b) return;
+const a = reverse(this)
+    if (a) {
+this.custom.b=true;
+//this.angle=this.custom.a
+this.angle=pf(this.x,this.y)
+}}}],
+})
+},ev.i*cfg.multi)},
+{x:entity.x,y:entity.y,count:cfg.count})
+}
+},
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell60)
+//じきねらいはんしゃ
+const spell61 = {
+  name: "休日｢妖怪祭り｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "らんちぇんゆかりをイメージしたんすけど、なんか違うような？？？ま、多少はね？個人的にはかなり気に入ってる。反射の仕組みが天才的！",
+  nm: "まあまあな難易度の気合い。こんくらいが一番いいのさ",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 40,
+run() {
+const seeds=  this.seeds
+//660
+//entity.mov(players[0].x,entity.x)
+const cfg = {
+    multi:9,
+count:72,
+}
+const f = cfg.count * cfg.multi
+const data = [{x:Half.x+100,c:"blue"},{x:Half.x-100,c:"red"},{x:Half.x,c:"purple"}]
+if (time(f+3)) {
+for (const dat of data) {arc((ev) => {
+wait(() => {
+for(let i=0;i<360;i+=90)bullet({
+    angle:dtr(ev.deg+i),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"scale",
+color:dat.c,
+speed:3,
+rd:0.65,
+custom:2,
+fnlist:[{f:0,loop:true,fn:function(){
+if (this.timer===6) {
+smooth(this,-2,30,"speed")
+smooth(this,dtr(seeds[7613].random(-45,45)),60)
+    }
+if (this.custom>0 && this.x - ev.y < 100) if(this.x > canvas.w-3 || this.x <= 3 || this.y<= 3) {
+const a = reverse(this)
+if (a) this.custom-=1
+}
+}}]
+})
+},ev.i*cfg.multi)},
+{x:dat.x,y:100,count:cfg.count,length:30})
+}
+}},
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell61)
+//速度7.5の72Way全方位:6fで停止、完全に円になったところでev.iから順にしっかり射出
+//上の円になったあとに平行線に射出 > おんみょうだんなのでだんげんとしてうごいてその後dtr(90)レーザーとか出していくといいかも
+const spell62 = {
+  name: "大車輪｢魂スパイラル｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "めちゃくちゃ気に入ってるスペカ！大回転からのバラマキが挙動良すぎるよね。時間発狂も入ってるし！言うほど発狂か？w挙動に頑張ってて、発動の度に8個玉増えるけどそうすると大回転にかかる時間が長くなるから正規化するのに割り算3回くらいは使ったw",
+  nm: "激気に入ってる。結構作るのに時間かかった！",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 40,
+run() {
+const seeds=  this.seeds
+//660
+//entity.mov(players[0].x,entity.x)
+if (time())this.prop.s=72
+const cfg = {
+    multi:0.5,
+}
+const count = this.prop.s
+const targetF = 45 /count
+const f = count * cfg.multi
+const data = [{x:Half.x,c:"aqua"}]
+if (time(180)) {
+this.prop.s += 8;
+arc((ev) => {
+wait(() => {
+const color = "blue"
+for(let i=0;i<360;i+=90) bullet({
+    angle:dtr(ev.deg+i),
+x:ev.x,
+y:ev.y,
+size:24,
+type:"big",
+color,
+speed:3,
+rd:0.65,
+custom:dtr(seeds[9134].random(-45,45)),
+fnlist:[{f:0,loop:true,fn:function() {
+    if (this.timer===18)this.speed=0
+if (this.timer===120) {
+this.angle+=this.custom
+smooth(this,seeds[7316].random(1.5,3),120,"speed")
+}
+    
+}}]
+})
+},ev.i*targetF)},
+{x:Half.x,y:entity.y,count,length:0})
+}},
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell62)
+//7回反射する青御札だん
+//プレイヤーとの距離に基づいて速度が上がるが、(近いほど早い)、じきねらいではない
+//2回反射する発動の度に色がレインボーで変わるくそでかだん、速度も爆早いが2つしかでない(発動する度に+1増えていく)
+//Size:64のNormalは案外いい感じ
+const spell64 = {
+  name: "感知｢センサー付き御札｣",
+  dif: "n",
+  desc: "",
+  hint: "",
+  ct: "プレイヤーとの距離に応じて加速する御札。^0.4を入れてることで距離が近すぎても爆速にならない。搦手作るのいいね",
+  nm: "下手に動くと普通に被弾しまくるww",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 30,
+run() {
+const seeds = this.seeds
+if (time(1200)) for(let i = 0;i<80;i++)bullet({
+    angle: dtr(seeds[7316].random(-180,180)),
+    x: random(0,canvas.w),
+    y: random(0,100),
+    size: 32,
+    type: "amulet",
+    color: "cyan",
+    speed: 0,
+    rd: 0.65,
+    custom: 7,
+    fnlist: [{
+        f: 0,
+        loop: true,
+        fn: function () {
+const dx = players[0].x - this.x
+    const dy = players[0].y - this.y
+    const distance = Math.hypot(dx, dy)
+this.speed =(((1 / distance)*200) ** 0.4)+0.3
+    if (this.custom > 0) {
+        const a = reverse(this)
+if (a) {
+    this.custom-=1
+}
+    }
+        }}]
+})
+},
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell64)
+//7回反射する青御札だん
+//プレイヤーとの距離に基づいて速度が上がるが、(近いほど早い)、じきねらいではない
+//2回反射する発動の度に色がレインボーで変わるくそでかだん、速度も爆早いが2つしかでない(発動する度に+1増えていく)
+//Size:64のNormalは案外いい感じ
+const spell65 = {
+  name: "永符｢弾幕部隊｣",
+  dif: "h",
+  desc: "",
+  hint: "",
+  ct: "最後のスペル。なう(2026/10/20 20:36:33) シーズン1最後のスペルwちなみにこれ作ったのは数日前なのは内緒..難易度はまあまあ高いし最後には悪くないような？時間発狂型。シーズン2に実は1人だけシーズン1から輸入されたやつがあるんすわ。スペカ2かそれです。",
+  nm: "難易度感はちょうどいいと思う。スペカ100記念からはや一ヶ月くらいでどうとうここも終わりです。シーズン2はまだまだ頑張るのでw",
+  seeds: [],
+  prop: { s: 0, a: 0, rng: { s: 999 }, bool: false, x: 0, y: 0, step: 0, shrink: 0, speed: 0 },
+  arr: [],
+  init() { setup(this) },
+  time: 49,
+run() {
+const seeds = this.seeds
+if (time(300)) {
+this.prop.s++
+for(let i = 0;i<this.prop.s;i++)bullet({
+    angle: dtr(seeds[7316].random(-180,180)),
+    x: Half.x,
+    y: 100,
+    size: 96,
+    type: "big",
+    color: rainbow[normal(this.prop.s,0,rainbow.length)],
+    speed: 7.5,
+    rd: 0.65,
+    custom: 4,
+    fnlist: [{
+        f: 0,
+        loop: true,
+        fn: function () {
+    if (this.custom > 0) {
+        const a = reverse(this)
+if (a) {
+    this.custom-=1
+}
+    }
+        }}]
+})
+}},
+
+img: "./cloud.png",
+  mask: "./water.png",
+  maskAlpha: 0.6,
+  maskSpeed: 4.15,
+  imgSpeed: 1,
+  imgAlpha: 0.95,
+}
+functions.push(spell65)

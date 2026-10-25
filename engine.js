@@ -4,8 +4,8 @@ import {
     updateFrame, frame, Half, entitys, spelln, start
     , internal, gps, updateGamepad,pbs
 } from './sys.js';
-import { functions } from "./boss.js"
-import { bullet, Bullet } from "./bc.js"
+import { functions, getSeason, sdKey } from "./functions.js"
+import { bullet, Bullet, drawLightAuras } from "./bc.js"
 import { cfg } from "./logs/cfg.js"
 let y=0;
 let my=0
@@ -124,6 +124,7 @@ function rbpush() {
     // 💡 停止状態をリセットしてから再開
     stat.freezeLeft = 0;
     stat.freezeDone = false;
+pbs.length=0
     start(stat.nowspell);
     cb.remove();
     rb.remove();
@@ -345,6 +346,8 @@ function highlightDrawLoop() {
     if (activeCanvas && ctx) {
         ctx.clearRect(0, 0, activeCanvas.w, activeCanvas.h);
         // 背景の代わりに、直近の静止フレームを保つため再描画はせず弾のみ描き直す
+        // 💡 光弾のオーラを先に一括描画（コアより奥）
+        drawLightAuras();
         for (let i = bullets.length - 1; i >= 0; i--) {
             const b = bullets[i];
             if (cfg && !b.active) continue;
@@ -577,7 +580,7 @@ if (fn.img) {
         : fn.time;
 
     // 💡 時間切れ：まず1秒停止（グレイズ回収）、停止が終わったらクリア処理へ
-    const timeUp = effectiveTime === fs(stat.pfr) && players[0].zanki > 0;
+    const timeUp = (effectiveTime === fs(stat.pfr) && players[0].zanki > 0) || entity.hp <= 0;
     if (timeUp && !stat.freezeDone && stat.freezeLeft === 0) {
         stat.freezeLeft = FREEZE_FRAMES;
     }
@@ -599,7 +602,7 @@ ntxt.textContent = " 現在の合計ミス数は、"+m+"です！"
 
         txt.textContent = text
         if (!stat.isChallenge) {
-        const allData = JSON.parse(localStorage.getItem("sd")) || {};
+        const allData = JSON.parse(localStorage.getItem(sdKey())) || {};
         console.log("ミス数", missAmount)
         const bool = missAmount === 0
         console.log(bool)
@@ -614,7 +617,7 @@ ntxt.textContent = " 現在の合計ミス数は、"+m+"です！"
         allData[spelln] = updatedSpellData;
 
         // 5. 最後に全体をシリアライズしてローカルストレージに保存
-        localStorage.setItem("sd", JSON.stringify(allData));
+        localStorage.setItem(sdKey(), JSON.stringify(allData));
         }
 
         cancelAnimationFrame(stat.gameId);
@@ -644,23 +647,14 @@ pause=false
         if (stat.isChallenge) document.body.appendChild(cb)
         }
       if(!pause)  p.update();
-      //  if (frame % 5 === 0) p.OnShot(false); // 通常
+        // シーズン2のみショットを撃てる(通常弾+ホーミング)
+        if (getSeason() === 2 && !pause && !frozen && !p.death && stat.pfr % 5 === 0) p.OnShot(false);
      //   if (frame % 15 === 0) p.OnShot(true);  // ホーミング
         p.draw(ctx, ondebug);
     });
 
     // 敵・ボス処理
-    for (let i = entitys.length - 1; i >= 0; i--) {
-        const e = entitys[i];
-      if (!pause && !frozen)  e.update();
-
-        e.draw(ctx, true);
-e.hitTests()
-if (e.hp <= 0) {
-                entitys.splice(i, 1);
-                continue;
-}
-    }
+  
 
 
     const grid = [
@@ -670,6 +664,18 @@ if (e.hp <= 0) {
 
     // 💡 cfg で弾の更新・削除方式を切り替える
 if (stat.pfr % 60 === 0) console.log(bullets.length)
+
+    // 💡 光弾(type:"light")のオーラを先に一括描画（加算合成）。
+    //    すべての弾(白コア含む)より奥に敷くため、弾の描画ループの直前に1回だけ呼ぶ。
+    drawLightAuras();
+        for (let i = pbs.length - 1; i >= 0; i--) {
+            const b = pbs[i];
+            b.update();
+            b.drawI(ctx);
+            if (b.shouldRemove()) {
+                pbs.splice(i, 1);
+                continue;
+            }}
     if (cfg) {
         // --- オブジェクトプール方式 ---
         // active な弾のみ更新・描画。削除対象なら releaseToPool() で明示的に swap-pop → spaceb へ返却。
@@ -702,6 +708,17 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
             registerBulletToGrid(b, grid);
         }
     }
+ for (let i = entitys.length - 1; i >= 0; i--) {
+        const e = entitys[i];
+      if (!pause && !frozen)  e.update();
+
+        e.draw(ctx, true);
+e.hitTests()
+if (e.hp <= 0) {
+                entitys.splice(i, 1);
+                continue;
+}
+    }
     if (players[0]) {
         // player.hitTest の中身で `grid` を使って some() を回す
         // 💡 停止中(frozen)は player 側で全弾を走査してグレイズ回収し、被弾判定は無効になる
@@ -718,14 +735,15 @@ if (stat.pfr % 60 === 0) console.log(bullets.length)
             }
         }
     }
-        for (let i = pbs.length - 1; i >= 0; i--) {
-            const b = pbs[i];
-            b.update();
-            b.drawI(ctx);
-            if (b.shouldRemove()) {
-                pbs.splice(i, 1);
-                continue;
-            }}
+
+    // シーズン2のみ：画面最上部にボス体力ゲージ(白)。幅 = canvas.w × 体力割合
+    if (getSeason() === 2 && stat.entity && Number.isFinite(stat.entity.maxhp)) {
+        const ratio = Math.max(0, stat.entity.hp) / stat.entity.maxhp;
+        ctx.save();
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.w * ratio, 4);
+        ctx.restore();
+    }
     drawFps(ctx)
     const displayTime = (stat.isChallenge && stat.timeOverride !== null && stat.timeOverride !== undefined)
         ? stat.timeOverride

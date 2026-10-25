@@ -6,6 +6,7 @@ import {
 export const ondebug = true;
 import { bullet, Bullet } from "./bc.js"
 import { stat, gameLoop } from "./engine.js"
+import { functions, getSeason, getChara } from "./functions.js"
 
 /**
  * 指定したフレーム数またはミリ秒が経過した後に、一度だけ関数を実行する
@@ -105,9 +106,11 @@ export function gi(playerSize = 1, bulletTypes = [], it = 120, zankia) {
 const zanki = stat.isChallenge ? stat.nowzanki : zankia
     // 2. プレイヤーの生成（位置やサイズ、色などは固定、判定サイズだけ可変）
     // ※内部で globalThis に自動登録されるか、players配列にプッシュされる想定
-    const playerObj = new Player(canvas.w / 2, canvas.h - 50, 15, "magenta", playerSize, it, zanki);
+    const playerObj = new Player(canvas.w / 2, canvas.h - 50, 15, "magenta", playerSize, it, zanki, getChara());
     // 3. ボスエンティティの生成
-    entity = new Entity("ボス", Half.x, Half.y - 80, 20, "purple", 6, true,20,Infinity);
+    // シーズン2のみボスに体力がある(スペルの hp プロパティ、未指定なら1500)。シーズン1は無敵(Infinity)
+    const bossHp = getSeason() === 2 ? (functions[spelln]?.hp ?? 1500) : Infinity;
+    entity = new Entity("ボス", Half.x, Half.y - 80, 20, "purple", 6, true,20,bossHp);
 
     // 4. 弾種・カラーパレットの事前登録（引数があれば一括処理）
     for (const config of bulletTypes) {
@@ -206,52 +209,102 @@ export function pf(x, y, Offset = 0, entity, yy, xx) {
     let targetY = (yy !== undefined) ? yy : (entity ? entity.y : (players[0]?.y || 0));
     return Math.atan2(targetY - y, targetX - x) + Offset;
 }
-/**
- * 正多角形の頂点上に配置してコールバックを実行する（三角形・四角形共通汎用版）
- * @param {Function} fn - 各頂点で呼ばれるコールバック
- * @param {Object} opts
- * @param {number} [opts.sides=4] - 辺の数（3なら三角形、4なら四角形）
- * @param {number} [opts.count=1] - 1辺あたりに配置する弾の数（頂点のみなら1）
- * @param {number} [opts.startDeg=0] - 図形全体の回転オフセット（度）
- * @param {number} [opts.dist=100] - 中心から頂点までの距離
- * @param {*} [opts.custom=null] - コールバックに渡す任意データ
- */
-export function polygon(fn, { sides = 4, count = 1, startDeg = 0, dist = 100, x: cx = 0, y: cy = 0, custom = null } = {}, rl = []) {
+export function polygon(fn, { sides = 4, count = 1, startDeg = 0, dist = 0, length = 0, x: cx = 0, y: cy = 0, custom = null } = {}, rl = []) {
+    // dist と length のどちらで指定してもOK(旧コード互換)。両方未指定なら従来どおり100
+    const size = (dist + length) || 100;
     const total = sides * count;
     for (let i = 0; i < total; i++) {
-        // 頂点そのものの角度（正多角形を等分割した基準角）
         const vertexStep = 360 / sides;
         const vertexIndex = Math.floor(i / count);
-        const t = (i % count) / count; // 0〜1、辺上の補間位置
+        const t = (i % count) / count;
 
         const vDegA = vertexIndex * vertexStep;
         const vDegB = ((vertexIndex + 1) % sides) * vertexStep;
 
-        // 頂点Aと頂点Bの座標（中心からdist距離の円周上）
         const radA = dtr(vDegA + startDeg);
         const radB = dtr(vDegB + startDeg);
-        const ax = Math.cos(radA) * dist;
-        const ay = Math.sin(radA) * dist;
-        const bx = Math.cos(radB) * dist;
-        const by = Math.sin(radB) * dist;
+        const ax = Math.cos(radA) * size;
+        const ay = Math.sin(radA) * size;
+        const bx = Math.cos(radB) * size;
+        const by = Math.sin(radB) * size;
 
-        // 辺上を線形補間（count=1のときは頂点そのもの）
         const dx = ax + (bx - ax) * t;
         const dy = ay + (by - ay) * t;
-
-        // 中心から見た角度（自機狙いや放射状の初期angleとして便利）
         let deg = normal((Math.atan2(dy, dx) * 180 / Math.PI), -180, 180);
 
-        const ev = {
-            sides, count, startDeg, i,
-            vertexIndex, t,
-            x: cx + dx, y: cy + dy,
-            dx, dy, deg,
-            custom, rl
-        };
+        const ev = { sides, count, startDeg, i, vertexIndex, t, x: cx + dx, y: cy + dy, dx, dy, deg, custom, rl };
         rl.push(ev);
         fn(ev);
     }
+}
+
+/**
+ * 星型(デフォルト五芒星)。一筆書きの書き順で fn を呼ぶ。
+ * 頂点を skip 個飛ばしで結ぶ(五芒星は points=5, skip=2)。
+ * 書き順: 真上 → 右下 → 左上 → 右上 → 左下 → 真上
+ * @param {number} [opts.points=5] - 頂点数
+ * @param {number} [opts.skip=2] - 何個飛ばしで結ぶか(7,3 なら七芒星など)
+ * @param {number} [opts.count=1] - 1辺あたりの弾数(1なら頂点だけ)
+ * @param {number} [opts.length=100] - 中心から頂点までの距離(distでも可)
+ * @param {number} [opts.startDeg=-90] - 最初の頂点の角度(-90で真上)
+ * ev.strokeDeg = 線を引く進行方向(度)
+ */
+export function star(fn, { points = 5, skip = 2, count = 1, startDeg = -90, dist = 0, length = 0, x: cx = 0, y: cy = 0, custom = null } = {}, rl = []) {
+    const size = (dist + length) || 100;
+    const vertex = (k) => {
+        const deg = startDeg + ((k * skip) % points) * (360 / points);
+        const rad = dtr(deg);
+        return { x: Math.cos(rad) * size, y: Math.sin(rad) * size };
+    };
+
+    let i = 0;
+    for (let e = 0; e < points; e++) {
+        const a = vertex(e);
+        const b = vertex(e + 1);
+        const strokeDeg = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+        for (let j = 0; j < count; j++) {
+            const t = j / count;
+            const dx = a.x + (b.x - a.x) * t;
+            const dy = a.y + (b.y - a.y) * t;
+            const ev = {
+                points, skip, count, startDeg, i,
+                edge: e, t,
+                x: cx + dx, y: cy + dy, dx, dy,
+                deg: normal(Math.atan2(dy, dx) * 180 / Math.PI, -180, 180),
+                strokeDeg,
+                custom, rl
+            };
+            rl.push(ev);
+            fn(ev);
+            i++;
+        }
+    }
+    return rl;
+}
+
+/**
+ * 花型。花びら数 petals、r = length * (inner + (1-inner)*|cos(petals*θ/2)|)
+ * @param {number} [opts.petals=5] - 花びらの数
+ * @param {number} [opts.count=60] - 生成する点の数
+ * @param {number} [opts.inner=0.3] - くびれの深さ(0で花びらの間が中心まで、1で円)
+ * @param {number} [opts.length=100] - 花びらの先端までの距離(distでも可)
+ * @param {number} [opts.startDeg=0] - 回転オフセット(度)
+ */
+export function flower(fn, { petals = 5, count = 60, inner = 0.3, startDeg = 0, dist = 0, length = 0, x: cx = 0, y: cy = 0, custom = null } = {}, rl = []) {
+    const size = (dist + length) || 100;
+    for (let i = 0; i < count; i++) {
+        const theta = (i / count) * 360;
+        const thetaRad = dtr(theta);
+        const r = size * (inner + (1 - inner) * Math.abs(Math.cos(petals * thetaRad / 2)));
+        const deg = normal(theta + startDeg, -180, 180);
+        const rad = dtr(deg);
+        const dx = Math.cos(rad) * r;
+        const dy = Math.sin(rad) * r;
+        const ev = { petals, count, inner, startDeg, i, x: cx + dx, y: cy + dy, dx, dy, deg, rad, r, custom, rl };
+        rl.push(ev);
+        fn(ev);
+    }
+    return rl;
 }
 
 /**
@@ -1012,7 +1065,7 @@ a.cs = {a:0,b:0,c:0,d:0,e:0,f:0}
   a.prop.c = 0;
   a.prop.a2 = 0;
   const count = 100;
-  const arr = Array(1000).fill(0).map((e, i) => e = i * 15);
+  const arr = Array(10000).fill(0).map((e, i) => e = i * 15);
   const alphabet = [..."abcdefghijklmnopqrstuvwxyz"];
   const s = { spread: arr, name: alphabet.splice(0, arr.length) };
   a.seeds = Seed.multi(
@@ -1078,3 +1131,42 @@ fnlist:[{f:0,loop:true,fn:function(){reverse(this)}}]
 },{count:36})
     },yc)
 }}
+
+export function spawn({
+    x = 0,
+    y = 0,
+    hp = 100,
+    speed = 1,
+    size = 16,          // デカさ(見た目の半径)
+    hitbox = size * 0.8, // 当たり判定半径(省略時は size の8割)
+    color = "red",
+    name = "enemy",
+} = {}) {
+    return new Entity(name, x, y, size, color, speed, true, hitbox, hp);
+}
+export function clamp(...args) {
+    // 1つ目: オブジェクトなら座標、そうでなければ x, y の2引数
+    let pos, i;
+    if (typeof args[0] === "object" && args[0] !== null) {
+        pos = args[0];
+        i = 1;
+    } else {
+        pos = { x: args[0], y: args[1] };
+        i = 2;
+    }
+
+    // 次: オブジェクトなら範囲、そうでなければ x, y(yが省略ならxと同じ値)
+    let rx = 0, ry = 0;
+    if (typeof args[i] === "object" && args[i] !== null) {
+        rx = args[i].x ?? 0;
+        ry = args[i].y ?? 0;
+    } else {
+        rx = args[i] ?? 0;
+        ry = args[i + 1] ?? rx;
+    }
+
+    return {
+        x: Math.min(Math.max(pos.x, 0 + rx), canvas.w + rx),
+        y: Math.min(Math.max(pos.y, 0 + ry), canvas.h + ry),
+    };
+}

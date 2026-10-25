@@ -46,13 +46,18 @@ export let canvas = null
 export let ctx = null
 export let isTouching = false;
 export const entitys = []
-export let player = { x: 0, y: 0 }
+// players[0] への定数プロキシ。player.x / player.y = ... のように常に現在の自機を参照・変更できる
+export const player = new Proxy({}, {
+    get: (_, k) => players[0]?.[k],
+    set: (_, k, v) => { if (players[0]) players[0][k] = v; return true; },
+});
+globalThis.player = player; // boss2.js など import なしのスペル内からも使えるように
 export let bullets = []
 export const pbs = []
 export function pbpush(b) {pbs.push(b)}
 let lastTouchX = 0
 let lastTouchY = 0
-import { functions } from "./boss.js"
+import { functions, sdKey } from "./functions.js"
 import { nsnew, rpfr, setent, stat } from "./engine.js"
 
 export function start(index, bool,max,nowz) {
@@ -65,11 +70,11 @@ if (globalThis._waitTasks) globalThis._waitTasks.clear();
     nsnew(index);
     const fn = functions[index];
 
-    const allData = JSON.parse(localStorage.getItem("sd")) || {};
+    const allData = JSON.parse(localStorage.getItem(sdKey())) || {};
     if (!stat.isChallenge) {
     const now = allData[spelln] ?? { gets: 0, amount: 0 };
     allData[spelln] = { ...now, amount: now.amount + 1 };
-    localStorage.setItem("sd", JSON.stringify(allData));
+    localStorage.setItem(sdKey(), JSON.stringify(allData));
     }
 
     const oldCanvas = document.getElementById("gameCanvas");

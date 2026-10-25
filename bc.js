@@ -83,8 +83,20 @@ function loadAnimFrames(type) {
     }
 }
 
+/** light の as 用コア画像: assets/色名_light.png をロード(キャッシュキーは lightas-色名) */
+function loadLightAs(color) {
+    const key = `lightas-${color}`;
+    if (imgList.has(key)) return key;
+    imgList.set(key, "loading");
+    const img = new Image();
+    img.onload = () => imgList.set(key, toCanvas(img));
+    img.src = `${asset}pallets/${color}_light.png`;
+    return key;
+}
+
 /** 弾typeに必要な画像を全部ロード開始(constructor / setter / scolor / CC 共通) */
 function preload(type, color) {
+    if (type === "light") return; // light は画像不要(canvas APIのみ)。as:true の画像は loadLightAs で別途ロード
     if (ANIM_TYPES[type]) return loadAnimFrames(type);
     loadImg(type, color);
     if (isLaserType(type)) loadImg("normal", color); // 発射地点の飾り用
@@ -233,6 +245,11 @@ export class Bullet {
         this.type = "normal";
         this.vsize = null;
         this.vangle = 0;
+        this.glow = this.sglow = this.oglow = this.vglow = this.dglow = 1;
+        this.def = null;
+        this.gglow = 1;
+        this.cc = "white";
+        this.as = false;
         this.deleteFrame = Infinity;
         this.custom = [];
         this.rotate = [];
@@ -252,7 +269,21 @@ export class Bullet {
         w = 10, h = 10, type = "Circle", deleteFrame = Infinity,
         rotate = [], setlist = [], fnlist = [], custom = [], seta = [],
         rd = 1, active = false, noAuto = false, size, vsize, vangle = 0,
+        glow = 1, sglow = 1, oglow = 1, vglow = 1, dglow = 1, // light用: 初期設定に対する倍率
+        def = null, // 追加プロパティ(中身の処理は利用側で実装)
+        gglow = 1,  // 加算合成('lighter')時の光の強さ倍率
+        cc = "white", // light用: コアの色(パレット名 or "#rrggbb" / CSSの色文字列)
+        as = false,   // light用: true なら assets/色名_light.png をコア画像にする
     }) {
+        this.def = def;
+        this.gglow = gglow;
+        this.cc = cc;
+        this.as = as;
+        this.glow = glow;    // 光り方の強さ(オーラの大きさ・濃さ)の倍率
+        this.sglow = sglow;  // 半径の揺らぎ幅の倍率
+        this.oglow = oglow;  // 透明度の揺らぎ幅の倍率
+        this.vglow = vglow;  // 揺らぎの速度の倍率
+        this.dglow = dglow;  // 加算合成が効く距離(オーラの届く範囲)の倍率
         this.x = x; this.y = y; this.angle = angle; this.speed = speed;
         this.w = size ? size : w;
         this.h = isLaserType(type) ? 999 : (size ? size : h);
@@ -264,7 +295,7 @@ export class Bullet {
         this.color = ANIM_TYPES[type]?.color ?? color; // fire/curseは色固定
         this.imgKey = `${type}-${this.color}`;
         this.timer = 0;
-this.uid = ++uidCounter; // スポーンごとに新しいID（プール再利用対策）
+        this.uid = ++uidCounter; // スポーンごとに新しいID（プール再利用対策）
         this.opTimer = 0;
         this.deleteFrame = deleteFrame;
         this.custom = custom;
@@ -277,6 +308,7 @@ this.uid = ++uidCounter; // スポーンごとに新しいID（プール再利�
         this.activeLoop = null;
 
         preload(type, this.color);
+        if (type === "light" && as) loadLightAs(this.color);
 
         this.map.clear();
         for (const e of fnlist) {
@@ -295,6 +327,7 @@ this.uid = ++uidCounter; // スポーンごとに新しいID（プール再利�
         this.imgKey = `${this.type}-${c}`;
         this.cachedImg = null;
         preload(this.type, c);
+        if (this.type === "light" && this.as) loadLightAs(c);
     }
 
     /** OP(スポーン強調)演出をもう一度発動。timerには触らない */
@@ -411,6 +444,13 @@ this.uid = ++uidCounter; // スポーンごとに新しいID（プール再利�
         let key = this.imgKey;
         const opt = { vangle: this.vangle };
 
+        // 光弾: オーラは drawLightAuras() で先に描画済み。ここではコアだけ描く
+        if (this.type === "light") {
+            drawLightCore(this, w, alpha);
+            if (debug) drawDebugCircle(this);
+            return;
+        }
+
         if (this.type === "pre") {
             const pulse = Math.sin(((this.timer % 30) / 30) * Math.PI);
             alpha *= 0.4 + pulse * 0.6;
@@ -473,6 +513,158 @@ function drawPreStar(b, baseW, pulse, opAlpha) {
     ctx.lineTo(-s, 0);
     ctx.lineTo(-s * 0.25, -s * 0.25);
     ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+}
+
+// ============================================================
+// ▼▼▼ Light(光弾)関連: オーラ(加算合成) + コア ▼▼▼
+//   type: "light" で使う。画像は不要(canvas APIのみ)
+//   as: true の場合のみ、コアに assets/色名_light.png を使う
+//   2パス描画: ① drawLightAuras() で全オーラを先に一括描画
+//              ② Bullet.draw() → drawLightCore() でコアを上から描画
+// ============================================================
+const LIGHT_AURA_SCALE = 3.2;   // オーラ直径 = コア直径 × これ
+const LIGHT_SPRITE_SIZE = 128;  // オーラ原画のサイズ(px)
+
+// --- 初期設定(各弾の glow / sglow / oglow / vglow は、これらに掛ける倍率) ---
+const LIGHT_MAX_PASSES   = 4;     // gglow で重ね描きする最大回数(負荷対策)
+const LIGHT_BASE_ALPHA   = 1.0;   // オーラ全体の濃さ(glow倍で強くなる。最大1にクランプ)
+const LIGHT_WOBBLE_R     = 0.1;   // 半径の揺らぎ幅 (±10%)            ← sglow倍
+const LIGHT_WOBBLE_A     = 0.2;   // 透明度の揺らぎ幅 (±0.2)          ← oglow倍
+const LIGHT_WOBBLE_SPD_R = 0.003; // 半径の揺らぎ速度(rad/ms)         ← vglow倍
+const LIGHT_WOBBLE_SPD_A = 0.002; // 透明度の揺らぎ速度(rad/ms)       ← vglow倍
+
+const LIGHT_RGB = {
+    crim: [220, 20, 60], red: [255, 50, 40], purple: [170, 70, 255],
+    pink: [255, 120, 200], cobalt: [40, 80, 230], blue: [60, 120, 255],
+    cyan: [60, 230, 255], aqua: [80, 255, 220], lime: [170, 255, 40],
+    green: [60, 220, 90], olive: [150, 160, 40], gold: [255, 200, 40],
+    yellow: [255, 240, 60], orange: [255, 150, 30], white: [255, 255, 255],
+};
+const lightSprites = new Map();
+
+function resolveLightRGB(color) {
+    if (LIGHT_RGB[color]) return LIGHT_RGB[color];
+    const hex = String(color).trim().replace("#", "");
+    const full = hex.length === 3 ? hex.split("").map(c => c + c).join("") : hex;
+    const n = parseInt(full, 16);
+    return Number.isNaN(n) ? LIGHT_RGB.orange : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** 色ごとに1回だけ createRadialGradient でオーラ原画を作る(以後は drawImage で拡縮) */
+function getLightSprite(color) {
+    let s = lightSprites.get(color);
+    if (s) return s;
+    const [r, g, b] = resolveLightRGB(color);
+    const S = LIGHT_SPRITE_SIZE;
+    s = document.createElement("canvas");
+    s.width = s.height = S;
+    const c = s.getContext("2d");
+    const grad = c.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    grad.addColorStop(0,    `rgba(${r},${g},${b},0.95)`);
+    grad.addColorStop(1 / LIGHT_AURA_SCALE, `rgba(${r},${g},${b},0.75)`); // コア外縁
+    grad.addColorStop(0.6,  `rgba(${r},${g},${b},0.25)`);
+    grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+    c.fillStyle = grad;
+    c.fillRect(0, 0, S, S);
+    lightSprites.set(color, s);
+    return s;
+}
+
+/** OP演出の (alpha, scale) を返す */
+function opFactor(b) {
+    if (IsOp && b.opTimer < TIMEisOP) {
+        const t = b.opTimer / TIMEisOP;
+        return [OP_ALPHA + (1 - OP_ALPHA) * t, OP_SCALE + (1 - OP_SCALE) * t];
+    }
+    return [1, 1];
+}
+
+/**
+ * ★ステップ1: 全光弾のオーラだけを先に一括描画
+ *   engine.js から「弾の描画ループの前」に1回呼ぶ。
+ *   'lighter'(加算合成)で重なったオーラが溶け合って繋がって見える。
+ */
+export function drawLightAuras(list = bullets) {
+    const now = performance.now();
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < list.length; i++) {
+        const b = list[i];
+        if (!b || b.type !== "light" || b.color === "null") continue;
+        if (cfg && !b.active) continue;
+
+        const [opA, opS] = opFactor(b);
+        // 弾ごとの位相(uidで固定)+ 時間 → ゆっくりした揺らぎ
+        const seed = b.uid * 1.7 + b.x * 0.003 + b.y * 0.002;
+        const g  = b.glow  ?? 1;
+        const sg = b.sglow ?? 1;
+        const og = b.oglow ?? 1;
+        const vg = b.vglow ?? 1;
+        const dg = b.dglow ?? 1;
+        const wobble = Math.sin(now * LIGHT_WOBBLE_SPD_R * vg + seed);
+        const flick  = Math.sin(now * LIGHT_WOBBLE_SPD_A * vg + seed * 1.3);
+
+        const coreD = (b.vsize ?? b.w) * opS;
+        // glow: オーラの大きさ(倍率)  /  sglow: 半径の揺らぎ幅(倍率)
+        // dglow: オーラの届く範囲(倍率)。オーラ同士が重なる=加算合成が効く距離が dglow 倍になる(濃さは変えない)
+        const d = coreD * LIGHT_AURA_SCALE * g * dg * (1 + LIGHT_WOBBLE_R * sg * wobble);
+        // glow: 濃さ(倍率)  /  oglow: 透明度の揺らぎ幅(倍率)
+        const a = (LIGHT_BASE_ALPHA * g - LIGHT_WOBBLE_A * og + LIGHT_WOBBLE_A * og * flick);
+        // gglow: 重なったときの加算(明るさの足し算)の効き具合
+        //   1      … 純粋な加算合成 'lighter'(従来どおり。重なるほど白飛び)
+        //   0〜1   … 'screen'(重なっても飽和して白飛びしにくい)との混ぜ合わせ。0で完全にscreen
+        //   1超    … 加算を重ね描きして、全体をさらに明るく(最大 LIGHT_MAX_PASSES 回)
+        // 1以下なら、弾が1個だけのときの見た目は変わらない
+        const A = Math.min(Math.max(a, 0), 1) * opA;
+        const gg = b.gglow ?? 1;
+        const spr = getLightSprite(b.color);
+        const x0 = b.x - d / 2, y0 = b.y - d / 2;
+        if (gg < 1) {
+            ctx.globalCompositeOperation = "screen";
+            ctx.globalAlpha = A * (1 - gg);
+            ctx.drawImage(spr, x0, y0, d, d);
+            ctx.globalCompositeOperation = "lighter";
+            ctx.globalAlpha = A * gg;
+            ctx.drawImage(spr, x0, y0, d, d);
+        } else {
+            ctx.globalCompositeOperation = "lighter";
+            let total = A * gg;
+            for (let p = 0; p < LIGHT_MAX_PASSES && total > 0; p++, total -= 1) {
+                ctx.globalAlpha = Math.min(total, 1);
+                ctx.drawImage(spr, x0, y0, d, d);
+            }
+        }
+    }
+    ctx.restore();
+}
+
+/** コア色(cc)をCSSの色文字列にする。パレット名(orange等)は LIGHT_RGB から、それ以外はそのまま */
+function resolveCoreColor(cc) {
+    if (!cc) return "#fff";
+    const rgb = LIGHT_RGB[cc];
+    return rgb ? `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` : String(cc);
+}
+
+/**
+ * ★ステップ2: コア
+ *   as: true  → assets/色名_light.png(未ロード中は円にフォールバック)
+ *   as: false → 色は cc。省略時は白の円
+ */
+function drawLightCore(b, w, alpha) {
+    if (b.as) {
+        const key = `lightas-${b.color}`;
+        if (!imgList.has(key)) loadLightAs(b.color); // 念のため(未ロードなら開始)
+        // angle=-π/2 を渡して drawSprite 内の +π/2 回転を打ち消す(回転なし)
+        if (drawSprite(key, b.x, b.y, w, w, -Math.PI / 2, alpha)) return;
+        // 未ロード中は従来の円にフォールバック
+    }
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = resolveCoreColor(b.cc);
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, w / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 }

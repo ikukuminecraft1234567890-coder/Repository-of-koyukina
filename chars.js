@@ -10,7 +10,7 @@ import { cfg } from "./logs/cfg.js"
 
 // ===== グレイズ設定 =====
 // グレイズ範囲 = 当たり判定半径 × multi
-const multi = 17.5;
+const multi = 21.5;
 
 // ===== グレイズ音 =====
 let audioCtx = null;
@@ -49,22 +49,39 @@ export class Entity {
         this.ny = y;
         this.nx = x;
         this.hp = hp;
+        this.maxhp = hp;
         this.radius = radius;
         this.color = color;
         this.currentBaseColor = color;
         this.speed = speed;
         this.MySpeed = speed*2;
         this.hitboxRadius = rd;
+this.br=radius;
+this.bh = rd;
+        // 出現してからのフレーム数（Entity.update() が進める。Playerはプロパティだけ持つ）
+        this.timer = 1;
         // mov用の慣性管理
         this.movInertia = true;
         this.movCurrentSpeed = 0; // 現在の実移動速度（加速していく値）
         if (name !== "Player" && ap) entitys.push(this);
     }
+update() {
+    this.timer++;
+    this.radius = this.br*((canvas.w / 384)+(canvas.h / 448))*0.5
+    this.hitboxRadius = this.bh*((canvas.w / 384)+(canvas.h / 448))*0.5
+    if (this.y < this.targetY) this.y += this.speed;
+    this.moveToTarget();
 
-    update() {
-        if (this.y < this.targetY) this.y += this.speed;
-        this.moveToTarget();
+    // 場外に出たら自分を消す
+    if (this.x < 0 || this.x > canvas.w || this.y < 0 || this.y > canvas.h) {
+        this.remove();
     }
+}
+
+remove() {
+    const i = entitys.indexOf(this);
+    if (i !== -1) entitys.splice(i, 1);
+}
 
     Move(Direction = { x: 0, y: 0 }) {
         const Nx = this.x + (Direction.x * this.speed);
@@ -106,8 +123,6 @@ moveToTarget(speed = this.movSpeed ?? this.speed) {
     const nx = this.x + Math.cos(angle) * moveSpeed;
     const ny = this.y + Math.sin(angle) * moveSpeed;
 
-    if (nx < 0 || nx > (canvas.w || 280) || ny < 0 || ny > (canvas.h || 480)) return;
-
     this.x = nx;
     this.y = ny;
 
@@ -145,7 +160,8 @@ moveToTarget(speed = this.movSpeed ?? this.speed) {
             }
             const dx = bullet.x - this.x;
             const dy = bullet.y - this.y;
-            return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * 0.6), 2);
+const multip = bullet.def ? 1.0 : 0.6
+            return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * multip), 2);
         });
         if (OnHit) {
             this.color = "white"
@@ -157,7 +173,7 @@ moveToTarget(speed = this.movSpeed ?? this.speed) {
 
 
 export class Player extends Entity {
-    constructor(x, y, radius, color,rd,it,zanki) {
+    constructor(x, y, radius, color,rd,it,zanki,name="yuugi") {
         super("Player", x, y, radius, color, 2, false, rd);
         this.maxzanki = zanki ?? 3
         this.zanki = zanki ?? 3;
@@ -165,6 +181,7 @@ export class Player extends Entity {
         this.invincible = 0;
         this.death = false;
         this.deathF=0
+this.name=name
         // 💡 時間切れ後の停止中フラグ（engine.js の gameLoop が毎フレーム設定する）
         this.frozen = false;
         // グレイズ
@@ -175,6 +192,8 @@ this.gs = rd * multi
     }
 
     update() {
+this.radius = this.br*((canvas.w / 384)+(canvas.h / 448))*0.5
+this.hitboxRadius = this.bh*((canvas.w / 384)+(canvas.h / 448))*0.5
         if (this.zanki <= 0 && this.deathF < stat.pfr) {
             this.deathF = stat.pfr
             this.death = true;
@@ -192,11 +211,9 @@ this.gs = rd * multi
     }
 
     OnShot(a = false) {
-        if (!window.Allkeys.z && !isTouching) return;
-        if (!a) {
-new PlayerBullet({ x:-5, y: 10, angle: -Math.PI / 2, speed: 30, color: "red",size:16, type: "amulet",damage:12 });
-new PlayerBullet({ x:5, y: 10, angle: -Math.PI / 2, speed: 30, color: "red",size:16, type: "amulet",damage:12 });
-}
+if (this.name==="hakurei") {
+new PlayerBullet({ x:-5, y: 10, angle: -Math.PI / 2, speed: 30, color: "red",size:16, type: "amulet",damage:2.1 });
+new PlayerBullet({ x:5, y: 10, angle: -Math.PI / 2, speed: 30, color: "red",size:16, type: "amulet",damage:2.1});
         let near = null, minDist = Infinity;
         for (const e of entitys) {
             if (e === this) continue;
@@ -204,9 +221,27 @@ new PlayerBullet({ x:5, y: 10, angle: -Math.PI / 2, speed: 30, color: "red",size
             if (d < minDist) [minDist, near] = [d, e];
         }
         if (near) {
-new PlayerBullet({ x: -15, y: 0, angle: pf(this.x, this.y, 0, near), speed: 15, color: "green",size:16, type: "amulet", damage:3.5});
-new PlayerBullet({ x: 15, y: 0, angle: pf(this.x, this.y, 0, near), speed: 15, color: "green", size:16, type: "amulet", damage:3.5});
+new PlayerBullet({ x: -15, y: 0, angle: pf(this.x, this.y, 0, near), speed: 15, color: "green",size:16, type: "amulet", damage:2.4});
+new PlayerBullet({ x: 15, y: 0, angle: pf(this.x, this.y, 0, near), speed: 15, color: "green", size:16, type: "amulet", damage:2.4});
     }
+}
+if (this.name==="kirisame") {
+new PlayerBullet({ x:-5, y: 10, angle: -Math.PI / 2, speed: 6.5, color: "green",size:32, type: "star2",damage:1.8 });
+new PlayerBullet({ x:5, y: 10, angle: -Math.PI / 2, speed: 6.5, color: "green",size:32, type: "star2",damage:1.8 });
+}
+if (this.name==="kagiyama") {
+new PlayerBullet({ x:-5, y: 10, angle: -Math.PI / 2, speed: 40.5, color: "blue",size:32, type: "kunai",damage:1.5 })
+new PlayerBullet({ x:5, y: 10, angle: -Math.PI / 2, speed: 40.5, color: "blue",size:32, type: "kunai",damage:1.5 })
+new PlayerBullet({ x:-25, y: 10, angle: -Math.PI / 2, speed: 50.5, color: "purple",size:24, type: "amulet",damage:7 })
+new PlayerBullet({ x:25, y: 10, angle: -Math.PI / 2, speed: 50.5, color: "purple",size:24, type: "amulet",damage:7 })
+}
+if (this.name==="yuugi") {
+if (stat.pfr % 240 === 0)new PlayerBullet({ x:0, y: 10, angle: -Math.PI / 2, speed: 4, color: "red",size:96, type: "big",damage:20 })
+}
+if (this.name==="kurapi") {
+new PlayerBullet({ x:-5, y: 10, angle: -Math.PI / 2, speed: 0.5, color: "green",size:32, type: "polygon",damage:2.5 });
+new PlayerBullet({ x:5, y: 10, angle: -Math.PI / 2, speed: 0.5, color: "green",size:32, type: "polygon",damage:2.5 });
+}
 }
 
 
@@ -262,7 +297,8 @@ if(bullet.timer < bullet.speed) return;
         }
         const dx = bullet.x - this.x;
         const dy = bullet.y - this.y;
-        return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * 0.6), 2);
+const multip = bullet.def ? 1.0 : 0.6
+        return (dx * dx + dy * dy) < Math.pow(this.hitboxRadius + (bullet.radius * multip), 2);
     });
 
     if (OnHit) {
